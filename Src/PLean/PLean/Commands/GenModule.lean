@@ -16,9 +16,10 @@ Emitted inside `namespace M`:
 * `prog : PLean.Program S E F G W`;
 * `InitConditions` (every machine in its start state, its start entry
   pending), the invariants and `Lemma` / `Theorem` bundles, and the
-  automatic invariants `NoHalt` (when no machine ever halts) and
+  automatic invariants `NoHalt` (when no machine ever halts),
   `Transient` (a machine is never idle in a state whose entry always ends
-  in a `goto`).
+  in a `goto`) and `Waiting` (a machine suspended at a `receive` is in
+  that `receive`'s state).
 -/
 import Lean
 import PLean.Internal.Decls
@@ -93,6 +94,10 @@ def programHalts (ctx : LocalPModuleCtx) : Bool :=
     | some md => md.body.any fun b => (raisedEvents b).contains `halt
     | none => false
 
+/-- Whether `stx` contains a `receive`. -/
+partial def hasReceive (stx : Syntax) : Bool :=
+  stx.getKind == ``pReceive || stx.getArgs.any hasReceive
+
 /-- The states of `md` whose entry always ends in a `goto` (a machine is
 never idle in them). -/
 def transientStates (md : PMachineDecl) : Array Name := Id.run do
@@ -104,11 +109,106 @@ def transientStates (md : PMachineDecl) : Array Name := Id.run do
         | `(pStateBodyItem| entry ( $_:ident : $_:term ) { $b:doSeq }) => some b
         | _ => none
       let some b := body? | continue
+      if hasReceive b then continue
       let seq := if b.getKind == ``Lean.Parser.Term.doSeqBracketed then b[1] else b[0]
       if let some item := seq.getArgs.back? then
         if item[0].getKind == ``pGotoNoPayload || item[0].getKind == ``pGotoPayload then
           out := out.push sname
   return out
+
+/-! ## `receive` sites
+
+A handler or entry body is split at each top-level `receive`: the code
+before it ends by suspending at the site (`H.suspend (W.site<k> …)`,
+saving the locals), and each case resumes with its body followed by the
+code after the `receive`. -/
+
+/-- A `receive` case: its event, payload binder and body. -/
+structure RecvCase where
+  ev     : Name
+  binder : Option (Ident × TSyntax `term)
+  body   : TSyntax ``Lean.Parser.Term.doSeq
+
+/-- A local a suspended handler keeps: a `var` or a handler / entry parameter. -/
+structure Saved where
+  name  : Ident
+  ty    : TSyntax `term
+  isVar : Bool
+
+/-- A `receive` site. `W.site<idx>` holds `saved`; a case resumes with its
+body, then `cont`, which ends by suspending at `next`, if any. -/
+structure RecvSite where
+  idx   : Nat
+  mname : Name
+  sname : Name
+  saved : Array Saved
+  cases : Array RecvCase := #[]
+  cont  : Array Syntax := #[]
+  next  : Option Nat := none
+
+/-- A handler or entry body (assignments to its locals localised), up to its
+first top-level `receive`. -/
+structure BodyPlan where
+  pre   : Array Syntax
+  first : Option Nat
+
+/-- The `W` constructor of site `k`. -/
+def siteName (k : Nat) : Name := Name.mkSimple s!"site{k}"
+
+/-- The resumer of site `k` for event `ev`. -/
+def resumerName (sname : Name) (k : Nat) (ev : Name) : Name :=
+  sname ++ Name.mkSimple s!"recv{k}_{ev}"
+
+/-- The items of a `do` sequence. -/
+def doSeqItemsOf (b : Syntax) : Array Syntax :=
+  (if b.getKind == ``Lean.Parser.Term.doSeqBracketed then b[1] else b[0]).getArgs
+
+private def varsOf (items : Array Syntax) : Array Saved :=
+  items.filterMap fun it =>
+    if it[0].getKind == ``pLocalVar then some { name := ⟨it[0][1]⟩, ty := ⟨it[0][3]⟩, isVar := true }
+    else none
+
+private partial def planItems (mname sname : Name) (saved : Array Saved) (items : Array Syntax) :
+    StateM (Array RecvSite) (Array Syntax × Option Nat) := do
+  match items.findIdx? (·[0].getKind == ``pReceive) with
+  | none => return (items, none)
+  | some i =>
+    let saved := saved ++ varsOf (items.extract 0 i)
+    let idx := (← get).size
+    modify (·.push { idx, mname, sname, saved })
+    let (cont, next) ← planItems mname sname saved (items.extract (i + 1) items.size)
+    let recv := items[i]![0]
+    let cases := recv[2].getArgs.map fun c =>
+      { ev := c[1].getId
+        binder := if c[2].getNumArgs == 5 then some (⟨c[2][1]⟩, ⟨c[2][3]⟩) else none
+        body := ⟨c[5]⟩ : RecvCase }
+    modify fun a => a.set! idx { idx, mname, sname, saved, cases, cont, next }
+    return (items.extract 0 i, some idx)
+
+/-- Every handler / entry body's plan, keyed by (machine, state, event or
+`entry`), and every `receive` site. -/
+def planReceives (ctx : LocalPModuleCtx) :
+    CommandElabM (Array ((Name × Name × Name) × BodyPlan) × Array RecvSite) := do
+  let mut plans := #[]
+  let mut sites : Array RecvSite := #[]
+  for mname in ctx.machineOrder do
+    let some m := ctx.machines.find? mname | continue
+    for (sname, _, items) in machineStates m.body do
+      for it in items do
+        let (owner, params, body?) : Name × Array Saved × Option Syntax := match it with
+          | `(pStateBodyItem| on $ev:ident ( $p:ident : $ty:term ) { $b:doSeq }) =>
+            (ev.getId, #[{ name := p, ty, isVar := false }], some b.raw)
+          | `(pStateBodyItem| on $ev:ident { $b:doSeq }) => (ev.getId, #[], some b.raw)
+          | `(pStateBodyItem| entry { $b:doSeq }) => (`entry, #[], some b.raw)
+          | `(pStateBodyItem| entry ( $p:ident : $ty:term ) { $b:doSeq }) =>
+            (`entry, #[{ name := p, ty, isVar := false }], some b.raw)
+          | _ => (`none, #[], none)
+        let some b := body? | continue
+        let b ← liftMacroM (localizeAssigns (collectLocals b) b)
+        let ((pre, first), sites') := (planItems mname sname params (doSeqItemsOf b)).run sites
+        sites := sites'
+        plans := plans.push ((mname, sname, owner), { pre, first })
+  return (plans, sites)
 
 /-- The event handled by a state item, with its body (`none` for `goto`-only
 and `ignore` items). -/
@@ -165,8 +265,8 @@ private def emitMachineWrappers (ctx : LocalPModuleCtx) : CommandElabM Unit := d
     elabCommand (← `(attribute [pverifySimp] $(mkIdent (mname ++ `mk.injEq))))
 
 /-- `E`, `S`, `F`, `G`, `W`, `HM`, `GW`. -/
-private def emitProgramTypes (ctx : LocalPModuleCtx) (vars : NameMap (Array VarInfo)) :
-    CommandElabM Unit := do
+private def emitProgramTypes (ctx : LocalPModuleCtx) (vars : NameMap (Array VarInfo))
+    (sites : Array RecvSite) : CommandElabM Unit := do
   -- E
   let evCtors ← ctx.eventOrder.mapM fun en => do
     let some e := ctx.events.find? en | throwError "internal: event {en} missing"
@@ -218,8 +318,16 @@ private def emitProgramTypes (ctx : LocalPModuleCtx) (vars : NameMap (Array VarI
   elabCommand (← `(inductive $idG where
       $gCtors*
       deriving Inhabited))
-  -- W: suspended receives (none yet).
-  elabCommand (← `(abbrev $idW : Type := Unit))
+  -- W: one constructor per `receive` site, holding the saved locals.
+  if sites.isEmpty then
+    elabCommand (← `(abbrev $idW : Type := Unit))
+  else
+    let ctors ← sites.mapM fun s => do
+      let bs ← s.saved.mapM fun v =>
+        `(Lean.Parser.Term.bracketedBinderF| ($(v.name):ident : $(v.ty)))
+      `(Lean.Parser.Command.ctor| | $(mkIdent (siteName s.idx)):ident $bs:bracketedBinder*)
+    elabCommand (← `(inductive $idW where
+        $ctors*))
   elabCommand (← `(abbrev $idHM := PLean.HandlerM $idS $idE $idF $idG $idW))
   elabCommand (← `(abbrev $idGW := PLean.GWorld $idS $idE $idF $idG $idW))
   -- `if` through each field projection, for the obligation normaliser.
@@ -307,33 +415,45 @@ private def handlerPrelude (mname : Name) (vars : Array VarInfo) :
 
 /-- The handler / entry definitions of one state. -/
 private def emitStateHandlers (mname sname : Name) (items : Array Syntax) (vars : Array VarInfo)
-    (payloadTy : Name → Option Name) : CommandElabM Unit := do
+    (payloadTy : Name → Option Name) (plans : Array ((Name × Name × Name) × BodyPlan))
+    (sites : Array RecvSite) : CommandElabM Unit := do
   let pre ← handlerPrelude mname vars
   let hName (ev : Name) : Ident := mkIdent (sname ++ ev.appendAfter "_handler")
   let ordered ← match orderForRaise items with
     | .ok o => pure o
     | .error msg => throwError "state `{mname}.{sname}`: {msg}"
-  let localize (body : TSyntax ``Lean.Parser.Term.doSeq) :
-      CommandElabM (TSyntax ``Lean.Parser.Term.doSeq) :=
-    return ⟨← liftMacroM (localizeAssigns (collectLocals body) body)⟩
+  let suspendAt (k : Nat) : CommandElabM (TSyntax ``Lean.Parser.Term.doSeqItem) := do
+    let some s := sites[k]? | throwError "internal: no receive site {k}"
+    let args := s.saved.map (·.name)
+    `(Lean.Parser.Term.doSeqItem| PLean.H.suspend ($(mkIdent (`W ++ siteName k)) $args*))
+  let itemsOf (body : Array Syntax) (next : Option Nat) :
+      CommandElabM (Array (TSyntax ``Lean.Parser.Term.doSeqItem)) := do
+    let mut out : Array (TSyntax ``Lean.Parser.Term.doSeqItem) := body.map (⟨·⟩)
+    if let some k := next then out := out.push (← suspendAt k)
+    if out.isEmpty then out := out.push (← `(Lean.Parser.Term.doSeqItem| pure ()))
+    return out
+  let bodyOf (owner : Name) : CommandElabM (Array (TSyntax ``Lean.Parser.Term.doSeqItem)) := do
+    let some (_, pl) := plans.find? (·.1 == (mname, sname, owner))
+      | throwError "internal: no body for `{mname}.{sname}.{owner}`"
+    itemsOf pl.pre pl.first
   for it in ordered do
     match it with
-    | `(pStateBodyItem| on $ev:ident ( $p:ident : $ty:term ) { $body:doSeq }) =>
-      let body ← localize body
+    | `(pStateBodyItem| on $ev:ident ( $p:ident : $ty:term ) { $_:doSeq }) =>
+      let body ← bodyOf ev.getId
       elabCommand (← `(def $(hName ev.getId) ($p : $ty) : $idHM Unit := do
           $pre*
-          do $body))
-    | `(pStateBodyItem| on $ev:ident { $body:doSeq }) =>
-      let body ← localize body
+          $body*))
+    | `(pStateBodyItem| on $ev:ident { $_:doSeq }) =>
+      let body ← bodyOf ev.getId
       match payloadTy ev.getId with
       | some pt =>
         elabCommand (← `(def $(hName ev.getId) (_payload : $(mkIdent pt)) : $idHM Unit := do
             $pre*
-            do $body))
+            $body*))
       | none =>
         elabCommand (← `(def $(hName ev.getId) : $idHM Unit := do
             $pre*
-            do $body))
+            $body*))
     | `(pStateBodyItem| on $ev:ident goto $tgt:ident) =>
       let tag := mkIdent (tgt.getId.appendAfter "_st")
       match payloadTy ev.getId with
@@ -349,28 +469,48 @@ private def emitStateHandlers (mname sname : Name) (items : Array Syntax) (vars 
   let mut emitted := false
   for it in items do
     match it with
-    | `(pStateBodyItem| entry { $body:doSeq }) =>
-      let body ← localize body
+    | `(pStateBodyItem| entry { $_:doSeq }) =>
+      let body ← bodyOf `entry
       elabCommand (← `(def $entryName (_ : $idG) : $idHM Unit := do
           $pre*
-          do $body))
+          $body*))
       emitted := true
-    | `(pStateBodyItem| entry ( $p:ident : $ty:term ) { $body:doSeq }) =>
-      let body ← localize body
+    | `(pStateBodyItem| entry ( $p:ident : $ty:term ) { $_:doSeq }) =>
+      let body ← bodyOf `entry
       let gctor := mkIdent (`G ++ stateTagName mname sname)
       elabCommand (← `(def $entryName ($arg : $idG) : $idHM Unit := do
           let $p : $ty := match $arg:ident with
             | $gctor:ident x => x
             | _ => default
           $pre*
-          do $body))
+          $body*))
       emitted := true
     | _ => pure ()
   unless emitted do
     elabCommand (← `(def $entryName (_ : $idG) : $idHM Unit := pure ()))
+  -- resumers of this state's `receive` sites
+  for s in sites do
+    unless s.mname == mname && s.sname == sname do continue
+    let savedBs ← s.saved.mapM fun v =>
+      `(Lean.Parser.Term.bracketedBinderF| ($(v.name):ident : $(v.ty)))
+    let restore ← (s.saved.filter (·.isVar)).mapM fun v =>
+      `(Lean.Parser.Term.doSeqItem| let mut $(v.name):ident : $(v.ty) := $(v.name):ident)
+    let rest ← itemsOf s.cont s.next
+    for c in s.cases do
+      let plB ← match c.binder, payloadTy c.ev with
+        | some (x, ty), _ => pure #[← `(Lean.Parser.Term.bracketedBinderF| ($x:ident : $ty))]
+        | none, some pt => pure #[← `(Lean.Parser.Term.bracketedBinderF| (_ : $(mkIdent pt)))]
+        | none, none => pure #[]
+      let caseItem ← `(Lean.Parser.Term.doSeqItem| do $(c.body))
+      elabCommand (← `(def $(mkIdent (resumerName sname s.idx c.ev)) $savedBs:bracketedBinder*
+          $plB:bracketedBinder* : $idHM Unit := do
+          $pre*
+          $restore*
+          $caseItem
+          $rest*))
 
 /-- `prog : PLean.Program S E F G W`: exhaustive matches over (state, event). -/
-private def emitProgram (ctx : LocalPModuleCtx) : CommandElabM Unit := do
+private def emitProgram (ctx : LocalPModuleCtx) (sites : Array RecvSite) : CommandElabM Unit := do
   let mut hAlts : Array (TSyntax ``Lean.Parser.Term.matchAlt) := #[]
   let mut eAlts : Array (TSyntax ``Lean.Parser.Term.matchAlt) := #[]
   let mut dAlts : Array (TSyntax ``Lean.Parser.Term.matchAlt) := #[]
@@ -404,11 +544,26 @@ private def emitProgram (ctx : LocalPModuleCtx) : CommandElabM Unit := do
     dAlts := dAlts.push (← `(Lean.Parser.Term.matchAltExpr| | _, _ => false))
   if nStates == 0 then
     eAlts := eAlts.push (← `(Lean.Parser.Term.matchAltExpr| | _ => pure ()))
-  let s := mkIdent `s; let e := mkIdent `e
+  -- resumers, per (site, case)
+  let mut rAlts : Array (TSyntax ``Lean.Parser.Term.matchAlt) := #[]
+  for s in sites do
+    let args := (List.range s.saved.size).toArray.map fun j => mkIdent (Name.mkSimple s!"a{j}")
+    for c in s.cases do
+      let hasPayload := (ctx.events.find? c.ev).any (·.hasPayload)
+      let pat ← if hasPayload then `($(mkIdent (`E ++ c.ev)) $p) else `($(mkIdent (`E ++ c.ev)))
+      let fn := mkIdent (s.mname ++ resumerName s.sname s.idx c.ev)
+      let rhs ← if hasPayload then `(some ($fn $args* $p)) else `(some ($fn $args*))
+      rAlts := rAlts.push (← `(Lean.Parser.Term.matchAltExpr|
+        | $(mkIdent (`W ++ siteName s.idx)) $args*, $pat => $rhs))
+  let allCovered := !sites.isEmpty &&
+    sites.all fun s => ctx.eventOrder.all fun ev => s.cases.any (·.ev == ev)
+  unless allCovered do
+    rAlts := rAlts.push (← `(Lean.Parser.Term.matchAltExpr| | _, _ => none))
+  let s := mkIdent `s; let e := mkIdent `e; let k := mkIdent `k
   elabCommand (← `(def $(mkIdent `prog) : PLean.Program $idS $idE $idF $idG $idW :=
       ⟨fun $s $e => match $s:ident, $e:ident with $hAlts:matchAlt*,
        fun $s $arg => match $s:ident with $eAlts:matchAlt*,
-       fun _ _ => none,
+       fun $k $e => match $k:ident, $e:ident with $rAlts:matchAlt*,
        fun $s $e => match $s:ident, $e:ident with $dAlts:matchAlt*⟩))
 
 /-- `def name : GW → Prop := fun s => c₁ ∧ … ∧ cₙ` (`True` when empty);
@@ -447,9 +602,8 @@ private def emitInitConditions (ctx : LocalPModuleCtx) (mk ek : NameSet)
     (← `(∀ $j:ident, ($s).log $j = none), false),
     (← `(($s).error = none), false),
     (← `(∀ $r:ident, ($s).nextRef ≤ $r → (($s).machines $r).state = none), false),
-    (← `(∀ $r:ident, $r < ($s).nextRef → $startD ∧ (($s).machines $r).pending ≠ none ∧
-          (($s).machines $r).waiting = none), false),
-    (← `(∀ $r:ident, (($s).machines $r).halted = false), false)]
+    (← `(∀ $r:ident, $r < ($s).nextRef → $startD ∧ (($s).machines $r).pending ≠ none), false),
+    (← `(∀ $r:ident, (($s).machines $r).halted = false ∧ (($s).machines $r).waiting = none), false)]
   for d in ctx.inits do
     if let some stx := d.defStx then
       PLean.rejectStateShadowIn "`init-holds`" stx[1]
@@ -483,7 +637,8 @@ def elabPGenModule : CommandElab := fun stx => do
   let mut vars : NameMap (Array VarInfo) := {}
   for mname in ctx.machineOrder do
     if let some m := ctx.machines.find? mname then vars := vars.insert mname (collectVars m.body)
-  emitProgramTypes ctx vars
+  let (plans, sites) ← planReceives ctx
+  emitProgramTypes ctx vars sites
   emitKindPredicates ctx
   let machineKinds : NameSet := ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
   let eventKinds : NameSet := ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
@@ -521,9 +676,9 @@ def elabPGenModule : CommandElab := fun stx => do
     elabCommand (← `(namespace $(mkIdent mname)))
     emitMachineAliases mname states mvars
     for (sname, _, items) in states do
-      emitStateHandlers mname sname items mvars payloadTy
+      emitStateHandlers mname sname items mvars payloadTy plans sites
     elabCommand (← `(end $(mkIdent mname)))
-  emitProgram ctx
+  emitProgram ctx sites
   if noncomp then elabCommand (← `(end))
   -- specifications
   for (_, d) in ctx.invariants.toList do
@@ -544,6 +699,15 @@ def elabPGenModule : CommandElab := fun stx => do
     let disj ← transient.pop.foldrM (init := last) fun d acc => `($d ∨ $acc)
     elabCommand (← `(@[reducible] def $(mkIdent `Transient) (s : $idGW) : Prop :=
         ∀ r, $disj → (s.machines r).pending ≠ none))
+  -- A machine suspended at a `receive` site is in the site's state.
+  unless sites.isEmpty do
+    let conjs ← sites.mapM fun st => do
+      let args := (List.range st.saved.size).toArray.map fun j => mkIdent (Name.mkSimple s!"a{j}")
+      let tag := mkIdent (`S ++ stateTagName st.mname st.sname)
+      `(∀ $args*, (s.machines r).waiting = some ($(mkIdent (`W ++ siteName st.idx)) $args*) →
+          (s.machines r).state = some $tag)
+    let body ← conjs.pop.foldrM (init := conjs.back!) fun c acc => `($c ∧ $acc)
+    elabCommand (← `(@[reducible] def $(mkIdent `Waiting) (s : $idGW) : Prop := ∀ r, $body))
   -- `pinstance` class fields become named facts, used as solver hints.
   let mut axioms := ctx.axioms
   for (_, d) in ctx.instances.toList do

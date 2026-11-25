@@ -163,8 +163,10 @@ def elabPVerify : CommandElab := fun stx => do
         throwError "`prove {t} using {u}`: `{u}` is never proved (add `prove {u} ;`)"
   let hasNoHalt := env.contains (modName ++ `NoHalt)
   let hasTransient := env.contains (modName ++ `Transient)
+  let hasWaiting := env.contains (modName ++ `Waiting)
   let allTargets := if hasNoHalt then tgts.push `NoHalt else tgts
   let allTargets := if hasTransient then allTargets.push `Transient else allTargets
+  let allTargets := if hasWaiting then allTargets.push `Waiting else allTargets
   -- names to unfold / hints
   let mut defs : Array Ident := #[mkIdent `InitConditions]
   for n in ctx.invariantOrder do defs := defs.push (mkIdent n)
@@ -173,6 +175,7 @@ def elabPVerify : CommandElab := fun stx => do
   for e in ctx.eventOrder do defs := defs.push (mkIdent (Name.mkSimple ("is_" ++ e.toString)))
   if hasNoHalt then defs := defs.push (mkIdent `NoHalt)
   if hasTransient then defs := defs.push (mkIdent `Transient)
+  if hasWaiting then defs := defs.push (mkIdent `Waiting)
   defs := defs.push (mkIdent `AllInv)
   let mut hints : Array (TSyntax `term) := #[]
   for e in ctx.eventOrder do
@@ -242,14 +245,36 @@ def elabPVerify : CommandElab := fun stx => do
     else return #[]
   -- A handler of a transient state runs only where `Transient` fails, so
   -- its obligations may assume `Transient`.
-  let transientIn (mname sname : Name) : Bool :=
-    hasTransient && ((ctx.machines.find? mname).map (transientStates · |>.contains sname)).getD false
-  let premisesOf (t : Name) (withTransient : Bool) : Array Name :=
-    let ms := #[t] ++ ((usingOf.find? t).getD #[])
-    if withTransient && !ms.contains `Transient then ms.push `Transient else ms
+  let transientIn (mname sname : Name) : Array Name :=
+    if hasTransient && ((ctx.machines.find? mname).map (transientStates · |>.contains sname)).getD false
+    then #[`Transient] else #[]
+  -- A resumer runs on a machine suspended at its site: `Waiting` gives the state.
+  let premisesOf (t : Name) (extra : Array Name) : Array Name :=
+    extra.foldl (init := #[t] ++ ((usingOf.find? t).getD #[])) fun ms x =>
+      if ms.contains x then ms else ms.push x
+  let (_, sites) ← planReceives ctx
+  let siteArgs (s : RecvSite) : Array Ident :=
+    (List.range s.saved.size).toArray.map fun j => mkIdent (Name.mkSimple s!"a{j}")
+  let siteBinders (s : RecvSite) : CommandElabM (Array (TSyntax ``Lean.Parser.Term.bracketedBinder)) :=
+    (s.saved.zip (siteArgs s)).mapM fun (v, a) =>
+      `(Lean.Parser.Term.bracketedBinderF| ($a:ident : $(v.ty)))
+  let recvHyps (pre : TSyntax `term) (s : RecvSite) (ev : Name) :
+      CommandElabM (Array (TSyntax `term)) := do
+    let site ← `($(mkIdent (`W ++ siteName s.idx)) $(siteArgs s)*)
+    let evv ← evVal ev
+    return #[← `(PLean.Framework $g), ← `(($g).error = none), pre,
+      ← `(($g).net $i = some ⟨$src, $dst, $evv⟩),
+      ← `(($g).log $i = some ⟨$src, $dst, $evv⟩),
+      ← `($i < ($g).clock),
+      ← `((($g).machines $dst).pending = none),
+      ← `((($g).machines $dst).waiting = some $site),
+      ← `((($g).machines $dst).halted = false)]
+  let recvAct (s : RecvSite) (ev : Name) : CommandElabM (TSyntax `term) := do
+    let fn := mkIdent (s.mname ++ resumerName s.sname s.idx ev)
+    if (ctx.events.find? ev).any (·.hasPayload) then `($fn $(siteArgs s)* $pl) else `($fn $(siteArgs s)*)
   -- per-target obligations
   for t in allTargets do
-    let pre ← conjAt (premisesOf t false) g
+    let pre ← conjAt (premisesOf t #[]) g
     let post ← `(fun g' => $(mkIdent t) g')
     for (mname, sname, ev, act) in handled do
       let tag := mkIdent (`S ++ stateTagName mname sname)
@@ -275,6 +300,19 @@ def elabPVerify : CommandElab := fun stx => do
           ($arg:ident : $(mkIdent `G)) : $(← arrows hyps concl) := by
         $(← closeTac #[entryFn]))
       results := results ++ (← runOb obName cmd)
+    for s in sites do
+      for c in s.cases do
+        let obName := (s.mname ++ resumerName s.sname s.idx c.ev).appendAfter ("_correct_" ++ t.toString)
+        let preW ← conjAt (premisesOf t #[`Waiting]) g
+        let hyps ← recvHyps preW s c.ev
+        let concl ← `(PLean.RunPost $post (($g).consume $i) $dst
+            { ($g).machines $dst with waiting := none } $(← recvAct s c.ev))
+        let fn := mkIdent (s.mname ++ resumerName s.sname s.idx c.ev)
+        let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat)
+            ($src:ident $dst:ident : PLean.MachineRef) $((← siteBinders s) ++ (← plBinder c.ev))* :
+            $(← arrows hyps concl) := by
+          $(← closeTac #[fn]))
+        results := results ++ (← runOb obName cmd)
     if !hasNoHalt then
       let obName := Name.mkSimple ("drop_correct_" ++ t.toString)
       let p := mkIdent `p
@@ -312,6 +350,18 @@ def elabPVerify : CommandElab := fun stx => do
         ($arg:ident : $(mkIdent `G)) : $(← arrows hyps concl) := by
       $(← closeTac #[entryFn]))
     results := results ++ (← runOb obName cmd)
+  for s in sites do
+    for c in s.cases do
+      let obName := (s.mname ++ resumerName s.sname s.idx c.ev).appendAfter "_safe"
+      let hyps ← recvHyps allPre s c.ev
+      let concl ← `(PLean.RunSafe (($g).consume $i) $dst
+          { ($g).machines $dst with waiting := none } $(← recvAct s c.ev))
+      let fn := mkIdent (s.mname ++ resumerName s.sname s.idx c.ev)
+      let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat)
+          ($src:ident $dst:ident : PLean.MachineRef) $((← siteBinders s) ++ (← plBinder c.ev))* :
+          $(← arrows hyps concl) := by
+        $(← closeTac #[fn]))
+      results := results ++ (← runOb obName cmd)
   -- never-receives
   for (mname, sname, ev) in never do
     let tag := mkIdent (`S ++ stateTagName mname sname)
@@ -329,8 +379,8 @@ def elabPVerify : CommandElab := fun stx => do
   let preNames := (List.range n).toArray.map hName
   let destruct ← if n ≤ 1 then `(tactic| skip)
     else `(tactic| obtain ⟨$[$preNames],*⟩ := hpre)
-  let preOf (t : Name) (withTransient : Bool := false) : CommandElabM (TSyntax `term) := do
-    let members := premisesOf t withTransient
+  let preOf (t : Name) (extra : Array Name := #[]) : CommandElabM (TSyntax `term) := do
+    let members := premisesOf t extra
     let hs ← members.mapM fun u => do
       if n ≤ 1 then `(hpre) else pure (hName (allTargets.idxOf u))
     if hs.size = 1 then `($(hs[0]!)) else `(⟨$[$hs],*⟩)
@@ -394,6 +444,37 @@ def elabPVerify : CommandElab := fun stx => do
       have hall := hpre
       $destruct:tactic
       exact PLean.RunOK.of_safe_post ($(mkIdent (mname ++ sname ++ `entry_safe)) $g $m $arg hF herr hall hs hpend hhalt) $body))
+  let mut recvTacs : Array (TSyntax `tactic) := #[]
+  for s in sites do
+    for c in s.cases do
+      let base := s.mname ++ resumerName s.sname s.idx c.ev
+      let cn := base.appendAfter "_case"
+      let hasPl := (ctx.events.find? c.ev).any (·.hasPayload)
+      let args := siteArgs s
+      let plArg ← if hasPl then pure #[pl] else pure #[]
+      let body ← combineRun fun t => do
+        `($(mkIdent (base.appendAfter ("_correct_" ++ t.toString))) $g $i $src $dst $args* $plArg*
+            hF herr $(← preOf t #[`Waiting]) hnet hlog hlt hpend hw hhalt)
+      let safe ← `($(mkIdent (base.appendAfter "_safe")) $g $i $src $dst $args* $plArg*
+            hF herr hall hnet hlog hlt hpend hw hhalt)
+      asm (← `(command| theorem $(mkIdent cn) ($g:ident : $gwTy) ($i:ident : Nat)
+          ($src:ident $dst:ident : PLean.MachineRef) $((← siteBinders s) ++ (← plBinder c.ev))* :
+          $(← arrows (← recvHyps allPre s c.ev) (← `(PLean.RunOK $(mkIdent `AllInv) (($g).consume $i) $dst
+            { ($g).machines $dst with waiting := none } $(← recvAct s c.ev)))) := by
+        intro hF herr hpre hnet hlog hlt hpend hw hhalt
+        have hall := hpre
+        $destruct:tactic
+        exact PLean.RunOK.of_safe_post $safe $body))
+      let holes := (List.replicate (2 + args.size + plArg.size) (← `(_))).toArray
+      recvTacs := recvTacs.push (← `(tactic| exact $(mkIdent cn) g i $holes* hF herr hpre hnet
+        (PLean.Framework.log_of_net hF hnet) (PLean.Framework.lt_clock_of_net hF hnet) hpend hw hh))
+  let resumeTac ← if sites.isEmpty then
+      `(tactic| (intro g i p k _ _ _ _ _ _ _ act hr; simp [$(mkIdent `prog):ident] at hr))
+    else
+      `(tactic| (intro g i p k hF herr hpre hnet hpend hw hh act hr
+                 obtain ⟨src, dst, ev⟩ := p
+                 cases k <;> cases ev <;> simp [$(mkIdent `prog):ident] at hr <;> subst hr <;>
+                   first $[| $recvTacs:tactic]*))
   let caseTacs ← caseNames.mapM fun cn =>
     `(tactic| exact $(mkIdent cn) g i src dst _ hF herr hpre hnet (PLean.Framework.log_of_net hF hnet) (PLean.Framework.lt_clock_of_net hF hnet) hs hpend hwait hhalt)
   let caseTacs2 ← caseNames.mapM fun cn =>
@@ -420,7 +501,7 @@ def elabPVerify : CommandElab := fun stx => do
           $[| $caseTacs:tactic]*
           $[| $caseTacs2:tactic]*
           | (simp [$(mkIdent `prog):ident] at hdef)
-      · intro g i p k _ _ _ _ _ _ _ act hr; simp [$(mkIdent `prog):ident] at hr
+      · $resumeTac:tactic
       · intro g m s arg hF herr hpre hs hpend hhalt
         cases s <;> first $[| $entryTacs:tactic]*
       · $dropTac:tactic)
@@ -448,7 +529,7 @@ def elabPVerify : CommandElab := fun stx => do
   for cmd in (if only.isEmpty then #[stepThm, baseThm, safeThm, safeFifo] else #[]) do
     asmErrs := asmErrs ++ (← elabCapture (← wrap cmd))
   for (t, k) in allTargets.toList.zipIdx do
-    if t == `NoHalt || t == `Transient || !only.isEmpty then continue
+    if t == `NoHalt || t == `Transient || t == `Waiting || !only.isEmpty then continue
     let (gq, hgq) := (mkIdent `g, mkIdent `hg)
     let proj ← (List.range k).foldlM (init := ← `($(mkIdent `safe_fifo) $gq $hgq)) fun acc _ => `(($acc).2)
     let proj ← if k + 1 < n then `(($proj).1) else pure proj

@@ -153,6 +153,21 @@ macro_rules
   | `(doElem| $v:ident = $rhs:term) =>
     `(doElem| do $v:ident := $rhs; $(setterOf v):ident $v)
 
+/-! ## `receive`
+
+`receive { case e1 (x : T) => { … } case e2 => { … } }` suspends the
+handler until one of the cases' events arrives, then runs that case and
+the rest of the handler. `#gen_module` splits handlers at their
+top-level `receive`s; anywhere else a `receive` is rejected. -/
+
+syntax pRecvCase := "case " ident ("(" ident " : " term ")")? " => " "{" doSeq "}"
+syntax (name := pReceive) "receive " "{" pRecvCase* "}" : doElem
+
+macro_rules
+  | `(doElem| receive { $_* }) =>
+    Macro.throwError "`receive` must be a top-level statement of a handler or entry body \
+      (not inside `if`, a loop or a `receive` case)"
+
 /-! ## Local variables
 
 `var x : T` declares a handler local, initialised to `default`. Writes to

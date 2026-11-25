@@ -11,7 +11,7 @@ The phases are those of [`TransitionModel.md`](TransitionModel.md); see
 | P0 Toolchain | ☑ | Lean v4.36.0; lean-crush is the only dependency |
 | P1 Prototype | ☑ | |
 | P2 Semantics library | ☑ | metatheory proved, no `sorry` |
-| P3 Code generation | ◐ | `receive` pending |
+| P3 Code generation | ☑ | `receive` as a top-level statement of a handler / entry body |
 | P4 Obligations | ☑ | |
 | P5 Ports | ☑ | every example verifies |
 | P6 Explicit-state BMC | ☐ | backlog |

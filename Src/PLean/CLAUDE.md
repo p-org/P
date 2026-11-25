@@ -122,26 +122,29 @@ Tests/               -- regressions; Tests.** is globbed
 Per proved target `T` (`prove T using U₁ … ;`), with premises `T ∧ U₁ ∧ …`:
 
 - `<M>.<S>.<ev>_correct_<T>` per handled / ignored event of each state,
-  and `<M>.<S>.entry_correct_<T>` per state: after a handler that
-  completes, `T` holds (`RunPost`);
+  `<M>.<S>.entry_correct_<T>` per state, and
+  `<M>.<S>.recv<k>_<ev>_correct_<T>` per `receive` case: after a handler
+  that completes, `T` holds (`RunPost`);
 - `base_<T>`: `InitConditions g → T g`.
 
 Assuming every invariant (`AllInv`), once per module:
 
-- `<M>.<S>.<ev>_safe` / `<M>.<S>.entry_safe`: the handler never fails
-  (`assert`, `choose` on an empty range, …) (`RunSafe`);
+- `<M>.<S>.<ev>_safe` / `<M>.<S>.entry_safe` / `<M>.<S>.recv<k>_<ev>_safe`:
+  the handler never fails (`assert`, `choose` on an empty range, …)
+  (`RunSafe`);
 - `<M>.<S>.<ev>_never` for each event a state neither handles, ignores
   nor defers: it is never delivered there.
 
 `#gen_module` adds automatic targets: `NoHalt` (no machine ever halts),
-when no machine can halt, and `Transient` (a machine is never idle in a
-state whose entry always ends in a `goto`). The framework invariants
+when no machine can halt, `Transient` (a machine is never idle in a
+state whose entry always ends in a `goto`) and `Waiting` (a machine
+suspended at a `receive` is in that `receive`'s state). The framework invariants
 (packet ids below the clock, in-flight ⊆ log, unallocated references)
 are proved once, generically.
 
 Initial worlds: every machine below `nextRef` is in its start state with
-its start entry pending (as in PVerifier); `init-holds` clauses
-constrain the rest.
+its start entry pending (as in PVerifier), and no machine is halted or
+suspended; `init-holds` clauses constrain the rest.
 
 ## Surface keywords
 
@@ -160,6 +163,7 @@ reserved word or builtin. Mechanical replacements when porting `.p`:
 | `choose(e)`     | `let x ← choose e` (`e : Int` gives `[0, e]`; sets / maps give a member / key) |
 | `if ($)` / `if ($$)` | same               |
 | `var x : T;` in a body | same (a handler local, initialised to `default`) |
+| `receive { case e: (x: T) { … } … }` | `receive { case e (x : T) => { … } … }` |
 
 `Lemma`, `Theorem`, `Proof`, `prove`, `using`, `system` are PLean's
 verification-declaration surface.
@@ -170,6 +174,18 @@ In invariants, an event binder `e : eV` ranges over sent messages
 (an `Option` of the state tag, e.g. `some Node.Won_st`) are the P
 predicates. `n.<v>` is machine `n`'s field and `e.<f>` the payload
 field (when `f` is a payload field of the binder's event).
+
+### `receive`
+
+A `receive` must be a top-level statement of a handler or entry body
+(not inside `if`, a loop or another `receive` case). `#gen_module` splits
+the body there: the code before it suspends the machine at the site,
+saving the handler's parameter and the `var` locals declared before it
+in the site's `W` constructor (`W.site<k>`), and each case resumes with
+its body followed by the rest of the handler. While suspended, a machine
+accepts only the cases' events (the others stay queued). Invariants can
+talk about a suspended machine through `(s.machines r).waiting = some
+(W.site<k> …)`.
 
 ### Container types
 

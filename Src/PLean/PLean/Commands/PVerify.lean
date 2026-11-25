@@ -70,6 +70,8 @@ structure ObResult where
   msg  : String := ""
   /-- The goals `crush` failed on (report file only). -/
   goals : Array String := #[]
+  /-- The full error, e.g. the solver's model (report file only). -/
+  fullMsg : String := ""
   /-- Proved, but some step trusts the solver (no checked reconstruction). -/
   trusted : Bool := false
   /-- Per-goal times (`pverify.profile`, report file only). -/
@@ -78,7 +80,7 @@ structure ObResult where
 /-- The kind of a failed obligation, from its error message. -/
 def failureKind (msg : String) : String :=
   let has (s : String) := (msg.splitOn s).length > 1
-  if has "returned `sat`" then "counterexample"
+  if has "returned `sat`" || has "found a model" then "counterexample"
   else if has "reconstruction failed" then "reconstruct-failed"
   else if has "`unknown`" || has "timeout" then "unknown"
   else "error"
@@ -213,6 +215,7 @@ def elabPVerify : CommandElab := fun stx => do
     let (errs, goals, trusted, notes) ← elabCaptureGoals (← wrap cmd)
     let t1 ← IO.monoMsNow
     return #[{ name := obName, ok := errs.isEmpty, ms := t1 - t0, goals, trusted, notes,
+                 fullMsg := if errs.isEmpty then "" else errs[0]!,
                  msg := if errs.isEmpty then "" else excerpt errs[0]! }]
   let (g, i, src, dst, pl, m, arg) :=
     (mkIdent `g, mkIdent `i, mkIdent `src, mkIdent `dst, mkIdent `pl, mkIdent `m, mkIdent `arg)
@@ -562,7 +565,8 @@ def elabPVerify : CommandElab := fun stx => do
     for r in results do
       unless r.notes.isEmpty do h.putStrLn s!"--- {r.name} (profile)\n{"\n".intercalate r.notes.toList}"
     for r in failed do
-      for gl in r.goals do h.putStrLn s!"--- {r.name}\n{gl}"
+      h.putStrLn s!"--- {r.name}\n{r.fullMsg}"
+      for gl in r.goals do h.putStrLn gl
   catch _ => pure ()
   if failed.isEmpty && asmErrs.isEmpty then logInfo report
   else if pverify.failOnIncomplete.get opts then logError report

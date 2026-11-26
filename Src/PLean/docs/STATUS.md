@@ -21,20 +21,22 @@ The phases are those of [`TransitionModel.md`](TransitionModel.md); see
 Every obligation of every example is proved. Those not counted under
 "With an SMT solver" were closed by `vcgen` and normalisation (or their
 goals are hypotheses). "Trusted" obligations were proved by the solver
-but its proof could not be replayed in Lean.
-Times are the total solving time of `#pverify` on one machine.
+but its proof could not be replayed in Lean; both have checked proofs too
+(RingLeader's with `pverify.trust "reconstruct"`, PingPongAuto's by hand).
+Times are the wall-clock time `#pverify` spends proving, ten obligations
+at a time on one machine.
 
 | Example | Obligations | With an SMT solver | Trusted | Time |
 |---|---|---|---|---|
-| [`PingPongTrivial`](../Examples/PingPongTrivial.lean) | 8 | 3 | 0 | 1 s |
-| [`PingPongAuto`](../Examples/PingPongAuto.lean) | 16 | 13 | 1 | 7 s |
-| [`DistributedLock`](../Examples/DistributedLock.lean) | 11 | 9 | 0 | 15 s |
-| [`ShardedKV`](../Examples/ShardedKV.lean) | 15 | 13 | 0 | 13 s |
-| [`LockServer`](../Examples/LockServer.lean) | 36 | 32 | 0 | 76 s |
-| [`RingLeader`](../Examples/RingLeader.lean) | 24 | 22 | 1 | 27 s |
-| [`Consensus`](../Examples/Consensus.lean) | 34 | 30 | 0 | 116 s |
-| [`TwoPhaseCommit`](../Examples/TwoPhaseCommit.lean) | 203 | 184 | 0 | 75 s |
-| [`ClockBound`](../Examples/ClockBound.lean) | 118 | 115 | 0 | 552 s |
+| [`PingPongTrivial`](../Examples/PingPongTrivial.lean) | 8 | 3 | 0 | 0.1 s |
+| [`PingPongAuto`](../Examples/PingPongAuto.lean) | 16 | 13 | 1 | 4 s |
+| [`DistributedLock`](../Examples/DistributedLock.lean) | 11 | 9 | 0 | 6 s |
+| [`ShardedKV`](../Examples/ShardedKV.lean) | 15 | 13 | 0 | 5 s |
+| [`LockServer`](../Examples/LockServer.lean) | 36 | 32 | 0 | 23 s |
+| [`RingLeader`](../Examples/RingLeader.lean) | 24 | 22 | 1 | 17 s |
+| [`Consensus`](../Examples/Consensus.lean) | 34 | 30 | 0 | 68 s |
+| [`TwoPhaseCommit`](../Examples/TwoPhaseCommit.lean) | 203 | 184 | 0 | 20 s |
+| [`ClockBound`](../Examples/ClockBound.lean) | 118 | 115 | 0 | 103 s |
 
 No example needs a manual proof. An obligation that is not proved is
 reported with a counterexample when z3 finds one (see

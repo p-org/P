@@ -281,6 +281,13 @@ load-bearing invariants you need to respect when editing.
   itself when it took over 5 s, in the report file.
 - Both work from the command line without editing the file:
   `lake env lean -Dweak.pverify.only=… -Dweak.pverify.profile=true Examples/X.lean`.
+- `pverify.jobs`: how many obligations are proved at once (default 0:
+  the environment variable `PVERIFY_JOBS`, or else one per hardware
+  thread; 1 runs them one by one). Solver timeouts are wall-clock, so
+  lower it when several builds share the machine (`PVERIFY_JOBS=2 lake
+  build Examples`); the `Tests` library sets it to 1 in the lakefile. The
+  editor's progress message names the goal and solver only when
+  obligations run one by one.
 - `pverify.timeout` (seconds), `pverify.trust` (`reconstructOrTrust` by
   default: obligations whose proof could not be replayed are reported
   `✓ (trusted)`), `pverify.heartbeats`.

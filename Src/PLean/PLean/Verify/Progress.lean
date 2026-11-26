@@ -30,6 +30,9 @@ initialize store : IO.Ref (Std.HashMap Nat Entry) ← IO.mkRef {}
 initialize nextId : IO.Ref Nat ← IO.mkRef 0
 /-- The run reporting progress, if any. -/
 initialize current : IO.Ref (Option Nat) ← IO.mkRef none
+/-- Whether `setDetail` reports (off while obligations run in parallel, where
+each would overwrite the others' detail). -/
+initialize details : IO.Ref Bool ← IO.mkRef true
 
 /-- Start a run; returns its id. -/
 def start (status : String) : BaseIO Nat := do
@@ -45,6 +48,7 @@ def setHead (status task : String) : BaseIO Unit := do
 
 /-- Set what `pverify_close` is doing. -/
 def setDetail (detail : String) : BaseIO Unit := do
+  unless ← details.get do return
   if let some id ← current.get then
     store.modify fun m => m.modify id ({ · with detail })
 

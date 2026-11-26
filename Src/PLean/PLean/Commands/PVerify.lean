@@ -36,6 +36,10 @@ when z3 finds one: the invariant that fails, the step, and a minimised
 pre-state, see `PLean.Cex`) and left as `sorry`, so the remaining
 obligations and the assembly still run.
 
+Obligations are proved in parallel, `pverify.jobs` at a time (default: one
+per hardware thread), each kernel-checked on its own copy of the
+environment; the report keeps their order.
+
 The report ends with what `M.safe` assumes beyond Lean's axioms (`paxiom`s,
 `pinstance`s, the solver's answers in trusted obligations, `sorry`), and
 warns when `InitConditions` is unsatisfiable.
@@ -69,6 +73,11 @@ register_option pverify.only : String := {
   defValue := ""
   descr := "Comma-separated name fragments: run only the obligations whose name contains one \
             (and skip the assembly). For iterating on a few obligations." }
+
+register_option pverify.jobs : Nat := {
+  defValue := 0
+  descr := "How many obligations `#pverify` proves at once (0: the environment variable \
+            `PVERIFY_JOBS`, or else one per hardware thread)." }
 
 register_option pverify.progress : Bool := {
   defValue := true
@@ -599,9 +608,112 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     let nFailed := (rs.filter (!·.ok)).size
     let failedS := if nFailed == 0 then "" else s!", {nFailed} failed"
     s!"#pverify {modName}: {k}/{queued.size} obligations done{failedS}"
+  -- Obligations are proved in parallel by a pool of workers. Each worker
+  -- elaborates an obligation's theorem, kernel-checking it, on its own copy of
+  -- the environment as it is now (so no obligation waits for another), and
+  -- returns the theorem with any auxiliary declarations its proof added.
+  -- They are then added here, in order, without a second kernel check: each
+  -- was checked against this environment, which only gains the other
+  -- obligations. Manual proofs exist already and are checked here.
+  let jobs ← match pverify.jobs.get opts with
+    | 0 => do
+      match (← IO.getEnv "PVERIFY_JOBS").bind String.toNat? with
+      | some j => pure (max 1 j)
+      | none => pure (max 1 (System.Platform.Internal.getHardwareConcurrency ()).toNat)
+    | j => pure j
+  let slots ← IO.mkRef (Array.replicate queued.size (none : Option ObResult))
+  let declSlots ← IO.mkRef (Array.replicate queued.size (#[] : Array ConstantInfo))
+  let doneRef ← IO.mkRef (0 : Nat)
+  let failedRef ← IO.mkRef (0 : Nat)
+  let runningRef ← IO.mkRef (#[] : Array Name)
+  let showProgress : BaseIO Unit := do
+    let k ← doneRef.get
+    let nFailed ← failedRef.get
+    let failedS := if nFailed == 0 then "" else s!", {nFailed} failed"
+    let running ← runningRef.get
+    let names := ", ".intercalate ((running.toList.take 3).map toString)
+    let more := if running.size > 3 then s!", … ({running.size} running)" else ""
+    Progress.setHead s!"#pverify {modName}: {k}/{queued.size} obligations done{failedS}"
+      (if running.isEmpty then "" else s!"[Proving] {names}{more}")
+  let record (k : Nat) (r : ObResult) : BaseIO Unit := do
+    slots.modify (·.set! k (some r))
+    doneRef.modify (· + 1)
+    unless r.ok do failedRef.modify (· + 1)
+  let cancelTk? := (← read).cancelTk?
+  let baseConsts : NameSet :=
+    (← getEnv).constants.map₂.foldl (init := {}) fun acc n _ => acc.insert n
+  let mut work : Array (Nat × Name × (Unit → EIO Exception (ObResult × Array ConstantInfo))) := #[]
   for (obName, cmd, kind) in queued, k in [0:queued.size] do
-    Progress.setHead (status k results) s!"[Proving] {obName}"
-    results := results.push (← runOb obName cmd kind)
+    if pverifyProofAttr.hasTag (← getEnv) (modName ++ obName) then
+      record k (← runOb obName cmd kind)
+      continue
+    let act ← Command.wrapAsync (cancelTk? := cancelTk?) fun (_ : Unit) => do
+      let r ← runOb obName cmd kind
+      let added := (← getEnv).constants.map₂.foldl (init := #[]) fun acc n ci =>
+        if baseConsts.contains n then acc else acc.push ci
+      return (r, added)
+    work := work.push (k, obName, act)
+  let nextRef ← IO.mkRef (0 : Nat)
+  let worker : IO Unit := do
+    repeat
+      -- once the command is cancelled (the file was edited), take no more
+      if let some tk := cancelTk? then
+        if ← tk.isSet then break
+      let i ← nextRef.modifyGet fun n => (n, n + 1)
+      let some (k, obName, act) := work[i]? | break
+      runningRef.modify (·.push obName)
+      showProgress
+      match ← (act ()).toBaseIO with
+      | .ok (r, added) =>
+        declSlots.modify (·.set! k added)
+        record k r
+      | .error e =>
+        record k { name := obName, ok := false, ms := 0, msg := excerpt (← e.toMessageData.toString) }
+      runningRef.modify (·.erase obName)
+      showProgress
+  if jobs > 1 then Progress.details.set false
+  let tProve ← IO.monoMsNow
+  try
+    let workers ← (List.range (min jobs work.size)).mapM fun _ => IO.asTask worker .dedicated
+    for t in workers do
+      match t.get with
+      | .ok () => pure ()
+      | .error e => logError m!"#pverify: a worker failed: {e}"
+  finally
+    Progress.details.set true
+  let wallMs := (← IO.monoMsNow) - tProve
+  let nJobs := min jobs work.size
+  -- add the obligations' theorems (and their auxiliary declarations)
+  for added in ← declSlots.get do
+    for ci in added do
+      -- an auxiliary declaration several proofs created (an equation lemma
+      -- made on demand) is added once; the same name with another statement
+      -- would make the unchecked addition unsound
+      if let some old := (← getEnv).find? ci.name then
+        -- the same statement suffices for theorems (proofs are irrelevant);
+        -- anything else must be the same declaration
+        let same := old.type == ci.type && old.levelParams == ci.levelParams &&
+          (if old.isTheorem && ci.isTheorem then true
+           else old.isTheorem == ci.isTheorem &&
+             old.value? (allowOpaque := true) == ci.value? (allowOpaque := true))
+        unless same do
+          logError m!"#pverify: two proofs declare `{ci.name}` differently"
+        continue
+      let decl? : Option Declaration := match ci with
+        | .thmInfo v => some (.thmDecl v)
+        | .defnInfo v => some (.defnDecl v)
+        | .opaqueInfo v => some (.opaqueDecl v)
+        | .axiomInfo v => some (.axiomDecl v)
+        | _ => none
+      let some decl := decl?
+        | logError m!"#pverify: cannot add `{ci.name}` from a parallel proof"
+      try
+        -- (a failed obligation's `sorry` is in the report already)
+        liftCoreM <| withOptions (fun o => ((debug.skipKernelTC.set o true).setBool `Elab.async false
+            ).setBool `warn.sorry false) <|
+          addDecl decl
+      catch e => logError m!"#pverify: cannot add `{ci.name}`: {e.toMessageData}"
+  results := (← slots.get).filterMap id
   if only.isEmpty then
     Progress.setHead (status queued.size results) s!"[Assembling] {modName}.safe"
   -- assembly (not counted as obligations; skipped under `pverify.only`)
@@ -809,7 +921,6 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   -- report
   let failed := results.filter (!·.ok)
   let total := results.foldl (· + ·.ms) 0
-  let tm (ms : Nat) : String := if showT then s!" ({ms} ms)" else ""
   let nTrusted := (results.filter fun r => r.ok && r.trusted).size
   let proved := results.filter fun r => r.ok && !r.manual
   let nManual := (results.filter fun r => r.ok && r.manual).size
@@ -827,7 +938,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       s!" (time: {secs normT} in vcgen and normalisation, {secs crushT} in crush, \
         {secs (total - min total (normT + crushT))} elaborating and checking)"
     else ""
-  let mut lines : Array String := #[s!"#pverify {modName}: {results.size} obligations, {results.size - failed.size} proved ({nTrusted} trusting the solver), {failed.size} failed{tm total}",
+  let mut lines : Array String := #[s!"#pverify {modName}: {results.size} obligations, {results.size - failed.size} proved ({nTrusted} trusting the solver), {failed.size} failed{if showT then s!" ({wallMs} ms, {nJobs} at a time)" else ""}",
     s!"  proved by normalisation or a hypothesis: {nNorm}, by crush before SMT: {nPre}, with an SMT solver: {nSmt}{if nManual > 0 then s!", by hand: {nManual}" else ""}{timeSplit}"]
   for r in results do
     lines := lines.push s!"  {r.line showT}"
@@ -911,6 +1022,7 @@ def elabPVerify : CommandElab := fun stx => do
     modify fun st => { st with scopes }
     throw e
   finally
+    Progress.details.set true
     Progress.finish s!"#pverify {name.getId}: stopped"
 
 end PLean

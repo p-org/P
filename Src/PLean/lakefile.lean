@@ -110,6 +110,10 @@ lean_lib Examples where
   globs := #[Glob.submodules `Examples]
   extraDepTargets := #[``downloadDependencies]
 
+-- The regression tests prove each file's obligations one at a time (lake
+-- builds several files at once, and solver timeouts are wall-clock), so their
+-- pinned output does not depend on the machine's load.
 lean_lib Tests where
   globs := #[Glob.submodules `Tests]
   extraDepTargets := #[``downloadDependencies]
+  leanOptions := #[⟨`weak.pverify.jobs, .ofNat 1⟩]

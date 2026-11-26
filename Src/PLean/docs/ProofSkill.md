@@ -177,6 +177,11 @@ lake env lean -Dweak.pverify.only=Waiting.eGlobalResponse -Dweak.pverify.profile
   comma-separated fragments, and skips the assembly of the theorems.
 - `pverify.profile` records, for each goal handed to the solver, its
   time, which solver closed it, and the goal itself when it was slow.
+- `pverify.jobs` is how many obligations are proved at once (default:
+  `PVERIFY_JOBS`, or one per hardware thread). The report's header gives
+  the wall time; its time split adds up the obligations' times. Set it to
+  `1` to time obligations alone, and lower it when other builds share the
+  machine (solver timeouts are wall-clock).
 - `pverify.cex false` skips the counterexample search, when you only need
   to know whether a goal closes; `pverify.timeout` (seconds) bounds the
   full-length solver attempts (the first, quick ones take 5 s each).

@@ -69,6 +69,9 @@ end PingPong
 - An obligation that is not proved is reported with a counterexample: the
   invariant that fails, the handler that breaks it, and a small state in
   which it does.
+- Obligations are proved in parallel, and proofs are cached between runs
+  (and checked again when reused): after an edit, only the goals it
+  affects go to the solver.
 - The model is executable, so the same program can be run and, later,
   model checked.
 
@@ -87,8 +90,9 @@ lake build Examples.DistributedLock  # one example
 ```
 
 The first build downloads z3 and cvc5 into `.lake/build/bin`; put that
-directory on your `PATH`. Verifying an example takes from seconds to
-minutes.
+directory first on your `PATH`. Verifying an example from scratch takes from
+seconds to minutes; a run after an edit proves again only what the edit
+affects.
 
 ## Examples
 

@@ -1,6 +1,6 @@
 # PLean transition model
 
-> **Status: implemented (phases P0–P5), revision 4.** This document
+> **Status: implemented (phases P0–P5), revision 4.1.** This document
 > describes the model as built. Where the original plan chose
 > differently, the implementation is described and the difference noted.
 > It replaced the interim `PM := StateT (GlobalState P) Id` model that
@@ -15,6 +15,7 @@
 | 3 | Answers to the open questions recorded (§0). **User containers became finite history datatypes** instead of bare functions (§3.1). Without that, `sizeof` lemmas are unsound, and enumeration and model-checker state hashing are impossible for int/string keys. Crush still sees the same lookup equations. Explicit-state BMC is now the first model checker (§6). |
 | 3.1 | Loop invariants are evaluated over a tentative world, with PVerifier's `new` quantifier ranging over the handler's outbox, plus auto-generated frame conjuncts (§4.7). Model-checking items moved to a backlog (§10). P0 solver and sequencing notes. |
 | 4 | Aligned with the implementation: errors are exceptions of the handler monad, `raise` is a direct call, only top-level `receive`, loop invariants over the handler state (§4.7). Reference `0` is P's `null`, and a send to it fails. P's `==` on containers and map errors (§3.1). |
+| 4.1 | Obligations are proved in parallel, can be proved by hand, and their proofs are reused across runs (§4.4). |
 
 ## 0. Decisions
 
@@ -385,6 +386,8 @@ These are proved inductive generically, about `gcommit`. As a result:
    - A `dsimp` projection pass is kept only if P1 shows it helps.
 3. **Trust (D14):** `pverify.trust` defaults to `reconstructOrTrust`: an obligation that the solver proves but reconstruction can't replay is reported as `✓ (trusted)` (its theorem then depends on crush's trust axiom). `reconstruct` makes such obligations fail.
 4. **Counterexamples:** each post-condition invariant is marked with its name (`PostInv`), so a goal that is not proved names its invariant. For such a goal, crush writes the SMT encoding; z3 is asked for a model of it with the recursive well-formedness predicates dropped, and the model is minimised (fewest machines, fewest packet ids, fewest packets in flight and delivered, smallest integers). `#pverify` decodes the model into the pre-state world: the machines by kind, with their state and fields, and the packets.
+5. **Running the obligations:** they are independent, so `#pverify` proves them in parallel (`pverify.jobs`), each from the environment `#gen_module` left, and adds the resulting theorems before the assembly. A `@[pverifyProof]` theorem with an obligation's name and statement replaces its automatic proof, once its statement and the axioms it uses are checked.
+6. **Reuse across runs:** an obligation's proof is stored under a hash of its statement and of the module's definitions it depends on, and a goal's proof as a lemma over the hypotheses it uses, keyed by its invariant and the shape of its conclusion. When nothing an obligation depends on changed, its proof is replayed; otherwise each goal that matches a stored lemma reuses it, so an edit sends only the goals it affects to the solver. Every reused proof goes through the kernel and may use only the axioms a fresh proof could, so a stale entry is a miss, never a false theorem.
 
 **Removed:**
 - `PLean/Verify/Smt.lean`;

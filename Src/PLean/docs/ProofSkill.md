@@ -181,7 +181,8 @@ lake env lean -Dweak.pverify.only=Waiting.eGlobalResponse -Dweak.pverify.profile
   only the goals it affects to the solver; editing a handler re-solves
   that handler's goals. The final theorems (`step_AllInv`, `M.safe`) are
   reused the same way when nothing they depend on changed. Every reused
-  proof is checked by the kernel.
+  proof is checked by the kernel, and one that trusts the solver is not
+  reused under `pverify.trust "reconstruct"`.
 - `pverify.only` runs the obligations whose names contain one of the
   comma-separated fragments, and skips the assembly of the theorems.
 - `pverify.profile` records, for each goal handed to the solver, its

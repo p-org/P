@@ -55,7 +55,9 @@ lake build Examples.DistributedLock  # one specific protocol
 
 `lake build` from the repo root will fail. The first build downloads
 `z3` 4.15.4 and `cvc5` 1.3.4 into `.lake/build/bin/`; crush finds the
-solvers on `PATH`, so add `<PLean>/.lake/build/bin` to `PATH`.
+solvers on `PATH`, so put `<PLean>/.lake/build/bin` first on `PATH`
+(`export PATH=$PWD/.lake/build/bin:$PATH`): other versions give other
+counterexamples than the ones `Tests/` pins.
 Toolchain pinned to **Lean v4.36.0** in `lean-toolchain`; the only
 dependency is lean-crush (`bump/4.36.0`).
 
@@ -286,16 +288,20 @@ load-bearing invariants you need to respect when editing.
   An obligation whose statement and module dependencies (handlers,
   invariants, types, facts) did not change replays its stored proof; in
   an obligation that changed, a goal that matches a stored lemma (its
-  conclusion, with its hypotheses among the goal's) reuses it. Both are
-  kernel-checked, so a stale entry only misses. The assembly theorems
-  (`step_AllInv`, `safe`, …) are cached like obligations. Adding or editing
-  an invariant re-solves only the goals it affects. The report marks
-  `[cached]` obligations and `cache n` goals; the cache lives in memory
-  and in `.lake/pverify/cache/<M>.olean` (a full run keeps what it used,
-  and the goal lemmas of the obligations it used); `#pverify_cache M`
-  counts it. `PVERIFY_DEBUG_CACHE=1` prints why a stored lemma did not
-  apply, and `PVERIFY_DEBUG_TIME=1` how long each phase of `#pverify`
-  took.
+  conclusion, with its hypotheses among the goal's) reuses it, the
+  obligation's own lemmas first. Both are kernel-checked, and a reused
+  proof may use only the axioms a fresh one could (Lean's, the module's
+  `paxiom`s and `pinstance`s, and the solver's word unless `pverify.trust`
+  is `reconstruct`; a cache file never adds an axiom), so a stale or
+  foreign entry only misses (`Tests/Verify/Cache.lean`). The assembly
+  theorems (`step_AllInv`, `safe`, …) are cached like obligations. Adding
+  or editing an invariant re-solves only the goals it affects. The report
+  marks `[cached]` obligations and `cache n` goals; the cache lives in
+  memory and in `.lake/pverify/cache/<M>.olean` (a full run keeps what it
+  used, and the goal lemmas of the obligations it replayed);
+  `#pverify_cache M` counts it. `PVERIFY_DEBUG_CACHE=1` prints why a stored
+  proof or lemma was not reused, and `PVERIFY_DEBUG_TIME=1` how long each
+  phase of `#pverify` took.
 - `pverify.jobs`: how many obligations are proved at once (default 0:
   the environment variable `PVERIFY_JOBS`, or else one per hardware
   thread; 1 runs them one by one). Solver timeouts are wall-clock, so

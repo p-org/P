@@ -260,6 +260,12 @@ private def manualMismatch? (full : Name) (cmd : Syntax) : CommandElabM (Option 
     return some s!"the statement of `@[pverifyProof]` theorem `{full}` is not the obligation's, \
       which is: {← Meta.ppExpr expected}"
 
+/-- The module's `paxiom`s and `pinstance`s: the axioms, besides Lean's own and
+the solver's word, that a proof of one of its obligations may use. -/
+private def declaredAxioms (ctx : LocalPModuleCtx) (modName : Name) : NameSet :=
+  let s := ctx.axioms.foldl (init := {}) fun s k _ => s.insert (modName ++ k)
+  ctx.instances.foldl (init := s) fun s k _ => s.insert (modName ++ k)
+
 /-- Why the axioms the `@[pverifyProof]` theorem `full` uses make it no proof,
 if they do: `sorry`, or an axiom the module does not declare (Lean's own and
 the solver's trust are allowed; the latter makes it trusted). -/
@@ -267,12 +273,10 @@ private def manualAxiomsProblem? (ctx : LocalPModuleCtx) (modName full : Name) :
     CommandElabM (Option String) := do
   let axs ← collectAxioms full
   if axs.contains ``sorryAx then return some s!"`{full}` uses `sorry`"
-  let declared (ax : Name) : Bool :=
-    let short := ax.replacePrefix modName .anonymous
-    modName.isPrefixOf ax && (ctx.axioms.contains short || ctx.instances.contains short)
+  let declared := declaredAxioms ctx modName
   let other := axs.filter fun ax =>
     !(ax == ``propext || ax == ``Classical.choice || ax == ``Quot.sound ||
-      ax == ``Crush.crushSorry || declared ax)
+      ax == ``Crush.crushSorry || declared.contains ax)
   if other.isEmpty then return none
   return some s!"`{full}` uses {", ".intercalate (other.toList.map (s!"`{·}`"))}, \
     which the module does not declare"
@@ -365,7 +369,9 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let timeout := pverify.timeout.get opts
   let trust := pverify.trust.get opts
   let cacheOn := Cache.pverify.cache.get opts
-  if cacheOn then Cache.ensureLoaded modName
+  if cacheOn then
+    Cache.ensureLoaded modName
+    Cache.setAllowed modName (declaredAxioms ctx modName)
   -- targets
   let tgts := proofTargets ctx
   let mut usingOf : NameMap (Array Name) := {}
@@ -443,13 +449,17 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     unless cacheOn do return none
     let some stmt ← statementOf cmd | return none
     return some (stmt, Cache.obKey (← getEnv) stmt ((hintNames ++ factNames).map (modName ++ ·)))
-  let replayCached (full : Name) (stmt : Expr) (key : UInt64) : CommandElabM Bool := do
+  -- A replayed proof must also use no axiom a fresh one could not (`Cache.foreign`:
+  -- the solver's word only when `trusted`, `sorry` only when `allowSorry`); on
+  -- success, its axioms.
+  let replayCached (full : Name) (stmt : Expr) (key : UInt64) (trusted allowSorry : Bool) :
+      CommandElabM (Option (Array Name)) := do
     let dbg := (← IO.getEnv "PVERIFY_DEBUG_CACHE").isSome
     let some ci ← Cache.find? modName (Cache.obName key) |
       if dbg then IO.eprintln s!"NOENTRY {full}"
-      return false
-    let some v := ci.value? (allowOpaque := true) | return false
-    if trust == "reconstruct" && Cache.trustsSolver v then return false
+      return none
+    let some v := ci.value? (allowOpaque := true) | return none
+    let env0 ← getEnv
     -- (the stored statement may differ up to `let` / `have`; the kernel checks
     -- the proof against this one)
     let ok ← liftCoreM do
@@ -464,8 +474,15 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       catch e =>
         if dbg then IO.eprintln ((s!"REJECT {full}: {← e.toMessageData.toString}").take 400).toString
         return false
-    if ok then Cache.touch modName (Cache.obName key)
-    return ok
+    let axs ← if ok then collectAxioms full else pure #[]
+    let bad ← Cache.foreign modName trusted allowSorry axs
+    if !ok || !bad.isEmpty then
+      if dbg && ok then IO.eprintln s!"AXIOMS {full}: {bad}"
+      setEnv env0
+      return none
+    Cache.touch modName (Cache.obName key)
+    Cache.markReplayed modName full
+    return some axs
   let recordCached (full : Name) (key : UInt64) : CommandElabM Unit := do
     if let some ci := (← getEnv).find? full then
       if let some v := ci.value? (allowOpaque := true) then
@@ -487,8 +504,8 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     -- a cached proof (kernel-checked)
     let key? ← cacheKeyOf cmd
     if let some (stmt, key) := key? then
-      if ← replayCached full stmt key then
-        let trusted := (← collectAxioms full).contains ``Crush.crushSorry
+      if let some axs ← replayCached full stmt key (trust != "reconstruct") false then
+        let trusted := axs.contains ``Crush.crushSorry
         return { name := obName, ok := true, ms := (← IO.monoMsNow) - t0, cached := true, trusted }
     let c ← elabCaptureGoals (← wrap cmd)
     let t1 ← IO.monoMsNow
@@ -796,6 +813,9 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   -- assembly (not counted as obligations; skipped under `pverify.only`)
   -- An assembly theorem, from the cache when its proof is there (with the
   -- auxiliary declarations its elaboration adds); its errors.
+  -- (They may rest on the solver's word where an obligation does, and on `sorry`,
+  -- which a failed obligation leaves and the report counts as incomplete.)
+  let asmTrusted := trust != "reconstruct" || results.any (fun r => r.ok && r.trusted)
   let asmCached (cmd : TSyntax `command) (capture : Bool) : CommandElabM (Array String) := do
     let t0 ← IO.monoMsNow
     let doElab : CommandElabM (Array String) := do
@@ -803,7 +823,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     let some (stmt, key) ← cacheKeyOf cmd | doElab
     let `(command| theorem $nm:ident $_* : $_ := $_) := cmd.raw | doElab
     let full := (← getCurrNamespace) ++ nm.getId
-    if ← replayCached full stmt key then return #[]
+    if (← replayCached full stmt key asmTrusted true).isSome then return #[]
     let before : NameSet := (← getEnv).constants.map₂.foldl (init := {}) fun acc n _ => acc.insert n
     let errs ← doElab
     if (← IO.getEnv "PVERIFY_DEBUG_TIME").isSome then

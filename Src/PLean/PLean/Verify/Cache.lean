@@ -5,8 +5,8 @@ Two levels, both replayed through the kernel, so a stale entry only misses
 (the obligation or goal is then proved afresh) and cannot make a false
 theorem pass:
 
-* **Obligations** (and `#pverify`'s final theorems, `step_AllInv`, `safe`,
-  …). A proof term, keyed by a hash of the theorem's statement and of every
+* **Obligations** (and `#pverify`'s final theorems, `step_AllInv`, `safe`, ...).
+  A proof term, keyed by a hash of the theorem's statement and of every
   definition of the module it depends on (handlers, invariants, types; a
   theorem by its statement only), and the facts and hints the solver is
   given. When nothing it depends on changed, `#pverify` kernel-checks the
@@ -19,12 +19,16 @@ theorem pass:
   (same conclusion, and its hypotheses among the goal's) reuses it without a
   solver call: only the goals the change affects reach the solver.
 
+A reused proof may use no axiom beyond Lean's own, the module's `paxiom`s and
+`pinstance`s, and the solver's word when `pverify.trust` allows it; a cached
+file never adds an axiom.
+
 A goal lemma inlines the run-specific auxiliary theorems its proof uses
 (`…._proof_3`), so it does not depend on their names, and records the
 obligation it came from. Entries live in memory for the session and on disk
 in `.lake/pverify/cache/<M>.olean` (Lean's module-data format), which a full
 run of `#pverify M` prunes to the entries it used and the goal lemmas of the
-obligations it used.
+obligations it replayed.
 -/
 import Lean
 
@@ -46,6 +50,11 @@ use) by name, and what this run used or added. -/
 structure Store where
   consts : NameMap ConstantInfo := {}
   used : NameSet := {}
+  /-- The obligations whose cached proofs this run replayed. -/
+  replayed : NameSet := {}
+  /-- The axioms, besides Lean's own and the solver's word, that a cached
+  proof may use: the module's `paxiom`s and `pinstance`s (set by `#pverify`). -/
+  allowed : NameSet := {}
 
 instance : Inhabited Store := ⟨{}⟩
 
@@ -78,7 +87,16 @@ def touch (mod n : Name) : BaseIO Unit :=
 
 def insert (mod : Name) (c : ConstantInfo) : BaseIO Unit :=
   stores.modify fun m => m.modify mod fun st =>
-    { consts := st.consts.insert c.name c, used := st.used.insert c.name }
+    { st with consts := st.consts.insert c.name c, used := st.used.insert c.name }
+
+/-- Record that this run replayed the cached proof of obligation `owner`. -/
+def markReplayed (mod owner : Name) : BaseIO Unit :=
+  stores.modify fun m => m.modify mod fun st => { st with replayed := st.replayed.insert owner }
+
+/-- Set the axioms a cached proof of `mod` may use besides Lean's own and the
+solver's word. -/
+def setAllowed (mod : Name) (axs : NameSet) : BaseIO Unit :=
+  stores.modify fun m => m.modify mod fun st => { st with allowed := axs }
 
 /-- The number of obligation proofs and goal lemmas cached for `mod`. -/
 def counts (mod : Name) : BaseIO (Nat × Nat) := do
@@ -94,21 +112,20 @@ def ownerOf (c : ConstantInfo) : Option Name :=
   | _ => none
 
 /-- Write `mod`'s cache to disk. With `prune`, keep what this run used or added,
-the goal lemmas of the obligations it used (a replayed obligation keeps the
-lemmas of its goals, for when it changes), and the auxiliary declarations
-they need. The file is replaced by a rename: a loaded one may still be
-mapped. -/
+the goal lemmas of the obligations whose proofs it replayed (their goals were
+not normalised again, and they are needed when the obligation changes), and
+the auxiliary declarations they need; an obligation proved afresh keeps only
+the lemmas its proof used or added. The file is written under a name of its
+own and then renamed into place, so concurrent saves (the editor and `lake
+build`) cannot mix, and a loaded file, which may still be mapped, is not
+overwritten. -/
 def save (mod : Name) (prune : Bool) : IO Unit := do
   let some st := (← stores.get)[mod]? | return
   let mut keep := st.consts
   if prune then
     keep := {}
-    let owners : NameSet := st.used.foldl (init := {}) fun acc n =>
-      match (st.consts.find? n).bind ownerOf with
-      | some o => acc.insert o
-      | none => acc
     let mut todo := st.used.toList ++ st.consts.foldl (init := []) fun acc n c =>
-      if (`_pvcache.goal).isPrefixOf n && ((ownerOf c).any owners.contains) then n :: acc else acc
+      if (`_pvcache.goal).isPrefixOf n && ((ownerOf c).any st.replayed.contains) then n :: acc else acc
     while !todo.isEmpty do
       let n := todo.head!
       todo := todo.tail!
@@ -119,12 +136,17 @@ def save (mod : Name) (prune : Bool) : IO Unit := do
         if st.consts.contains d && !keep.contains d then todo := d :: todo
   let cs := keep.foldl (init := #[]) fun acc _ c => acc.push c
   IO.FS.createDirAll dir
-  let tmp := (fileOf mod).addExtension "tmp"
-  saveModuleData tmp (`PLeanCache ++ mod)
-    { isModule := false, imports := #[], constNames := cs.map (·.name), constants := cs,
-      extraConstNames := #[], entries := #[] }
-  IO.FS.rename tmp (fileOf mod)
-  stores.modify fun m => m.modify mod fun st => { consts := keep, used := {} }
+  let tmp := dir / s!"{mod}.olean.{← IO.Process.getPID}.{← IO.monoNanosNow}.tmp"
+  try
+    saveModuleData tmp (`PLeanCache ++ mod)
+      { isModule := false, imports := #[], constNames := cs.map (·.name), constants := cs,
+        extraConstNames := #[], entries := #[] }
+    IO.FS.rename tmp (fileOf mod)
+  catch e =>
+    try IO.FS.removeFile tmp catch _ => pure ()
+    throw e
+  stores.modify fun m => m.modify mod fun st =>
+    { st with consts := keep, used := {}, replayed := {} }
 
 /-- Marks the conclusion of a cached goal lemma `∀ hyps, Concl target`, so that
 opening its hypotheses stops before `target`'s own quantifiers. -/
@@ -169,7 +191,11 @@ def obKey (env : Environment) (stmt : Expr) (extra : Array Name) : UInt64 := Id.
   return h
 
 /-- How many lemmas are kept per goal key. -/
-def slots : Nat := 16
+def slots : Nat := 64
+
+/-- How many unifications a lookup of a goal may try, over all the lemmas of
+its key. -/
+def matchBudget : Nat := 32000
 
 /-- The invariant of a goal tagged `pv_inv.<invariant>…` (`PLean.splitPost`). -/
 def invOf (tag : Name) : Name :=
@@ -187,12 +213,12 @@ def goalKey (inv : Name) (target : Expr) : MetaM UInt64 := do
 
 /-! ## Replay -/
 
-/-- The declaration of a cached constant. -/
+/-- The declaration of a cached constant. Never an axiom: a cached proof may
+use only axioms the environment already has. -/
 def declOf : ConstantInfo → Option Declaration
   | .thmInfo v => some (.thmDecl v)
   | .defnInfo v => some (.defnDecl v)
   | .opaqueInfo v => some (.opaqueDecl v)
-  | .axiomInfo v => some (.axiomDecl v)
   | _ => none
 
 /-- Add to the environment the cached auxiliary declarations `e` uses that it
@@ -213,9 +239,39 @@ partial def ensureAux (mod : Name) (e : Expr) : CoreM Bool := do
     touch mod c
   return true
 
-/-- Whether `e` relies on the solver's word (`Crush.crushSorry`). -/
-def trustsSolver (e : Expr) : Bool :=
-  e.getUsedConstants.any (·.toString == "Crush.crushSorry")
+/-- The axioms `e` depends on (its constants must be in the environment). -/
+def axiomsOf (e : Expr) : CoreM (Array Name) := do
+  let env ← getEnv
+  let mut seen : NameSet := {}
+  let mut axs : NameSet := {}
+  let mut todo := e.getUsedConstants.toList
+  while !todo.isEmpty do
+    let c := todo.head!
+    todo := todo.tail!
+    if seen.contains c then continue
+    seen := seen.insert c
+    -- (an imported constant's axioms are recorded in its module)
+    if (env.getModuleIdxFor? c).isSome then
+      for a in ← collectAxioms c do axs := axs.insert a
+      continue
+    let some ci := env.find? c | continue
+    if ci matches .axiomInfo _ then axs := axs.insert c
+    todo := ci.type.getUsedConstants.toList ++
+      (((ci.value? (allowOpaque := true)).map (·.getUsedConstants.toList)).getD []) ++
+      (match ci with
+       | .inductInfo v => v.ctors
+       | _ => []) ++ todo
+  return axs.toArray
+
+/-- The axioms among `axs` that a cached proof of `mod` may not use: any but
+Lean's own, the module's `paxiom`s and `pinstance`s (`setAllowed`), the
+solver's word (`Crush.crushSorry`) when `trusted`, and `sorry` when
+`allowSorry`. -/
+def foreign (mod : Name) (trusted allowSorry : Bool) (axs : Array Name) : BaseIO (Array Name) := do
+  let allowed := (((← stores.get)[mod]?).map (·.allowed)).getD {}
+  return axs.filter fun a =>
+    !(a == ``propext || a == ``Classical.choice || a == ``Quot.sound || allowed.contains a ||
+      (trusted && a == `Crush.crushSorry) || (allowSorry && a == ``sorryAx))
 
 /-- Instantiate the hypotheses `xs` (metavariables) with local hypotheses
 `hyps` whose types unify with theirs, backtracking; at most `budget`
@@ -238,29 +294,35 @@ partial def matchHyps (xs : List Expr) (hyps : Array LocalDecl) (budget : IO.Ref
       s.restore
     return false
 
-/-- Close goal `g` with a cached lemma, if one applies: its conclusion
-unifies with the goal's and each of its hypotheses with one of the goal's. -/
-def tryGoal (mod : Name) (g : MVarId) (allowTrusted : Bool) : MetaM Bool := g.withContext do
+/-- Close goal `g` of obligation `owner` with a cached lemma, if one applies:
+its conclusion unifies with the goal's, each of its hypotheses with one of the
+goal's, and its proof uses no axiom it may not (`foreign`; the solver's word
+only when `trusted`). The obligation's own lemmas are tried first. -/
+def tryGoal (mod : Name) (g : MVarId) (owner : Name) (trusted : Bool) : MetaM Bool := g.withContext do
   let target ← instantiateMVars (← g.getType)
   let k ← goalKey (invOf (← g.getTag).eraseMacroScopes) target
   let hyps := (← getLCtx).foldl (init := #[]) fun acc d =>
     if d.isImplementationDetail then acc else acc.push d
+  let mut mine : Array (Name × ConstantInfo) := #[]
+  let mut others : Array (Name × ConstantInfo) := #[]
   for i in [0:slots] do
     let n := goalName k i
-    let some ci ← find? mod n | return false
+    let some ci ← find? mod n | continue
+    if ownerOf ci == some owner then mine := mine.push (n, ci) else others := others.push (n, ci)
+  let budget ← IO.mkRef matchBudget
+  let dbg := (← IO.getEnv "PVERIFY_DEBUG_CACHE").isSome
+  for (n, ci) in mine ++ others do
+    if (← budget.get) == 0 then return false
     let some v := ci.value? (allowOpaque := true) | continue
-    if !allowTrusted && trustsSolver v then continue
-    unless ← ensureAux mod v do continue
+    unless ← ensureAux mod ci.type do continue
     let s ← saveState
-    let budget ← IO.mkRef 2000
-    let dbg := (← IO.getEnv "PVERIFY_DEBUG_CACHE").isSome
-    let ok ← withReducible do
+    let pf? ← withReducible do
       let (xs, _, body) ← forallMetaTelescopeReducing ci.type
-      unless body.isAppOfArity ``Concl 1 do return false
+      unless body.isAppOfArity ``Concl 1 do return none
       let body := body.appArg!
       unless ← isDefEq body target do
         if dbg then IO.eprintln ((s!"MISS concl {n}: {← ppExpr body} VS {← ppExpr target}").take 400).toString
-        return false
+        return none
       unless ← matchHyps xs.toList hyps budget do
         if dbg then
           for x in xs do
@@ -276,14 +338,19 @@ def tryGoal (mod : Name) (g : MVarId) (allowTrusted : Bool) : MetaM Bool := g.wi
                 unless any do
                   IO.eprintln ((s!"MISS hyp {n}: {← ppExpr xt}").take 600).toString
                   break
-        return false
+        return none
       let pf ← instantiateMVars (mkAppN v xs)
-      if pf.hasExprMVar then return false
-      g.assign pf
-      return true
-    if ok then
-      touch mod n
-      return true
+      if pf.hasExprMVar then return none
+      return some pf
+    if let some pf := pf? then
+      -- the auxiliary declarations its proof uses, and the axioms
+      if ← ensureAux mod v then
+        let bad ← foreign mod trusted false (← axiomsOf v)
+        if bad.isEmpty then
+          g.assign pf
+          touch mod n
+          return true
+        if dbg then IO.eprintln s!"AXIOMS {n}: {bad}"
     s.restore
   return false
 
@@ -307,8 +374,37 @@ partial def inlineRunAux (e : Expr) : MetaM Expr := do
             return .done (← inlineRunAux (v.instantiateLevelParams ci.levelParams us))
     return .continue)
 
-/-- Store solved goal `g` (with conclusion `target`) as a lemma over the
-hypotheses its proof uses. -/
+/-- Store lemma `type := value`, of obligation `owner`, among the lemmas of
+goal key `k`: in place of a lemma with the same statement (which was not
+reused, so this proof is the one to keep), in a free slot, or else in place of
+a lemma this run did not use (one of `owner`'s own first, then one of an
+obligation not replayed). In one step, as the obligations' proofs run in
+parallel. -/
+def insertGoal (mod : Name) (k : UInt64) (owner : Name) (type value : Expr) : BaseIO Unit :=
+  stores.modify fun m => m.modify mod fun st => Id.run do
+    let mut same? : Option Nat := none
+    let mut free? : Option Nat := none
+    let mut victim? : Option (Nat × Nat) := none
+    for i in [0:slots] do
+      let n := goalName k i
+      match st.consts.find? n with
+      | some ci =>
+        if same?.isNone && ci.type == type then same? := some i
+        else if !st.used.contains n then
+          let rank := if ownerOf ci == some owner then 0
+            else if (ownerOf ci).any st.replayed.contains then 2 else 1
+          match victim? with
+          | some (_, r) => if rank < r then victim? := some (i, rank)
+          | none => victim? := some (i, rank)
+      | none => if free?.isNone then free? := some i
+    let some i := same? <|> free? <|> victim?.map (·.1) | return st
+    let n := goalName k i
+    return { st with
+      consts := st.consts.insert n (.thmInfo { name := n, levelParams := [], type, value, all := [owner] })
+      used := st.used.insert n }
+
+/-- Store solved goal `g` (with conclusion `target`) of obligation `owner` as
+a lemma over the hypotheses its proof uses. -/
 def recordGoal (mod : Name) (g : MVarId) (target : Expr) (owner : Name) : MetaM Unit := g.withContext do
   let pf ← inlineRunAux (← zetaReduce (← instantiateMVars (.mvar g)))
   let target ← zetaReduce (← instantiateMVars target)
@@ -336,12 +432,6 @@ def recordGoal (mod : Name) (g : MVarId) (target : Expr) (owner : Name) : MetaM 
   let value ← instantiateMVars (← mkLambdaFVars deps pf)
   if type.hasFVar || value.hasFVar || type.hasMVar || value.hasMVar then return
   let k ← goalKey (invOf (← g.getTag).eraseMacroScopes) target
-  for i in [0:slots] do
-    let n := goalName k i
-    match ← find? mod n with
-    | some ci => if ci.type == type then return
-    | none =>
-      insert mod (.thmInfo { name := n, levelParams := [], type, value, all := [owner] })
-      return
+  insertGoal mod k owner type value
 
 end PLean.Cache

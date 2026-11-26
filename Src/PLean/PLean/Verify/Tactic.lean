@@ -185,11 +185,12 @@ def evalPverifyClose : Tactic := fun stx => do
   let cacheMod := (Cache.pverify.cacheModule.get (← getOptions)).toName
   let cacheOn := Cache.pverify.cache.get (← getOptions) && !cacheMod.isAnonymous
   let allowTrusted := (← getOptions).get `crush.trust "reconstructOrTrust" != "reconstruct"
+  let owner := (← Term.getDeclName?).getD .anonymous
   let mut nCache : Nat := 0
   for g in goals, k in [0:goals.length] do
     let t0 ← IO.monoMsNow
     if cacheOn then
-      if ← Cache.tryGoal cacheMod g allowTrusted then
+      if ← Cache.tryGoal cacheMod g owner allowTrusted then
         nCache := nCache + 1
         crushMs := crushMs + ((← IO.monoMsNow) - t0)
         continue
@@ -221,7 +222,7 @@ def evalPverifyClose : Tactic := fun stx => do
         | _ => nSmt := nSmt + 1
         modifyTraceState fun _ => traces0
         if cacheOn then
-          Cache.recordGoal cacheMod g target ((← Term.getDeclName?).getD .anonymous)
+          Cache.recordGoal cacheMod g target owner
         break
       catch e =>
         s.restore (restoreInfo := true)

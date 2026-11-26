@@ -973,9 +973,9 @@ def materialiseInstance (d : PInstanceDecl) : CommandElabM Unit := do
 
 /-- Per-field axiom synthesis for `pinstance <id> : <Class> <T>`.
 
-For every Prop-typed field of `<Class>`, emit a top-level
-`noncomputable def <Mod>.<id>_<field> := @<Class>.<field> _ <id>`,
-returning the array of registered theorem names so the caller can add
+For every Prop-typed field of `<Class>`, add a theorem
+`<Mod>.<id>_<field> := @<Class>.<field> _ <id>`, returning the array of
+registered theorem names so the caller can add
 them to `ctx.axioms`. The obligation generator's existing
 `paxiom → have hax_<name>` SMT bridge then carries them into every
 VC's local context.
@@ -1018,25 +1018,21 @@ def synthInstanceFieldAxioms (modName : Name) (d : PInstanceDecl) :
       let some _ := env.find? projName | continue
       let thmName : Name :=
         Name.mkSimple (d.name.toString ++ "_" ++ fname.toString)
-      let thmId : Ident := mkIdent thmName
       let projId : Ident := mkIdent projName
       let projInstantiated : Term ← `(@$projId _ $instWitness)
-      let cmd ← `(
-        set_option linter.unusedVariables false in
-        noncomputable def $thmId := $projInstantiated)
-      let okElaborated : Bool ← (do
-        try
-          elabCommand cmd
-        catch _ => return false
-        let env' ← getEnv
-        match env'.find? (modName ++ thmName) with
-        | some info =>
-          try
-            let isProp ← Lean.Elab.Command.liftTermElabM do
-              Lean.Meta.isProp info.type
-            return isProp
-          catch _ => return false
-        | none => return false)
+      -- A law (a Prop-typed field) becomes a theorem; the class's data
+      -- fields need no name of their own.
+      let okElaborated : Bool ← try
+          liftTermElabM do
+            let v ← Term.elabTerm projInstantiated none
+            Term.synthesizeSyntheticMVarsNoPostponing
+            let v ← instantiateMVars v
+            let ty ← instantiateMVars (← Meta.inferType v)
+            if v.hasMVar || ty.hasMVar || v.hasLevelMVar || ty.hasLevelMVar then return false
+            unless ← Meta.isProp ty do return false
+            addDecl (.thmDecl { name := modName ++ thmName, levelParams := [], type := ty, value := v })
+            return true
+        catch _ => pure false
       if okElaborated then
         out := out.push
           { name := thmName, leanName := modName ++ thmName

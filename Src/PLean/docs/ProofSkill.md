@@ -89,11 +89,22 @@ target to be a machine. A kind fact gives it (`null` is never
 allocated): `is_Coordinator coordinator s` for a field, and for a reply
 to a payload field, an invariant on the request,
 `∀ e : eReq, inflight e s → is_Client e.client s`. For an opaque
-function used as a target, assume the kind initially and prove it an
-invariant in its own lemma, as RingLeader does for its successor function
-(`init-holds ∀ x : Server, is_Server (right x.ref) s`). A `paxiom` would
-also do, but it is a hypothesis of every goal, which can slow the solver
-on unrelated ones.
+function used as a target, say what it returns for the machines that use
+it: RingLeader's successor function maps ring members to ring members,
+and the Servers are exactly the members (`init-holds`, and an invariant).
+
+**Assumptions about all references.** `MachineRef` is all of ℕ, most of
+it no machine. A `paxiom` or `pinstance` law that quantifies over every
+reference (where P's `forall (x: machine)` ranges over the program's
+machines) can hold only for infinitely many references, and then every
+initial world may have to be empty. A successor that is immediate in a
+cyclic order of all of ℕ, for instance, closes no finite set of
+references. State such laws for the machines (or a set of them, like
+RingLeader's `mem`) and relate the set to the machines with `init-holds`
+and an invariant. The vacuity check cannot catch this, since the empty
+world satisfies `InitConditions`. A `paxiom` is also a hypothesis of every
+goal, which can slow the solver on unrelated ones; a `pinstance` law is
+only a hint.
 
 **Bridging invariants for deep arguments.** If a step needs a long
 chain (an axiom, then an existential witness, then a uniqueness fact),

@@ -117,7 +117,7 @@ class TestToEnvVars(unittest.TestCase):
             os.environ.pop("LLM_PROVIDER", None)
             env = s.to_env_vars()
         self.assertEqual(env["ANTHROPIC_API_KEY"], "ant-key")
-        self.assertEqual(env["ANTHROPIC_MODEL_NAME"], "claude-3-5-sonnet-20241022")
+        self.assertEqual(env["ANTHROPIC_MODEL_NAME"], "claude-sonnet-4-6")
 
     def test_bedrock_env_vars(self):
         s = PeasyAISettings(

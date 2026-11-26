@@ -33,11 +33,11 @@ providers:
     type: anthropic
     api_key: "${ANTHROPIC_API_KEY}"
     base_url: "${ANTHROPIC_BASE_URL:}"
-    default_model: claude-3-5-sonnet-20241022
+    default_model: claude-sonnet-4-6
     models:
-      - claude-3-5-sonnet-20241022
-      - claude-3-5-haiku-20241022
-      - claude-3-opus-20240229
+      - claude-sonnet-4-6
+      - claude-opus-4-6
+      - claude-haiku-4-5
     timeout: 600
     description: "Direct Anthropic API"
 

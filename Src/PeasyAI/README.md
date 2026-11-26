@@ -105,7 +105,7 @@ Open it and fill in the credentials for the LLM provider you want to use:
       },
       "anthropic": {
         "api_key": "your-anthropic-key",
-        "model": "claude-3-5-sonnet-20241022"
+        "model": "claude-sonnet-4-6"
       },
       "bedrock": {
         "region": "us-west-2",

@@ -124,6 +124,102 @@ syntax (name := pAssert) "assert " term : doElem
 macro_rules
   | `(doElem| assert $c) => `(doElem| PLean.H.passert (decide ($c)) 0)
 
+/-! ## Container updates and reads
+
+`c += (x)` adds a member to a set, or inserts a key into a map (P's
+`m += (k, v)`, which fails on a key already present). `c[i]`, read in a
+handler, fails on a missing map key or an index out of range (`#gen_module`
+rewrites handler reads `c[i]` to `(← cindex c i)`). -/
+
+/-- `c += (x)`. -/
+class PAdd (C : Type) (X : outParam Type) where
+  add {S E F G W : Type} : C → X → HandlerM S E F G W C
+
+instance {T : Type} [DecidableEq T] : PAdd (PSet T) T := ⟨fun s x => pure (s.add x)⟩
+instance {K V : Type} [DecidableEq K] : PAdd (PMap K V) (K × V) := ⟨fun m kv => H.minsert m kv.1 kv.2⟩
+
+/-- `c += (x)`. -/
+@[inline] def cadd {S E F G W C X : Type} [PAdd C X] (c : C) (x : X) : HandlerM S E F G W C :=
+  PAdd.add c x
+
+/-- `c[i]`, read in a handler. -/
+class PIndex (C : Type) (K V : outParam Type) where
+  index {S E F G W : Type} : C → K → HandlerM S E F G W V
+
+instance {K V : Type} [DecidableEq K] : PIndex (PMap K V) K V := ⟨fun m k => H.mget m k⟩
+instance {T : Type} : PIndex (List T) Int T := ⟨fun l i => H.sget l i⟩
+
+/-- `c[i]`, read in a handler. -/
+@[inline] def cindex {S E F G W C K V : Type} [PIndex C K V] (c : C) (i : K) : HandlerM S E F G W V :=
+  PIndex.index c i
+
+section
+open Std.WP
+variable {S E F G W : Type} {epost : PError → Prop}
+
+@[spec] theorem cadd_set_spec {T : Type} [DecidableEq T] {s : PSet T} {x : T}
+    {post : PSet T → HState S E F G W → Prop} :
+    Triple (cadd (S := S) (E := E) (F := F) (G := G) (W := W) s x) (fun hs => post (s.add x) hs)
+      post epost := by
+  unfold cadd; show Triple (pure (s.add x)) _ _ _; vcgen; all_goals assumption
+
+@[spec] theorem cadd_map_spec {K V : Type} [DecidableEq K] {m : PMap K V} {kv : K × V}
+    {post : PMap K V → HState S E F G W → Prop} :
+    Triple (cadd (S := S) (E := E) (F := F) (G := G) (W := W) m kv)
+      (fun hs => (m.has kv.1 = true → epost .duplicateKey) ∧
+        (m.has kv.1 = false → post (m.put kv.1 kv.2) hs)) post epost :=
+  H.minsert_spec
+
+@[spec] theorem cindex_map_spec {K V : Type} [DecidableEq K] {m : PMap K V} {k : K}
+    {post : V → HState S E F G W → Prop} :
+    Triple (cindex (S := S) (E := E) (F := F) (G := G) (W := W) m k)
+      (fun hs => (∀ v, m.get k = some v → post v hs) ∧ (m.get k = none → epost .keyNotFound))
+      post epost :=
+  H.mget_spec
+
+@[spec] theorem cindex_list_spec {T : Type} {l : List T} {i : Int}
+    {post : T → HState S E F G W → Prop} :
+    Triple (cindex (S := S) (E := E) (F := F) (G := G) (W := W) l i)
+      (fun hs => (∀ (h : 0 ≤ i ∧ i.toNat < l.length), post l[i.toNat] hs) ∧
+        (¬ (0 ≤ i ∧ i.toNat < l.length) → epost .outOfRange)) post epost :=
+  H.sget_spec
+end
+
+/-- Whether `stx` reads `c[i]`. -/
+private partial def hasIndexRead (stx : Syntax) : Bool :=
+  stx.getKind == `«term__[_]» || stx.getArgs.any hasIndexRead
+
+/-- Rewrite the reads `c[i]` in a handler body to `(← cindex c i)` (not in
+loop annotations, which are propositions). Lean runs a nested action before
+the statement it is in, so a read in the right operand of `&&`, `||`, `∧`,
+`∨`, `→` or in a branch of a conditional expression would run even when P's
+short-circuit evaluation skips it: such an operand is evaluated in its own
+block, under the condition. -/
+partial def rewriteIndexReads (stx : Syntax) : MacroM Syntax := do
+  let k := stx.getKind
+  if k == `PLean.pLoopInvItem || k == `PLean.pLoopDoneWithItem ||
+      k == `PLean.pLoopDecreasingItem then
+    return stx
+  let rw (s : Syntax) : MacroM (TSyntax `term) := return ⟨← rewriteIndexReads s⟩
+  if (k == `«term_&&_» || k == `«term_∧_») && hasIndexRead stx[2] then
+    let a ← rw stx[0]; let b ← rw stx[2]
+    return (← `((← if $a then (do pure (decide $b)) else pure false))).raw
+  if (k == `«term_||_» || k == `«term_∨_») && hasIndexRead stx[2] then
+    let a ← rw stx[0]; let b ← rw stx[2]
+    return (← `((← if $a then pure true else (do pure (decide $b))))).raw
+  if k == ``Lean.Parser.Term.arrow && hasIndexRead stx[2] then
+    let a ← rw stx[0]; let b ← rw stx[2]
+    return (← `((← if $a then (do pure (decide $b)) else pure true))).raw
+  if k == `termIfThenElse && (hasIndexRead stx[3] || hasIndexRead stx[5]) then
+    let c ← rw stx[1]; let a ← rw stx[3]; let b ← rw stx[5]
+    return (← `((← if $c then (do pure $a) else (do pure $b)))).raw
+  let stx ← stx.setArgs <$> stx.getArgs.mapM rewriteIndexReads
+  if k == `«term__[_]» then
+    let c : TSyntax `term := ⟨stx[0]⟩
+    let i : TSyntax `term := ⟨stx[2]⟩
+    return (← `((← PLean.cindex $c $i))).raw
+  else return stx
+
 /-! ## Assignments and container updates
 
 Each writes the local `v` and the machine field `v`. -/
@@ -137,18 +233,20 @@ syntax (name := pAssign) (priority := high) ident " = " term : doElem
 
 macro_rules
   | `(doElem| $v:ident += ($e:term)) =>
-    `(doElem| do $v:ident := PLean.PContainerAdd.add $v $e; $(setterOf v):ident $v)
+    `(doElem| do $v:ident ← PLean.cadd $v $e; $(setterOf v):ident $v)
   | `(doElem| $v:ident -= ($e:term)) =>
     `(doElem| do $v:ident := PLean.PContainerErase.erase $v $e; $(setterOf v):ident $v)
   | `(doElem| $v:ident [ $k:term ] = $x:term) =>
     `(doElem| do $v:ident := PLean.PMap.put $v $k $x; $(setterOf v):ident $v)
   | `(doElem| $v:ident [ $k:term ] += ($e:term)) =>
     `(doElem| do
-        $v:ident := PLean.PMap.put $v $k (PLean.PContainerAdd.add (($v).get $k |>.getD default) $e)
+        let cur ← PLean.H.mget $v $k
+        $v:ident := PLean.PMap.put $v $k (← PLean.cadd cur $e)
         $(setterOf v):ident $v)
   | `(doElem| $v:ident [ $k:term ] -= ($e:term)) =>
     `(doElem| do
-        $v:ident := PLean.PMap.put $v $k (PLean.PContainerErase.erase (($v).get $k |>.getD default) $e)
+        let cur ← PLean.H.mget $v $k
+        $v:ident := PLean.PMap.put $v $k (PLean.PContainerErase.erase cur $e)
         $(setterOf v):ident $v)
   | `(doElem| $v:ident = $rhs:term) =>
     `(doElem| do $v:ident := $rhs; $(setterOf v):ident $v)
@@ -193,20 +291,19 @@ def localizeAssigns (locals : NameSet) (stx : Syntax) : MacroM Syntax :=
     | `(doElem| $v:ident = $rhs:term) =>
       if isLocal v then some <$> `(doElem| $v:ident := $rhs) else pure none
     | `(doElem| $v:ident += ($e:term)) =>
-      if isLocal v then some <$> `(doElem| $v:ident := PLean.PContainerAdd.add $v $e) else pure none
+      if isLocal v then some <$> `(doElem| $v:ident ← PLean.cadd $v $e) else pure none
     | `(doElem| $v:ident -= ($e:term)) =>
       if isLocal v then some <$> `(doElem| $v:ident := PLean.PContainerErase.erase $v $e) else pure none
     | `(doElem| $v:ident [ $k:term ] = $x:term) =>
       if isLocal v then some <$> `(doElem| $v:ident := PLean.PMap.put $v $k $x) else pure none
     | `(doElem| $v:ident [ $k:term ] += ($e:term)) =>
       if isLocal v then
-        some <$> `(doElem| $v:ident :=
-          PLean.PMap.put $v $k (PLean.PContainerAdd.add (($v).get $k |>.getD default) $e))
+        some <$> `(doElem| $v:ident := PLean.PMap.put $v $k (← PLean.cadd (← PLean.H.mget $v $k) $e))
       else pure none
     | `(doElem| $v:ident [ $k:term ] -= ($e:term)) =>
       if isLocal v then
         some <$> `(doElem| $v:ident :=
-          PLean.PMap.put $v $k (PLean.PContainerErase.erase (($v).get $k |>.getD default) $e))
+          PLean.PMap.put $v $k (PLean.PContainerErase.erase (← PLean.H.mget $v $k) $e))
       else pure none
     | _ => pure none
 

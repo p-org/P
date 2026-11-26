@@ -145,12 +145,17 @@ structure RecvSite where
   cases : Array RecvCase := #[]
   cont  : Array Syntax := #[]
   next  : Option Nat := none
+  /-- The names that shadow machine variables in the handler. -/
+  shadow : NameSet := {}
 
 /-- A handler or entry body (assignments to its locals localised), up to its
 first top-level `receive`. -/
 structure BodyPlan where
   pre   : Array Syntax
   first : Option Nat
+  /-- The names that shadow machine variables in the body: its parameter
+  and its `var` locals. -/
+  shadow : NameSet := {}
 
 /-- The `W` constructor of site `k`. -/
 def siteName (k : Nat) : Name := Name.mkSimple s!"site{k}"
@@ -185,6 +190,62 @@ private partial def planItems (mname sname : Name) (saved : Array Saved) (items 
     modify fun a => a.set! idx { idx, mname, sname, saved, cases, cont, next }
     return (items.extract 0 i, some idx)
 
+/-- Localise the assignments to a `receive` case's binder in its case. -/
+partial def localizeCaseBinders (stx : Syntax) : MacroM Syntax := do
+  let stx := stx.setArgs (← stx.getArgs.mapM localizeCaseBinders)
+  if stx.getKind == ``pRecvCase && stx[2].getNumArgs == 5 && stx[2][1].isIdent then
+    return stx.setArg 5 (← localizeAssigns (({} : NameSet).insert stx[2][1].getId) stx[5])
+  return stx
+
+/-- `stx` with the identifier `x` (and the head of `x.f`) renamed to `x'`. -/
+partial def renameIdent (x x' : Name) (stx : Syntax) : Syntax :=
+  if stx.isIdent then
+    match stx.getId.components with
+    | h :: rest => if h == x then mkIdentFrom stx (rest.foldl (· ++ ·) x') else stx
+    | [] => stx
+  else stx.setArgs (stx.getArgs.map (renameIdent x x'))
+
+/-- Whether `stx` mentions `n` (as `n`, or as the head of `n.f`). -/
+private partial def mentionsName (n : Name) (stx : Syntax) : Bool :=
+  if stx.isIdent then
+    let id := stx.getId
+    id == n || (match id with
+      | .str (.str .anonymous h) _ => Name.mkSimple h == n
+      | _ => false)
+  else stx.getArgs.any (mentionsName n)
+
+/-- The identifiers of a `let` / `have` before its `:=` / `←` (and before a
+type ascription): the names it binds, and the constructors of a pattern. -/
+private partial def letHeadIdents (stx : Syntax) : StateM Bool (Array Name) := do
+  if ← get then return #[]
+  if stx.isAtom then
+    if [":=", "←", ":", "|"].contains stx.getAtomVal then set true
+    return #[]
+  if stx.isIdent then return #[stx.getId]
+  let mut out := #[]
+  for c in stx.getArgs do
+    out := out ++ (← letHeadIdents c)
+  return out
+
+/-- A `let` before a top-level `receive` is not kept while the machine waits
+(only `var` locals and parameters are), so it cannot be used after it. -/
+def checkLetsAcrossReceive (items : Array Syntax) : CommandElabM Unit := do
+  for i in [0:items.size] do
+    unless items[i]![0].getKind == ``pReceive do continue
+    for j in [0:i] do
+      let e := items[j]![0]
+      let k := e.getKind
+      unless k == ``Lean.Parser.Term.doLet || k == ``Lean.Parser.Term.doLetArrow ||
+          k == ``Lean.Parser.Term.doLetElse || k == ``Lean.Parser.Term.doHave do continue
+      for n in Id.run ((letHeadIdents e).run' false) do
+        -- a constructor in a pattern binds nothing
+        let env ← getEnv
+        if (← resolveGlobalName n).any fun (c, _) => (env.find? c).any (·.isCtor) then continue
+        if (items.extract i items.size).any (mentionsName n) then
+          throwErrorAt e m!"`{n}` is bound by `let` before a `receive` and used after it, but \
+            only `var` locals and parameters are kept while the machine waits; declare it with \
+            `var {n} : T`"
+
 /-- Every handler / entry body's plan, keyed by (machine, state, event or
 `entry`), and every `receive` site. -/
 def planReceives (ctx : LocalPModuleCtx) :
@@ -204,10 +265,18 @@ def planReceives (ctx : LocalPModuleCtx) :
             (`entry, #[{ name := p, ty, isVar := false }], some b.raw)
           | _ => (`none, #[], none)
         let some b := body? | continue
-        let b ← liftMacroM (localizeAssigns (collectLocals b) b)
+        -- Parameters, like `var` locals, shadow machine variables of the
+        -- same name (as in P); a `receive` case's binder does in its case.
+        let b ← liftMacroM (localizeCaseBinders b)
+        let locals := params.foldl (fun s p => s.insert p.name.getId) (collectLocals b)
+        let b ← liftMacroM (localizeAssigns locals b)
+        let b ← liftMacroM (rewriteIndexReads b)
+        checkLetsAcrossReceive (doSeqItemsOf b)
+        let shadow := locals
+        let n0 := sites.size
         let ((pre, first), sites') := (planItems mname sname params (doSeqItemsOf b)).run sites
-        sites := sites'
-        plans := plans.push ((mname, sname, owner), { pre, first })
+        sites := sites'.mapIdx fun j st => if j < n0 then st else { st with shadow }
+        plans := plans.push ((mname, sname, owner), { pre, first, shadow })
   return (plans, sites)
 
 /-- The event handled by a state item, with its body (`none` for `goto`-only
@@ -403,22 +472,85 @@ private def emitMachineAliases (mname : Name) (states : Array (Name × Bool × A
     elabCommand (← `(abbrev $(mkIdent (v.name.appendAfter "_set")) (x : $(v.ty)) : $idHM Unit :=
         modify fun hs => { hs with ms := { hs.ms with fields := { hs.ms.fields with $f:ident := x } } }))
 
-/-- `let this : <Mach> := ⟨(← get).ref⟩` and `let mut v := …` for every var. -/
-private def handlerPrelude (mname : Name) (vars : Array VarInfo) :
+/-- `let this : <Mach> := ⟨(← get).ref⟩` and `let mut v := …` for every var
+not in `shadow` (a parameter or local of the same name hides the var, as
+in P). -/
+private def handlerPrelude (mname : Name) (vars : Array VarInfo) (shadow : NameSet := {}) :
     CommandElabM (Array (TSyntax ``Lean.Parser.Term.doSeqItem)) := do
   let thisB ← `(Lean.Parser.Term.doSeqItem|
       let $(mkIdent `this):ident : $(mkIdent mname) := ⟨(← get).ref⟩)
-  let vs ← vars.mapM fun v => do
+  let vs ← (vars.filter (!shadow.contains ·.name)).mapM fun v => do
     let f := mkIdent (fieldName mname v.name)
     `(Lean.Parser.Term.doSeqItem| let mut $(mkIdent v.name):ident := (← get).ms.fields.$f:ident)
   return #[thisB] ++ vs
 
+/-- The events a state ignores. -/
+def ignoredOf (items : Array Syntax) : Array Name :=
+  items.foldl (init := #[]) fun acc it =>
+    match it with
+    | `(pStateBodyItem| ignore $evs:ident,*) => acc ++ evs.getElems.map (·.getId)
+    | _ => acc
+
+/-- The nodes of `stx`, in pre-order. -/
+private partial def nodesOf (stx : Syntax) : Array Syntax :=
+  stx.getArgs.foldl (init := #[stx]) fun acc c => acc ++ nodesOf c
+
+/-- Reject what P's type checker rejects and the model would otherwise read
+differently: `goto S` / `pnew M` without the argument a typed entry takes
+(or with one an untyped entry does not take), and `raise e` in a state that
+neither handles nor ignores `e`. -/
+def checkStatements (ctx : LocalPModuleCtx) : CommandElabM Unit := do
+  let startTyped (m : Name) : Option Bool := do
+    let md ← ctx.machines.find? m
+    let (_, _, items) ← (machineStates md.body).find? (·.2.1)
+    return (typedEntry items).isSome
+  for mname in ctx.machineOrder do
+    let some md := ctx.machines.find? mname | continue
+    let states := machineStates md.body
+    let typed (st : Name) : Option Bool :=
+      (states.find? (·.1 == st)).map fun (_, _, items) => (typedEntry items).isSome
+    for (sname, _, items) in states do
+      let handled := items.filterMap itemEvent?
+      let ignored := ignoredOf items
+      for it in items do
+        for n in nodesOf it do
+          let k := n.getKind
+          if k == ``pGotoNoPayload && typed n[1].getId == some true then
+            throwErrorAt n m!"`goto {n[1].getId}`: the entry of state `{n[1].getId}` takes an \
+              argument; pass it with `goto {n[1].getId}, e`"
+          if k == ``pGotoPayload && typed n[1].getId == some false then
+            throwErrorAt n m!"`goto {n[1].getId}, …`: the entry of state `{n[1].getId}` takes no \
+              argument"
+          if k == ``pNewNoArg && startTyped n[1].getId == some true then
+            throwErrorAt n m!"`pnew {n[1].getId}`: the entry of `{n[1].getId}`'s start state takes \
+              an argument; pass it with `pnew {n[1].getId}, e`"
+          if k == ``pNewArg && startTyped n[1].getId == some false then
+            throwErrorAt n m!"`pnew {n[1].getId}, …`: the entry of `{n[1].getId}`'s start state \
+              takes no argument"
+          if (k == ``pRaiseNoPayload || k == ``pRaisePayload) && n[1].isIdent then
+            let ev := n[1].getId
+            unless ev == `halt || handled.contains ev || ignored.contains ev do
+              throwErrorAt n m!"`raise {ev}`: state `{mname}.{sname}` neither handles nor \
+                ignores `{ev}` (in P, an unhandled-event error)"
+
 /-- The handler / entry definitions of one state. -/
 private def emitStateHandlers (mname sname : Name) (items : Array Syntax) (vars : Array VarInfo)
     (payloadTy : Name → Option Name) (plans : Array ((Name × Name × Name) × BodyPlan))
-    (sites : Array RecvSite) : CommandElabM Unit := do
-  let pre ← handlerPrelude mname vars
+    (sites : Array RecvSite) (typedStates : NameSet) : CommandElabM Unit := do
   let hName (ev : Name) : Ident := mkIdent (sname ++ ev.appendAfter "_handler")
+  -- A definition, then the check that it compares no containers with `=`.
+  let emit (n : Ident) (cmd : TSyntax `command) (ref : Syntax) : CommandElabM Unit := do
+    elabCommand cmd
+    rejectContainerDecideEq ((← getCurrNamespace) ++ n.getId) ref
+  -- Parameters are bound after the prelude (which binds the machine
+  -- variables), so a parameter shadows a variable of the same name.
+  let argId := mkIdent `__arg
+  -- An ignored event's handler does nothing (what `raise` of it runs).
+  for ev in ignoredOf items do
+    match payloadTy ev with
+    | some pt =>
+      elabCommand (← `(def $(hName ev) (_ : $(mkIdent pt)) : $idHM Unit := pure ()))
+    | none => elabCommand (← `(def $(hName ev) : $idHM Unit := pure ()))
   let ordered ← match orderForRaise items with
     | .ok o => pure o
     | .error msg => throwError "state `{mname}.{sname}`: {msg}"
@@ -432,58 +564,68 @@ private def emitStateHandlers (mname sname : Name) (items : Array Syntax) (vars 
     if let some k := next then out := out.push (← suspendAt k)
     if out.isEmpty then out := out.push (← `(Lean.Parser.Term.doSeqItem| pure ()))
     return out
-  let bodyOf (owner : Name) : CommandElabM (Array (TSyntax ``Lean.Parser.Term.doSeqItem)) := do
+  let bodyOf (owner : Name) :
+      CommandElabM (Array (TSyntax ``Lean.Parser.Term.doSeqItem) × Array (TSyntax ``Lean.Parser.Term.doSeqItem)) := do
     let some (_, pl) := plans.find? (·.1 == (mname, sname, owner))
       | throwError "internal: no body for `{mname}.{sname}.{owner}`"
-    itemsOf pl.pre pl.first
+    return (← handlerPrelude mname vars pl.shadow, ← itemsOf pl.pre pl.first)
   for it in ordered do
     match it with
     | `(pStateBodyItem| on $ev:ident ( $p:ident : $ty:term ) { $_:doSeq }) =>
-      let body ← bodyOf ev.getId
-      elabCommand (← `(def $(hName ev.getId) ($p : $ty) : $idHM Unit := do
+      let (pre, body) ← bodyOf ev.getId
+      emit (hName ev.getId) (← `(def $(hName ev.getId) ($argId : $ty) : $idHM Unit := do
           $pre*
-          $body*))
+          let mut $p:ident : $ty := $argId
+          $body*)) it
     | `(pStateBodyItem| on $ev:ident { $_:doSeq }) =>
-      let body ← bodyOf ev.getId
+      let (pre, body) ← bodyOf ev.getId
       match payloadTy ev.getId with
       | some pt =>
-        elabCommand (← `(def $(hName ev.getId) (_payload : $(mkIdent pt)) : $idHM Unit := do
+        emit (hName ev.getId) (← `(def $(hName ev.getId) (_ : $(mkIdent pt)) : $idHM Unit := do
             $pre*
-            $body*))
+            $body*)) it
       | none =>
-        elabCommand (← `(def $(hName ev.getId) : $idHM Unit := do
+        emit (hName ev.getId) (← `(def $(hName ev.getId) : $idHM Unit := do
             $pre*
-            $body*))
+            $body*)) it
     | `(pStateBodyItem| on $ev:ident goto $tgt:ident) =>
+      -- As in P, the event's payload is the argument of the target's entry.
       let tag := mkIdent (tgt.getId.appendAfter "_st")
-      match payloadTy ev.getId with
-      | some pt =>
-        elabCommand (← `(def $(hName ev.getId) (_payload : $(mkIdent pt)) : $idHM Unit :=
+      let typed := typedStates.contains tgt.getId
+      match payloadTy ev.getId, typed with
+      | some pt, true =>
+        let garg := mkIdent (tgt.getId.appendAfter "_garg")
+        elabCommand (← `(def $(hName ev.getId) ($argId : $(mkIdent pt)) : $idHM Unit :=
+            PLean.H.goto $tag ($garg $argId)))
+      | some pt, false =>
+        elabCommand (← `(def $(hName ev.getId) (_ : $(mkIdent pt)) : $idHM Unit :=
             PLean.H.goto $tag $(mkIdent `G.none)))
-      | none =>
+      | none, true =>
+        throwErrorAt it m!"`on {ev.getId} goto {tgt.getId}`: the entry of state \
+          `{tgt.getId}` takes an argument, but `{ev.getId}` has no payload"
+      | none, false =>
         elabCommand (← `(def $(hName ev.getId) : $idHM Unit := PLean.H.goto $tag $(mkIdent `G.none)))
     | _ => pure ()
   -- entry
   let entryName := mkIdent (sname ++ `entry)
-  let arg := mkIdent `arg
   let mut emitted := false
   for it in items do
     match it with
     | `(pStateBodyItem| entry { $_:doSeq }) =>
-      let body ← bodyOf `entry
-      elabCommand (← `(def $entryName (_ : $idG) : $idHM Unit := do
+      let (pre, body) ← bodyOf `entry
+      emit entryName (← `(def $entryName (_ : $idG) : $idHM Unit := do
           $pre*
-          $body*))
+          $body*)) it
       emitted := true
     | `(pStateBodyItem| entry ( $p:ident : $ty:term ) { $_:doSeq }) =>
-      let body ← bodyOf `entry
+      let (pre, body) ← bodyOf `entry
       let gctor := mkIdent (`G ++ stateTagName mname sname)
-      elabCommand (← `(def $entryName ($arg : $idG) : $idHM Unit := do
-          let $p : $ty := match $arg:ident with
+      emit entryName (← `(def $entryName ($argId : $idG) : $idHM Unit := do
+          $pre*
+          let mut $p:ident : $ty := match $argId:ident with
             | $gctor:ident x => x
             | _ => default
-          $pre*
-          $body*))
+          $body*)) it
       emitted := true
     | _ => pure ()
   unless emitted do
@@ -491,23 +633,38 @@ private def emitStateHandlers (mname sname : Name) (items : Array Syntax) (vars 
   -- resumers of this state's `receive` sites
   for s in sites do
     unless s.mname == mname && s.sname == sname do continue
-    let savedBs ← s.saved.mapM fun v =>
-      `(Lean.Parser.Term.bracketedBinderF| ($(v.name):ident : $(v.ty)))
-    let restore ← (s.saved.filter (·.isVar)).mapM fun v =>
-      `(Lean.Parser.Term.doSeqItem| let mut $(v.name):ident : $(v.ty) := $(v.name):ident)
+    let savedIds := (List.range s.saved.size).toArray.map fun j => mkIdent (Name.mkSimple s!"__s{j}")
+    let savedBs ← (s.saved.zip savedIds).mapM fun (v, a) =>
+      `(Lean.Parser.Term.bracketedBinderF| ($a:ident : $(v.ty)))
+    let restore ← (s.saved.zip savedIds).mapM fun (v, a) =>
+      `(Lean.Parser.Term.doSeqItem| let mut $(v.name):ident : $(v.ty) := $a:ident)
     let rest ← itemsOf s.cont s.next
+    let pre ← handlerPrelude mname vars s.shadow
     for c in s.cases do
-      let plB ← match c.binder, payloadTy c.ev with
-        | some (x, ty), _ => pure #[← `(Lean.Parser.Term.bracketedBinderF| ($x:ident : $ty))]
-        | none, some pt => pure #[← `(Lean.Parser.Term.bracketedBinderF| (_ : $(mkIdent pt)))]
-        | none, none => pure #[]
-      let caseItem ← `(Lean.Parser.Term.doSeqItem| do $(c.body))
-      elabCommand (← `(def $(mkIdent (resumerName sname s.idx c.ev)) $savedBs:bracketedBinder*
-          $plB:bracketedBinder* : $idHM Unit := do
+      -- The case's binder is bound in the case's own block, so its scope
+      -- ends with the case. Lean forbids shadowing a mutable variable, so a
+      -- binder named like a machine variable or a saved local is renamed in
+      -- its case.
+      let (plB, caseItem) ← match c.binder, payloadTy c.ev with
+        | some (x, ty), _ =>
+          let collides := vars.any (·.name == x.getId) || s.saved.any (·.name.getId == x.getId)
+          let x' : Ident := if collides then mkIdent (x.getId.appendBefore "__case_") else x
+          let body := if collides then renameIdent x.getId x'.getId c.body else c.body
+          let items : Array (TSyntax ``Lean.Parser.Term.doSeqItem) := (doSeqItemsOf body).map (⟨·⟩)
+          pure (#[← `(Lean.Parser.Term.bracketedBinderF| ($argId : $ty))],
+            ← `(Lean.Parser.Term.doSeqItem| do
+                let mut $x':ident : $ty := $argId
+                $items*))
+        | none, some pt =>
+          pure (#[← `(Lean.Parser.Term.bracketedBinderF| (_ : $(mkIdent pt)))],
+            ← `(Lean.Parser.Term.doSeqItem| do $(c.body)))
+        | none, none => pure (#[], ← `(Lean.Parser.Term.doSeqItem| do $(c.body)))
+      let rn := mkIdent (resumerName sname s.idx c.ev)
+      emit rn (← `(def $rn $savedBs:bracketedBinder* $plB:bracketedBinder* : $idHM Unit := do
           $pre*
           $restore*
           $caseItem
-          $rest*))
+          $rest*)) c.body
 
 /-- `prog : PLean.Program S E F G W`: exhaustive matches over (state, event). -/
 private def emitProgram (ctx : LocalPModuleCtx) (sites : Array RecvSite) : CommandElabM Unit := do
@@ -602,17 +759,19 @@ private def emitInitConditions (ctx : LocalPModuleCtx) (mk ek : NameSet)
     (← `(∀ $j:ident, ($s).log $j = none), false),
     (← `(($s).error = none), false),
     (← `(∀ $r:ident, ($s).nextRef ≤ $r → (($s).machines $r).state = none), false),
-    (← `(∀ $r:ident, $r < ($s).nextRef → $startD ∧ (($s).machines $r).pending ≠ none), false),
+    (← `(0 < ($s).nextRef ∧ (($s).machines PLean.MachineRef.null).state = none), false),
+    (← `(∀ $r:ident, $r ≠ PLean.MachineRef.null → $r < ($s).nextRef →
+        $startD ∧ (($s).machines $r).pending ≠ none), false),
     (← `(∀ $r:ident, (($s).machines $r).halted = false ∧ (($s).machines $r).waiting = none), false)]
   for d in ctx.inits do
     if let some stx := d.defStx then
       PLean.rejectStateShadowIn "`init-holds`" stx[1]
       match d.stateBinder with
-      | none => props := props.push (⟨stx[1]⟩, false)
+      | none => props := props.push (← `(pv_ext% $(⟨stx[1]⟩)), false)
       | some _ =>
         let rw ← liftMacroM <| PLean.rewriteFieldProjections mk ek machineFields {} {} eventFields sName stx[1]
         let g ← liftMacroM <| PLean.injectKindGuards mk ek sName rw
-        props := props.push (⟨g⟩, false)
+        props := props.push (← `(pv_ext% $(⟨g⟩)), false)
   emitConj (mkIdent `InitConditions) props sName
 
 end Emit
@@ -621,12 +780,10 @@ end Emit
 
 syntax (name := pGenModule) "#gen_module " ident : command
 
-@[command_elab pGenModule]
-def elabPGenModule : CommandElab := fun stx => do
-  let `(#gen_module $name:ident) := stx | throwUnsupportedSyntax
-  let modName := name.getId
-  let some ctx ← getPModule? modName
-    | throwError "no `pmodule {modName}` is registered (did you import the file that declares it?)"
+/-- `#gen_module`'s emission, after the checks. -/
+private def genModuleBody (ctx : LocalPModuleCtx) (modName : Name) (name : Ident)
+    (plans : Array ((Name × Name × Name) × BodyPlan)) (sites : Array RecvSite) :
+    CommandElabM Unit := do
   elabCommand (← `(namespace $name))
   elabCommand (← `(open PLean))
   emitMachineWrappers ctx
@@ -637,7 +794,6 @@ def elabPGenModule : CommandElab := fun stx => do
   let mut vars : NameMap (Array VarInfo) := {}
   for mname in ctx.machineOrder do
     if let some m := ctx.machines.find? mname then vars := vars.insert mname (collectVars m.body)
-  let (plans, sites) ← planReceives ctx
   emitProgramTypes ctx vars sites
   emitKindPredicates ctx
   let machineKinds : NameSet := ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
@@ -657,10 +813,15 @@ def elabPGenModule : CommandElab := fun stx => do
           if f.raw[0].isIdent then s.insert f.raw[0].getId else s)
       | _ => pure ()
     return out
-  for (_, d) in ctx.pures.toList do materialisePure d
-  for (_, d) in ctx.axioms.toList do
-    materialiseAxiom machineKinds eventKinds machineFields {} {} eventFields d
-  for (_, d) in ctx.instances.toList do materialiseInstance d
+  -- In source order: instances first (functions and axioms may use them),
+  -- then functions, then axioms.
+  for n in ctx.instanceOrder do
+    if let some d := ctx.instances.find? n then materialiseInstance d
+  for n in ctx.pureOrder do
+    if let some d := ctx.pures.find? n then materialisePure d
+  for n in ctx.axiomOrder do
+    if let some d := ctx.axioms.find? n then
+      materialiseAxiom machineKinds eventKinds machineFields {} {} eventFields d
   -- per-machine aliases, accessors, handlers
   let payloadTy : Name → Option Name := fun ev =>
     match ctx.events.find? ev with
@@ -675,8 +836,10 @@ def elabPGenModule : CommandElab := fun stx => do
     let states := machineStates m.body
     elabCommand (← `(namespace $(mkIdent mname)))
     emitMachineAliases mname states mvars
+    let typedStates : NameSet := states.foldl (init := {}) fun acc (sn, _, items) =>
+      if (typedEntry items).isSome then acc.insert sn else acc
     for (sname, _, items) in states do
-      emitStateHandlers mname sname items mvars payloadTy plans sites
+      emitStateHandlers mname sname items mvars payloadTy plans sites typedStates
     elabCommand (← `(end $(mkIdent mname)))
   emitProgram ctx sites
   if noncomp then elabCommand (← `(end))
@@ -710,7 +873,8 @@ def elabPGenModule : CommandElab := fun stx => do
     elabCommand (← `(@[reducible] def $(mkIdent `Waiting) (s : $idGW) : Prop := ∀ r, $body))
   -- `pinstance` class fields become named facts, used as solver hints.
   let mut axioms := ctx.axioms
-  for (_, d) in ctx.instances.toList do
+  for n in ctx.instanceOrder do
+    let some d := ctx.instances.find? n | continue
     for ax in ← synthInstanceFieldAxioms modName d do
       axioms := axioms.insert ax.name ax
   elabCommand (← `(end $name))
@@ -718,5 +882,22 @@ def elabPGenModule : CommandElab := fun stx => do
     { ctx with
       axioms
       machines := ctx.machines.foldl (init := {}) fun acc n d => acc.insert n { d with materialised := true } }
+
+@[command_elab pGenModule]
+def elabPGenModule : CommandElab := fun stx => do
+  let `(#gen_module $name:ident) := stx | throwUnsupportedSyntax
+  let modName := name.getId
+  let some ctx ← getPModule? modName
+    | throwError "no `pmodule {modName}` is registered (did you import the file that declares it?)"
+  unless ctx.conflicts.isEmpty do
+    throwError "pmodule `{modName}`: its fragments disagree:\n{"\n".intercalate ctx.conflicts.toList}"
+  checkStatements ctx
+  let (plans, sites) ← planReceives ctx
+  -- On an error, close the namespaces opened below.
+  let scopes := (← get).scopes
+  try genModuleBody ctx modName name plans sites
+  catch e =>
+    modify fun st => { st with scopes }
+    throw e
 
 end PLean

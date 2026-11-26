@@ -81,8 +81,16 @@ pmodule ShardedKV
         k ∈ n1.kv → k ∈ n2.kv → n1 = n2
   }
 
+  -- A reshard names a Node: the transfer goes to it, and a send to `null`
+  -- fails.
+  Lemma routing {
+    invariant reshard_to_node :
+      ∀ e : eReshard, inflight e s → is_Node e.reshard_to s
+  }
+
   Proof of_Safety {
     prove Safety ;
+    prove routing ;
   }
 
 end ShardedKV

@@ -12,8 +12,13 @@ import PLean.Semantics.Containers
 
 namespace PLean
 
-/-- A machine reference: an index into the world's machine table. -/
+/-- A machine reference: an index into the world's machine table. Reference
+`0` is P's `null` (the `default` of a machine-typed value); machines are
+allocated from `1`. -/
 abbrev MachineRef := Nat
+
+/-- P's `null` machine reference. -/
+abbrev MachineRef.null : MachineRef := 0
 
 /-- Runtime errors. Every error is a property violation the verifier must
 rule out. -/
@@ -24,6 +29,10 @@ inductive PError where
   | emptyChoose
   | badChoose
   | unhandled
+  /-- `send` to `null`. -/
+  | nullSend
+  /-- A sequence index out of range. -/
+  | outOfRange
   deriving Repr, DecidableEq, Inhabited
 
 /-- Machine-local state (Verdi's `State n`). `state = none` means the

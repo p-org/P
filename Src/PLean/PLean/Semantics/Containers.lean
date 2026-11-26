@@ -131,9 +131,26 @@ theorem quorum_intersect {s t u : PSet T}
   simp only [List.length_append] at this
   unfold card at hq; omega
 
-/-- P's `==` on sets: extensional equality, decided via the supports. -/
+/-- P's `==` on sets: the same members. (Lean's `=` on `PSet` compares
+update histories: `{1, 2}` built in two orders gives two values.) -/
+def Equiv (s t : PSet T) : Prop := ∀ x, s.mem x = t.mem x
+
+/-- P's `==` on sets, decided via the supports. -/
 def beq (s t : PSet T) : Bool :=
   s.support.all (fun y => t.mem y) && t.support.all (fun y => s.mem y)
+
+theorem beq_iff (s t : PSet T) : s.beq t = true ↔ s.Equiv t := by
+  simp only [beq, Bool.and_eq_true, List.all_eq_true, Equiv]
+  constructor
+  · rintro ⟨h1, h2⟩ x
+    cases hs : s.mem x <;> cases ht : t.mem x
+    · rfl
+    · have := h2 x ((mem_support t x).mpr ht); rw [hs] at this; exact absurd this Bool.false_ne_true
+    · have := h1 x ((mem_support s x).mpr hs); rw [ht] at this; exact absurd this Bool.false_ne_true
+    · rfl
+  · intro h
+    exact ⟨fun y hy => (h y) ▸ (mem_support s y).mp hy,
+           fun y hy => (h y).symm ▸ (mem_support t y).mp hy⟩
 
 end PSet
 
@@ -188,9 +205,29 @@ theorem mem_keySet : ∀ (m : PMap K V) (k : K), m.keySet.mem k = (m.get k).isSo
     simp only [keySet, PSet.mem_del, get_del, mem_keySet m k']
     by_cases h : k' = k <;> simp [h]
 
+/-- P's `==` on maps: the same keys, with the same values. (Lean's `=` on
+`PMap` compares update histories.) -/
+def Equiv (m n : PMap K V) : Prop := ∀ k, m.get k = n.get k
+
+/-- P's `==` on maps, decided via the key supports. -/
+def beq [BEq V] (m n : PMap K V) : Bool :=
+  m.keySet.beq n.keySet && m.keySet.support.all fun k => m.get k == n.get k
+
+theorem beq_iff [BEq V] [LawfulBEq V] (m n : PMap K V) : m.beq n = true ↔ m.Equiv n := by
+  simp only [beq, Bool.and_eq_true, PSet.beq_iff, List.all_eq_true, beq_iff_eq, Equiv,
+    PSet.Equiv, mem_keySet]
+  constructor
+  · rintro ⟨hk, hv⟩ k
+    by_cases h : (m.get k).isSome
+    · exact hv k ((PSet.mem_support _ k).mpr (by rw [mem_keySet]; exact h))
+    · have hn := hk k
+      cases hm : m.get k <;> cases hn' : n.get k <;> simp_all
+  · intro h
+    exact ⟨fun k => by rw [h k], fun k _ => h k⟩
+
 end PMap
 
-/-! ## Surface instances: `∈`, `m[k]?`, `+=`, `-=`, iteration -/
+/-! ## Surface instances: `∈`, `m[k]?`, `==`, `-=`, iteration -/
 
 section Instances
 variable {T K V : Type} [DecidableEq T] [DecidableEq K]
@@ -249,12 +286,28 @@ class PContainerErase (C : Type) (E : outParam Type) where
 instance : PContainerErase (PSet T) T := ⟨PSet.del⟩
 instance : PContainerErase (PMap K V) K := ⟨PMap.del⟩
 
-/-- `c += (e)` on sets; `m += (k, v)` on maps (upsert). -/
-class PContainerAdd (C : Type) (E : outParam Type) where
-  add : C → E → C
+/-! P's `==` on containers is extensional: `PSet.beq` / `PMap.beq`, which the
+normaliser turns into `PSet.Equiv` / `PMap.Equiv`. -/
+instance (priority := high) : BEq (PSet T) := ⟨PSet.beq⟩
+instance (priority := high) [BEq V] : BEq (PMap K V) := ⟨PMap.beq⟩
 
-instance : PContainerAdd (PSet T) T := ⟨PSet.add⟩
-instance : PContainerAdd (PMap K V) (K × V) := ⟨fun m kv => m.put kv.1 kv.2⟩
+@[pverifySimp] theorem PSet.beq_eq_true (s t : PSet T) : ((s == t) = true) = s.Equiv t :=
+  propext (PSet.beq_iff s t)
+@[pverifySimp] theorem PSet.beq_eq_false (s t : PSet T) : ((s == t) = false) = ¬ s.Equiv t := by
+  rw [← PSet.beq_eq_true]; cases (s == t) <;> simp
+@[pverifySimp] theorem PSet.bne_eq_true (s t : PSet T) : ((s != t) = true) = ¬ s.Equiv t := by
+  rw [← PSet.beq_eq_true]; cases h : (s == t) <;> simp [bne, h]
+@[pverifySimp] theorem PMap.beq_eq_true [BEq V] [LawfulBEq V] (m n : PMap K V) :
+    ((m == n) = true) = m.Equiv n :=
+  propext (PMap.beq_iff m n)
+@[pverifySimp] theorem PMap.beq_eq_false [BEq V] [LawfulBEq V] (m n : PMap K V) :
+    ((m == n) = false) = ¬ m.Equiv n := by
+  rw [← PMap.beq_eq_true]; cases (m == n) <;> simp
+@[pverifySimp] theorem PMap.bne_eq_true [BEq V] [LawfulBEq V] (m n : PMap K V) :
+    ((m != n) = true) = ¬ m.Equiv n := by
+  rw [← PMap.beq_eq_true]; cases h : (m == n) <;> simp [bne, h]
+
+attribute [pverifySimp] PSet.Equiv PMap.Equiv
 
 /-- What `foreach (x in c)` iterates over. -/
 class PIterable (C : Type) (T : outParam Type) where
@@ -264,7 +317,7 @@ instance : PIterable (List T) T := ⟨id⟩
 instance : PIterable (PSet T) T := ⟨PSet.support⟩
 instance : PIterable (PMap K V) K := ⟨fun m => m.keySet.support⟩
 
-attribute [pverifySimp] PContainerErase.erase PContainerAdd.add
+attribute [pverifySimp] PContainerErase.erase
 
 end Instances
 

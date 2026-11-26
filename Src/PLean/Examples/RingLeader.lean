@@ -78,6 +78,14 @@ pmodule RingLeader
     }
   }
 
+  -- The ring is made of Servers: a Server's successor is a Server (so the
+  -- sends to it do not go to `null`).
+  init-holds ∀ x : Server, is_Server (RingTopology.right x.ref) s
+
+  Lemma ring_ok {
+    invariant right_is_server : ∀ x : Server, is_Server (RingTopology.right x.ref) s
+  }
+
   -- voteFor is the running max.
   Lemma lemmas {
     invariant LeaderMax :
@@ -97,6 +105,7 @@ pmodule RingLeader
         p.voteFor = m → LeOrder.le n m = true
   }
   Proof {
+    prove ring_ok ;
     prove lemmas ;
   }
 

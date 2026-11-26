@@ -64,9 +64,10 @@ variable {S E F G W : Type}
 /-- `this`. -/
 @[inline] def self : HandlerM S E F G W MachineRef := return (← get).ref
 
-/-- `send t, e`. -/
+/-- `send t, e`; sending to `null` fails. -/
 @[inline] def send (t : MachineRef) (e : E) : HandlerM S E F G W Unit :=
-  modify fun hs => { hs with out := hs.out.push ⟨hs.ref, t, e⟩ }
+  if t = MachineRef.null then throw .nullSend
+  else modify fun hs => { hs with out := hs.out.push ⟨hs.ref, t, e⟩ }
 
 /-- `announce e`. -/
 @[inline] def announce (e : E) : HandlerM S E F G W Unit :=
@@ -123,6 +124,10 @@ locals (the caller returns right after). -/
   | some v => pure v
   | none => throw .keyNotFound
 
+/-- `s[i]` (read) on a sequence. -/
+@[inline] def sget {T : Type} (l : List T) (i : Int) : HandlerM S E F G W T :=
+  if h : 0 ≤ i ∧ i.toNat < l.length then pure l[i.toNat] else throw .outOfRange
+
 /-- `m += (k, v)`: insert a new key. -/
 @[inline] def minsert {K V : Type} [DecidableEq K] (m : PMap K V) (k : K) (v : V) :
     HandlerM S E F G W (PMap K V) :=
@@ -141,9 +146,16 @@ variable {α : Type} {post : α → HState S E F G W → Prop} {epost : PError �
     Triple (self ) (fun hs => post hs.ref hs) post epost := by
   unfold self; vcgen; all_goals assumption
 
+/-- The spec of `send` does not record `t ≠ null` for what follows: the
+obligations after a send do not need it, and stay as small as without the
+check. -/
 @[spec] theorem send_spec {t : MachineRef} {e : E} {post : Unit → HState S E F G W → Prop} :
-    Triple (send t e) (fun hs => post () { hs with out := hs.out.push ⟨hs.ref, t, e⟩ }) post epost := by
-  unfold send; vcgen; all_goals assumption
+    Triple (send t e)
+      (fun hs => (t = MachineRef.null → epost .nullSend) ∧
+        post () { hs with out := hs.out.push ⟨hs.ref, t, e⟩ }) post epost := by
+  unfold send
+  vcgen
+  all_goals simp_all
 
 @[spec] theorem announce_spec {e : E} {post : Unit → HState S E F G W → Prop} :
     Triple (announce e) (fun hs => post () { hs with obs := hs.obs.push e }) post epost := by
@@ -218,6 +230,14 @@ variable {α : Type} {post : α → HState S E F G W → Prop} {epost : PError �
       (fun hs => (∀ v, m.get k = some v → post v hs) ∧ (m.get k = none → epost .keyNotFound))
       post epost := by
   unfold mget
+  vcgen
+  all_goals simp_all
+
+@[spec] theorem sget_spec {T : Type} {l : List T} {i : Int} {post : T → HState S E F G W → Prop} :
+    Triple (sget l i)
+      (fun hs => (∀ (h : 0 ≤ i ∧ i.toNat < l.length), post l[i.toNat] hs) ∧
+        (¬ (0 ≤ i ∧ i.toNat < l.length) → epost .outOfRange)) post epost := by
+  unfold sget
   vcgen
   all_goals simp_all
 

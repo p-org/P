@@ -118,9 +118,10 @@ Proof Safety {
   (`UniqueActions`, `IncreasingCount`, `ReceivedSubsetSent`) per
   handler, capturing the framework-level monotonicity guarantees.
 - `system s` declares the pmodule's state binder; every subsequent
-  invariant / `init-holds` / `paxiom` body may reference `s` as the
-  live state. Field-projection sugar (`n.held`, `e.target`) and
-  runtime kind guards (`is_<M> n.ref s`) are injected automatically.
+  invariant / `init-holds` body may reference `s` as the live state.
+  Field-projection sugar (`n.held`, `e.target`) and runtime kind guards
+  (`is_<M> n.ref s`) are injected automatically. A `paxiom` cannot
+  depend on the state: it would be assumed of every world.
 
 ### 2. Automated discharge
 

@@ -33,7 +33,11 @@ path through the handler, after normalisation) were closed:
 The summary line counts the obligations proved by normalisation or a
 hypothesis, by crush before SMT only, and with an SMT solver, and splits
 the time between `vcgen` and normalisation, crush, and the rest
-(elaborating the statement and checking the proof).
+(elaborating the statement and checking the proof). The last lines say
+what `M.safe` assumes beyond Lean's axioms (`paxiom`s, `pinstance`s, the
+solver's word for trusted obligations, `sorry`), and warn when no world
+satisfies `InitConditions`: contradictory `init-holds` make every theorem
+vacuous.
 
 A counterexample names the invariant and the step, and shows a smallest
 pre-state z3 finds:
@@ -78,6 +82,18 @@ invariant yes_to_coordinator : ∀ e : eYes, inflight e s → e.target = coordin
 ```
 
 together with a kind fact (`is_Coordinator coordinator s`).
+
+**Send targets.** A send to `null` (reference `0`, the default of a
+machine reference) fails, so a handler's `_safe` obligation needs each
+target to be a machine. A kind fact gives it (`null` is never
+allocated): `is_Coordinator coordinator s` for a field, and for a reply
+to a payload field, an invariant on the request,
+`∀ e : eReq, inflight e s → is_Client e.client s`. For an opaque
+function used as a target, assume the kind initially and prove it an
+invariant in its own lemma, as RingLeader does for its successor function
+(`init-holds ∀ x : Server, is_Server (right x.ref) s`). A `paxiom` would
+also do, but it is a hypothesis of every goal, which can slow the solver
+on unrelated ones.
 
 **Bridging invariants for deep arguments.** If a step needs a long
 chain (an axiom, then an existential witness, then a uniqueness fact),

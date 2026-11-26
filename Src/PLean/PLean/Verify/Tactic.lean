@@ -44,6 +44,11 @@ register_option pverify.cex : Bool := {
   descr := "Search for a counterexample (a small model of the goal's encoding) when a goal is \
             not proved." }
 
+register_option pverify.quick : Bool := {
+  defValue := false
+  descr := "One short solver attempt per goal (z3, 3 s), e.g. for `#pverify`'s check that \
+            `InitConditions` is satisfiable." }
+
 register_option pverify.heartbeats : Nat := {
   defValue := 0
   descr := "Heartbeat budget (in thousands, 0 = unlimited) of each solver attempt, so a slow \
@@ -140,6 +145,9 @@ def evalPverifyClose : Tactic := fun stx => do
     let prof ← if profile then
         `(Lean.Parser.Tactic.tacticSeq| set_option crush.profile true in $traced:tactic)
       else `(Lean.Parser.Tactic.tacticSeq| $traced:tactic)
+    if pverify.quick.get (← getOptions) then
+      return (crush1, [("z3 (3s)", ← `(tactic| (set_option crush.backend "z3" in
+          set_option crush.timeout 3 in set_option crush.inst.fuel 0 in ($prof))))])
     return (crush1, [
       ("z3 (5s)", ← `(tactic| (set_option crush.backend "z3" in set_option crush.timeout 5 in
           set_option crush.inst.fuel 0 in ($prof)))),

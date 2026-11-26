@@ -30,6 +30,10 @@ pmodule Consensus
   -- P's `isQuorum(s: set[machine]): bool`.
   function isQuorum : set[PLean.MachineRef] → Bool
 
+  -- The configured nodes are machines (a send to `null` fails).
+  paxiom nodes_not_null :
+    ∀ m : PLean.MachineRef, m ∈ nodes → m ≠ PLean.MachineRef.null
+
   paxiom quorum_intersect :
     ∀ (q1 q2 : set[PLean.MachineRef]),
       isQuorum q1 = true → isQuorum q2 = true →
@@ -42,7 +46,8 @@ pmodule Consensus
     start state RequestVoting {
       entry {
         foreach (m in nodes)
-          invariant only_requests : new_sends e => e is eRequestVote ;
+          invariant only_requests :
+            new_sends e => e is eRequestVote ∧ (eRequestVote_payload_of e).src = hs.ref ;
         {
           send m, eRequestVote, (src = this.ref)
         }
@@ -100,7 +105,14 @@ pmodule Consensus
         stateOf n2.ref s = some Node.Won_st →
         n1 = n2
   }
+  -- A vote request names a Node: the vote goes back to it.
+  Lemma routing {
+    invariant request_from_node :
+      ∀ e : eRequestVote, sent e s → is_Node e.src s
+  }
+
   Proof {
+    prove routing ;
     prove quorum_votes ;
     prove election_safety using quorum_votes ;
   }

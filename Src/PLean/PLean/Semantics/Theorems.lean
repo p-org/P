@@ -146,8 +146,8 @@ theorem Framework.lt_clock_of_net {g : GWorld S E F G W} (hF : Framework g) {i :
 
 theorem framework_consume {g : GWorld S E F G W} (i : Nat) (hF : Framework g) :
     Framework (g.consume i) := by
-  obtain ⟨h1, h2, h3, h4⟩ := hF
-  refine ⟨fun j hj => ?_, h2, fun j p hj => ?_, h4⟩
+  obtain ⟨h1, h2, h3, h4, h5⟩ := hF
+  refine ⟨fun j hj => ?_, h2, fun j p hj => ?_, h4, h5⟩
   · show (if j = i then none else g.net j) = none
     split
     · rfl
@@ -160,7 +160,7 @@ theorem framework_consume {g : GWorld S E F G W} (i : Nat) (hF : Framework g) :
 theorem framework_gcommit {g : GWorld S E F G W} {m : MachineRef} {hs : HState S E F G W}
     (hF : Framework g) (hm : (g.machines m).state.isSome = true) :
     Framework (gcommit g m hs) := by
-  obtain ⟨h1, h2, h3, h4⟩ := hF
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hF
   have hmlt : m < g.nextRef := by
     rcases Nat.lt_or_ge m g.nextRef with h | h
     · exact h
@@ -169,7 +169,8 @@ theorem framework_gcommit {g : GWorld S E F G W} {m : MachineRef} {hs : HState S
   have hc2 := Nat.le_max_right g.clock hs.out.size
   have hn1 := Nat.le_max_left g.nextRef hs.spawn.size
   have hn2 := Nat.le_max_right g.nextRef hs.spawn.size
-  refine ⟨fun j hj => ?_, fun j hj => ?_, fun j p hj => ?_, fun r hr => ?_⟩
+  refine ⟨fun j hj => ?_, fun j hj => ?_, fun j p hj => ?_, fun r hr => ?_,
+    Nat.lt_of_lt_of_le h5 hn1, ?_⟩
   · simp only [gcommit, commit] at hj ⊢
     have ha := Nat.le_trans hc1 hj
     have hb := Nat.le_trans hc2 hj
@@ -192,6 +193,10 @@ theorem framework_gcommit {g : GWorld S E F G W} {m : MachineRef} {hs : HState S
     have : ¬ (g.nextRef ≤ r ∧ r < hs.spawn.size) := fun ⟨_, h⟩ =>
       Nat.lt_irrefl _ (Nat.lt_of_lt_of_le h hb)
     simp only [hne, this, ite_false]; exact h4 r ha
+  · have hm0 : MachineRef.null ≠ m := fun h => by rw [← h, h6] at hm; cases hm
+    have : ¬ (g.nextRef ≤ MachineRef.null ∧ MachineRef.null < hs.spawn.size) := fun ⟨h, _⟩ =>
+      Nat.lt_irrefl _ (Nat.lt_of_lt_of_le h5 h)
+    simp only [gcommit, commit, hm0, this, ite_false]; exact h6
 
 end
 

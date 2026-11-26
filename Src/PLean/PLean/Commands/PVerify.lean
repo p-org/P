@@ -3,8 +3,8 @@ PLean.Commands.PVerify — `#pverify M`: emit the proof obligations of
 pmodule `M` (docs/TransitionModel.md §4), discharge each with
 `pverify_close`, and assemble the safety theorems:
 
-  M.safe      : ∀ g, GReachable prog .bag  InitConditions g → AllInv g
-  M.safe_fifo : ∀ g, GReachable prog .fifo InitConditions g → AllInv g
+  M.safe      : ∀ g, GReachable prog .bag  InitConditions g → AllInv g ∧ g.error = none
+  M.safe_fifo : ∀ g, GReachable prog .fifo InitConditions g → AllInv g ∧ g.error = none
   M.<T>_holds : ∀ g, GReachable prog .fifo InitConditions g → T g
 
 `AllInv` is the conjunction of every proved target (plus the automatic
@@ -35,6 +35,10 @@ A failing obligation is reported (with its time, and a counterexample
 when z3 finds one: the invariant that fails, the step, and a minimised
 pre-state, see `PLean.Cex`) and left as `sorry`, so the remaining
 obligations and the assembly still run.
+
+The report ends with what `M.safe` assumes beyond Lean's axioms (`paxiom`s,
+`pinstance`s, the solver's answers in trusted obligations, `sorry`), and
+warns when `InitConditions` is unsatisfiable.
 -/
 import Lean
 import PLean.Commands.GenModule
@@ -312,12 +316,16 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     let c ← elabCaptureGoals (← wrap cmd)
     let t1 ← IO.monoMsNow
     let errs := c.errs
+    -- Under `pverify.trust trust` crush trusts the solver without a warning.
+    let trusted ← if errs.isEmpty then
+        pure (c.trusted || (← collectAxioms (modName ++ obName)).contains ``Crush.crushSorry)
+      else pure false
     let cex := if errs.isEmpty || c.model.isEmpty then #[] else
       (Cex.render cexNames (kind (c.inv.map (·.toString))) c.script c.model).getD #[]
     let smt := if c.model.isEmpty then "" else
       c.script ++ "\n\n; z3's model:\n" ++ "\n".intercalate ((c.model.splitOn "\n").map ("; " ++ ·))
     return { name := obName, ok := errs.isEmpty, ms := t1 - t0, goals := c.goals,
-             trusted := c.trusted, notes := c.notes, inv := c.inv, cex, smt, stats := c.stats,
+             trusted, notes := c.notes, inv := c.inv, cex, smt, stats := c.stats,
              normMs := c.normMs, crushMs := c.crushMs,
              fullMsg := if errs.isEmpty then "" else errs[0]!,
              msg := if errs.isEmpty then "" else excerpt errs[0]! }
@@ -612,7 +620,10 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     else
       let parts ← allTargets.mapM fun t => do
         `($(mkIdent (Name.mkSimple ("drop_correct_" ++ t.toString))) g i p hF herr $(← preOf t) hnet hh)
-      `(tactic| (intro g i p hF herr hpre hnet hh; $destruct:tactic; exact ⟨$[$parts],*⟩))
+      if parts.size == 1 then
+        `(tactic| (intro g i p hF herr hpre hnet hh; exact $(parts[0]!)))
+      else
+        `(tactic| (intro g i p hF herr hpre hnet hh; $destruct:tactic; exact ⟨$[$parts],*⟩))
   let stepThm ← `(command|
     theorem $(mkIdent `step_AllInv) : ∀ g c coins, PLean.Framework g → g.error = none →
         $(mkIdent `AllInv) g → $(mkIdent `prog).enabled .bag g.toWorld c = true →
@@ -638,30 +649,62 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       intro g hI
       have hI' := hI
       simp only [$(mkIdent `InitConditions):ident] at hI'
-      obtain ⟨_, hn, hl, he, hu, _⟩ := hI'
-      refine ⟨⟨fun j _ => hn j, fun j _ => hl j, ?_, hu⟩, he, $baseConj⟩
+      obtain ⟨_, hn, hl, he, hu, ⟨hpos, hnull⟩, _⟩ := hI'
+      refine ⟨⟨fun j _ => hn j, fun j _ => hl j, ?_, hu, hpos, hnull⟩, he, $baseConj⟩
       intro j p h; rw [hn j] at h; cases h)
   let safeThm ← `(command|
     theorem $(mkIdent `safe) : ∀ g, PLean.GReachable $(mkIdent `prog) .bag $(mkIdent `InitConditions) g →
-        $(mkIdent `AllInv) g := fun g hg =>
-      (PLean.safety_of_step $(mkIdent `prog) $(mkIdent `InitConditions) $(mkIdent `AllInv)
-        $(mkIdent `base_AllInv) $(mkIdent `step_AllInv) g hg).2.2)
+        $(mkIdent `AllInv) g ∧ g.error = none := fun g hg =>
+      let h := PLean.safety_of_step $(mkIdent `prog) $(mkIdent `InitConditions) $(mkIdent `AllInv)
+        $(mkIdent `base_AllInv) $(mkIdent `step_AllInv) g hg
+      ⟨h.2.2, h.2.1⟩)
   let safeFifo ← `(command|
     theorem $(mkIdent `safe_fifo) : ∀ g, PLean.GReachable $(mkIdent `prog) .fifo $(mkIdent `InitConditions) g →
-        $(mkIdent `AllInv) g := fun g hg => $(mkIdent `safe) g hg.fifo_bag)
+        $(mkIdent `AllInv) g ∧ g.error = none := fun g hg => $(mkIdent `safe) g hg.fifo_bag)
   let mut asmErrs : Array String := #[]
   for cmd in (if only.isEmpty then #[stepThm, baseThm, safeThm, safeFifo] else #[]) do
     asmErrs := asmErrs ++ (← elabCapture (← wrap cmd))
   for (t, k) in allTargets.toList.zipIdx do
     if t == `NoHalt || t == `Transient || t == `Waiting || !only.isEmpty then continue
     let (gq, hgq) := (mkIdent `g, mkIdent `hg)
-    let proj ← (List.range k).foldlM (init := ← `($(mkIdent `safe_fifo) $gq $hgq)) fun acc _ => `(($acc).2)
+    let proj ← (List.range k).foldlM (init := ← `(($(mkIdent `safe_fifo) $gq $hgq).1)) fun acc _ => `(($acc).2)
     let proj ← if k + 1 < n then `(($proj).1) else pure proj
     asmErrs := asmErrs ++ (← elabCapture (← `(command|
       theorem $(mkIdent (Name.mkSimple (t.toString ++ "_holds"))) : ∀ g,
           PLean.GReachable $(mkIdent `prog) .fifo $(mkIdent `InitConditions) g → $(mkIdent t) g :=
         fun $gq $hgq => $proj)))
+  -- `InitConditions` (with the axioms) must be satisfiable, or every theorem
+  -- holds vacuously: a quick attempt to refute it.
+  let mut vacuous := false
+  if only.isEmpty then
+    Progress.setHead (status queued.size results) s!"[Checking] {modName}.InitConditions is satisfiable"
+    let saved ← get
+    let cmd ← `(command| theorem $(mkIdent `init_unsat) ($g:ident : $gwTy) :
+        $(mkIdent `InitConditions) $g → False := by
+      $(← closeTac #[]))
+    let errs ← elabCapture (← `(command|
+      set_option pverify.cex false in
+      set_option pverify.quick true in
+      $(← wrap cmd):command))
+    set saved
+    vacuous := errs.isEmpty
   elabCommand (← `(end $name))
+  -- What `M.safe` rests on besides Lean's own axioms.
+  let mut assumes : Array String := #[]
+  let mut usesSorry := false
+  if (← getEnv).contains (modName ++ `safe) then
+    for ax in ← collectAxioms (modName ++ `safe) do
+      if ax == ``propext || ax == ``Classical.choice || ax == ``Quot.sound then continue
+      if ax == ``sorryAx then
+        usesSorry := true
+        assumes := assumes.push "`sorry`"
+      else if ax == ``Crush.crushSorry then
+        assumes := assumes.push "the solver's answers in the trusted obligations (`Crush.crushSorry`)"
+      else
+        let short := ax.replacePrefix modName .anonymous
+        if ctx.axioms.contains short then assumes := assumes.push s!"paxiom `{short}`"
+        else if ctx.instances.contains short then assumes := assumes.push s!"pinstance `{short}`"
+        else assumes := assumes.push s!"`{ax}`"
   -- report
   let failed := results.filter (!·.ok)
   let total := results.foldl (· + ·.ms) 0
@@ -688,6 +731,11 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     lines := lines.push s!"  {r.line showT}"
     for l in r.cex do lines := lines.push s!"      {l}"
   for e in asmErrs do lines := lines.push s!"  assembly error: {excerpt e}"
+  unless assumes.isEmpty do
+    lines := lines.push s!"  {modName}.safe assumes: {", ".intercalate assumes.toList}"
+  if vacuous then
+    lines := lines.push s!"  warning: no world satisfies {modName}.InitConditions (with the axioms), \
+      so every theorem holds vacuously"
   let report := "\n".intercalate lines.toList
   -- Always keep the full report (with failing goals) on disk.
   let defaultPath : System.FilePath := ".lake" / "pverify" / s!"{modName}.txt"
@@ -711,7 +759,8 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
         IO.FS.writeFile p r.smt
   catch _ => pure ()
   Progress.finish (status queued.size results)
-  if failed.isEmpty && asmErrs.isEmpty then logInfo report
+  -- A vacuous result is as incomplete as a `sorry`.
+  if failed.isEmpty && asmErrs.isEmpty && !usesSorry && !vacuous then logInfo report
   else if pverify.failOnIncomplete.get opts then logError report
   else logWarning report
 
@@ -735,9 +784,14 @@ def elabPVerify : CommandElab := fun stx => do
         data := ← liftCoreM (Progress.message id text) }
       snap.new.resolve (.ofTyped (SnapshotTree.mk
         { diagnostics := ← Snapshot.Diagnostics.ofMessageLog log } #[]))
+  let scopes := (← get).scopes
   try
     -- The obligations are commands themselves; they must not take over the snapshot.
     withReader ({ · with snap? := none }) (pverifyBody stx)
+  catch e =>
+    -- close the namespace `pverifyBody` opened
+    modify fun st => { st with scopes }
+    throw e
   finally
     Progress.finish s!"#pverify {name.getId}: stopped"
 

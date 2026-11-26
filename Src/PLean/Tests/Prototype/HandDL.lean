@@ -80,18 +80,22 @@ def not_held_after_release (g : GW) : Prop :=
   ∀ r i pl, isNode g r → inflightAccept g i pl → pl.source = r → held g r = false
 def transfer_to_higher (g : GW) : Prop :=
   ∀ r i pl, isNode g r → inflightAccept g i pl → pl.source = r → pl.epoch > epochOf g r
+/-- An in-flight grant names a machine (a send to `null` fails). -/
+def grant_target (g : GW) : Prop :=
+  ∀ i p pl, g.net i = some p → p.ev = .eGrant pl → pl.node ≠ MachineRef.null
 /-- Auto-invariant: the program never halts a machine. -/
 def NoHalt (g : GW) : Prop := ∀ r, (g.machines r).halted = false
 
 def Inv (g : GW) : Prop :=
   unique_holder g ∧ no_lock_while_transfer g ∧ unique_accept g ∧
-  not_held_after_release g ∧ transfer_to_higher g ∧ NoHalt g
+  not_held_after_release g ∧ transfer_to_higher g ∧ grant_target g ∧ NoHalt g
 
 def InitConditions (g : GW) : Prop :=
   g.clock = 0 ∧ (∀ j, g.net j = none) ∧ (∀ j, g.log j = none) ∧ g.error = none ∧
   (∀ r, g.nextRef ≤ r → (g.machines r).state = none) ∧
+  (0 < g.nextRef ∧ (g.machines MachineRef.null).state = none) ∧
   (∀ r, (g.machines r).halted = false) ∧
-  (∀ r, r < g.nextRef → isNode g r) ∧
+  (∀ r, r ≠ MachineRef.null → r < g.nextRef → isNode g r) ∧
   (∃ r, isNode g r ∧ held g r = true ∧ epochOf g r > 0 ∧
      ∀ r1, isNode g r1 → r1 ≠ r → held g r1 = false ∧ epochOf g r1 = 0)
 
@@ -106,7 +110,7 @@ macro "dl_close" : tactic => `(tactic| (
   vcgen
   all_goals subst_vars
   all_goals simp only [pverifySimp, Inv, unique_holder, no_lock_while_transfer, unique_accept,
-    not_held_after_release, transfer_to_higher, NoHalt, isNode, held, epochOf,
+    not_held_after_release, transfer_to_higher, grant_target, NoHalt, isNode, held, epochOf,
     inflightAccept] at *
   all_goals pv_split_ands
   all_goals and_intros
@@ -132,10 +136,11 @@ theorem entry_ok (g : GW) (m : MachineRef) (arg : Unit) (hF : Framework g) (hInv
   intro coins; simp only [prog]; dl_close
 
 theorem base_ok (g : GW) (h : InitConditions g) : Framework g ∧ g.error = none ∧ Inv g := by
-  obtain ⟨_, hn, hl, he, hu, hh, _, hinit⟩ := h
-  refine ⟨⟨fun j _ => hn j, fun j _ => hl j, fun j p h => by simp [hn] at h, hu⟩, he, ?_⟩
+  obtain ⟨_, hn, hl, he, hu, ⟨hpos, hnull⟩, hh, _, hinit⟩ := h
+  refine ⟨⟨fun j _ => hn j, fun j _ => hl j, fun j p h => by simp [hn] at h, hu, hpos, hnull⟩,
+    he, ?_⟩
   simp only [Inv, unique_holder, no_lock_while_transfer, unique_accept, not_held_after_release,
-    transfer_to_higher, NoHalt, inflightAccept, hn] at *
+    transfer_to_higher, grant_target, NoHalt, inflightAccept, hn] at *
   and_intros <;> crush [*]
 
 /-! ## Assembly -/
@@ -151,7 +156,7 @@ theorem step_preserves :
     | eAccept pl => exact ⟨_, rfl, eAccept_ok pl g i _ hF hInv hnet rfl hs⟩
   · intro g i p k _ _ _ _ _ _ _ act hr; simp [prog] at hr
   · intro g m s arg hF _ hInv hs _ _; cases s; exact entry_ok g m arg hF hInv hs
-  · intro g i p _ _ hInv _ hh; have := hInv.2.2.2.2.2 p.dst; simp [this] at hh
+  · intro g i p _ _ hInv _ hh; have := hInv.2.2.2.2.2.2 p.dst; simp [this] at hh
 
 /-- Safety on every reachable world (bag semantics). -/
 theorem safe : ∀ g, GReachable prog .bag InitConditions g → Inv g := fun g hg =>

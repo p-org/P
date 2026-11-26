@@ -68,18 +68,18 @@ set_option pverify.failOnIncomplete false
 set_option pverify.showTimes false
 
 /--
-warning: #pverify CexT: 21 obligations, 15 proved (0 trusting the solver), 6 failed
-  proved by normalisation or a hypothesis: 4, by crush before SMT: 0, with an SMT solver: 11
+warning: #pverify CexT: 21 obligations, 14 proved (0 trusting the solver), 7 failed
+  proved by normalisation or a hypothesis: 3, by crush before SMT: 0, with an SMT solver: 11
   ✓ Pinger.Start.ePong_correct_counts [smt 2]
   ✗ [counterexample] Ponger.Serve.ePing_correct_counts
-      invariant `count_small` can fail after Ponger #0, in state Serve, handles ePing (packet #0 from #2 (unallocated)).
+      invariant `count_small` can fail after Ponger #1, in state Serve, handles ePing (packet #0 from null).
       Pre-state (it satisfies the premises; it need not be reachable):
       Machines:
         Ponger
-          #0  Serve  count = 1  ◀
-        (references from #1 on are unallocated)
+          #1  Serve  count = 1  ◀
+        (references from #2 on are unallocated)
       In flight:
-        #0  #2 (unallocated) → Ponger #0  ePing {n := 2}  ◀
+        #0  null → Ponger #1  ePing {n := 2}  ◀
   ✓ Pinger.Start.entry_correct_counts [smt 2]
   ✓ Ponger.Serve.entry_correct_counts [smt 2]
   ✗ [counterexample] base_counts
@@ -87,19 +87,19 @@ warning: #pverify CexT: 21 obligations, 15 proved (0 trusting the solver), 6 fai
       Initial world:
       Machines:
         Ponger
-          #0  Serve  count = 0  [entry pending]
-        (references from #1 on are unallocated)
+          #1  Serve  count = 0  [entry pending]
+        (references from #2 on are unallocated)
       In flight:
         (none)
   ✓ Pinger.Start.ePong_correct_pinger [smt 1]
   ✓ Ponger.Serve.ePing_correct_pinger [smt 1]
   ✗ [counterexample] Pinger.Start.entry_correct_pinger
-      invariant `sent_zero` can fail after Pinger #0 runs the entry of state Start.
+      invariant `sent_zero` can fail after Pinger #1 runs the entry of state Start.
       Pre-state (it satisfies the premises; it need not be reachable):
       Machines:
         Pinger
-          #0  Start  server = 2, sent = 0  [entry pending]  ◀
-        (references from #1 on are unallocated)
+          #1  Start  server = 2, sent = 0  [entry pending]  ◀
+        (references from #2 on are unallocated)
       In flight:
         (none)
   ✓ Ponger.Serve.entry_correct_pinger [smt 1]
@@ -111,34 +111,43 @@ warning: #pverify CexT: 21 obligations, 15 proved (0 trusting the solver), 6 fai
   ✓ base_NoHalt [smt 1]
   ✓ Pinger.Start.ePong_safe [norm]
   ✗ [counterexample] Ponger.Serve.ePing_safe
-      Ponger #0, in state Serve, can fail handling ePing (packet #0 from #2 (unallocated)) (an `assert` fails, or `choose` has nothing to choose from).
+      Ponger #1, in state Serve, can fail handling ePing (packet #0 from #2 (unallocated)) (an `assert`, a send to `null`, a map or sequence access, or a `choose` fails).
       Pre-state (it satisfies the premises; it need not be reachable):
       Machines:
         Ponger
-          #0  Serve  count = 1  ◀
-        (references from #1 on are unallocated)
+          #1  Serve  count = 1  ◀
+        (references from #2 on are unallocated)
       In flight:
-        #0  #2 (unallocated) → Ponger #0  ePing {n := -2}  ◀
-  ✓ Pinger.Start.entry_safe [norm]
-  ✓ Ponger.Serve.entry_safe [norm]
-  ✗ [counterexample] Pinger.Start.ePing_never
-      ePing (packet #0 from #2 (unallocated)) can reach Pinger #0 in state Start, which neither handles, defers nor ignores it.
+        #0  #2 (unallocated) → Ponger #1  ePing {n := -2}  ◀
+  ✗ [counterexample] Pinger.Start.entry_safe
+      Pinger #1 can fail running the entry of state Start (an `assert`, a send to `null`, a map or sequence access, or a `choose` fails).
       Pre-state (it satisfies the premises; it need not be reachable):
       Machines:
         Pinger
-          #0  Start  server = 2, sent = 0  ◀
-        (references from #1 on are unallocated)
+          #1  Start  server = 0, sent = 0  [entry pending]  ◀
+        (references from #2 on are unallocated)
       In flight:
-        #0  #2 (unallocated) → Pinger #0  ePing {n := -1}  ◀
+        (none)
+  ✓ Ponger.Serve.entry_safe [norm]
+  ✗ [counterexample] Pinger.Start.ePing_never
+      ePing (packet #0 from null) can reach Pinger #1 in state Start, which neither handles, defers nor ignores it.
+      Pre-state (it satisfies the premises; it need not be reachable):
+      Machines:
+        Pinger
+          #1  Start  server = 0, sent = 0  ◀
+        (references from #2 on are unallocated)
+      In flight:
+        #0  null → Pinger #1  ePing {n := 1}  ◀
   ✗ [counterexample] Ponger.Serve.ePong_never
-      ePong (packet #0 from #1 (unallocated)) can reach Ponger #0 in state Serve, which neither handles, defers nor ignores it.
+      ePong (packet #0 from #2 (unallocated)) can reach Ponger #1 in state Serve, which neither handles, defers nor ignores it.
       Pre-state (it satisfies the premises; it need not be reachable):
       Machines:
         Ponger
-          #0  Serve  count = 1  ◀
-        (references from #1 on are unallocated)
+          #1  Serve  count = 1  ◀
+        (references from #2 on are unallocated)
       In flight:
-        #0  #1 (unallocated) → Ponger #0  ePong  ◀
+        #0  #2 (unallocated) → Ponger #1  ePong  ◀
+  CexT.safe assumes: `sorry`
 -/
 #guard_msgs in
 #pverify CexT
@@ -182,14 +191,14 @@ end CexSetT
 warning: #pverify CexSetT: 1 obligations, 0 proved (0 trusting the solver), 1 failed
   proved by normalisation or a hypothesis: 0, by crush before SMT: 0, with an SMT solver: 0
   ✗ [counterexample] Hub.Run.eJoin_correct_small
-      invariant `one_member` can fail after Hub #0, in state Run, handles eJoin (packet #0 from #2 (unallocated)).
+      invariant `one_member` can fail after Hub #1, in state Run, handles eJoin (packet #0 from null).
       Pre-state (it satisfies the premises; it need not be reachable):
       Machines:
         Hub
-          #0  Run  members = {2}  ◀
-        (references from #1 on are unallocated)
+          #1  Run  members = {0}  ◀
+        (references from #2 on are unallocated)
       In flight:
-        #0  #2 (unallocated) → Hub #0  eJoin {who := 0}  ◀
+        #0  null → Hub #1  eJoin {who := 1}  ◀
 -/
 #guard_msgs in
 set_option pverify.timeout 2 in

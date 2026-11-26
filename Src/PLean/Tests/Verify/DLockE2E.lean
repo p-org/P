@@ -8,7 +8,7 @@ open PLean
 pmodule DLockT
 
   -- Name the pmodule's global state once; every `invariant` / `init-holds`
-  -- / `paxiom` body below may reference `s` as the live state.
+  -- body below may reference `s` as the live state.
   system s
 
   type tGrant  = (node : PLean.MachineRef, epoch : Int)
@@ -77,6 +77,10 @@ pmodule DLockT
         inflight e s →
         e.source = n1.ref →
         n1.held = false
+
+    -- A grant names a Node (the reply goes to it; a send to `null` fails).
+    invariant grant_to_node :
+      ∀ e : eGrant, inflight e s → is_Node e.node s
 
     -- Ported from the P source: an in-flight eAccept always
     -- transfers to a strictly higher epoch.

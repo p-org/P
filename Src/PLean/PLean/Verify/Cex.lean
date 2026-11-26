@@ -740,6 +740,7 @@ private def decodeMachine (md : Model) (v : Val) : Option MState := do
 /-- Machine `r`'s kind, if allocated. -/
 private def kindOf (machines : Array (Int × Int × Val)) (md : Model) (nextRef : Option Int) (r : Int) :
     String :=
+  if r == 0 then "null" else
   match machines.find? (fun (a, b, _) => a ≤ r && r < b) with
   | some (_, _, v) => match (decodeMachine md v).bind (·.mach) with
     | some m => s!"{m} #{r}"
@@ -824,7 +825,7 @@ def render (names : Names) (kind : Kind) (script model : String) : Option (Array
       | .drop => s!"{what} can fail when a halted machine drops a packet."
       | .base => s!"{what} can fail in an initial world."
     | .safe site =>
-      let how := "(an `assert` fails, or `choose` has nothing to choose from)"
+      let how := "(an `assert`, a send to `null`, a map or sequence access, or a `choose` fails)"
       match site with
       | .deliver m s e => s!"{mref m}, in state {s}, can fail handling {e}{pktFrom} {how}."
       | .entry m s => s!"{mref m} can fail running the entry of state {s} {how}."
@@ -859,7 +860,9 @@ def render (names : Names) (kind : Kind) (script model : String) : Option (Array
     unless rows.isEmpty do
       lines := lines.push s!"  {m}"
       for (a, b, ms) in rows do lines := lines.push (row a b ms)
-  let unalloc := decoded.filter fun (_, _, ms) => ms.mach.isNone
+  -- reference 0 is `null`, never a machine
+  let unalloc := (decoded.filter fun (_, _, ms) => ms.mach.isNone).filterMap fun (a, b, ms) =>
+    if a == 0 then (if b > 1 then some (1, b, ms) else none) else some (a, b, ms)
   for (a, b, _) in unalloc do
     lines := lines.push s!"  {rangeStr a b}: no machine"
   if let some n := nextRef then
@@ -895,7 +898,7 @@ def render (names : Names) (kind : Kind) (script model : String) : Option (Array
       | some (#["Int"], _) =>
         match nextRef with
         | some n =>
-          let pts := (List.range (min n 16).toNat).filterMap fun (r : Nat) =>
+          let pts := ((List.range (min n 16).toNat).drop 1).filterMap fun (r : Nat) =>
             let v := md.call f #[.int (r : Int)]
             if v.known then some s!"#{r} ↦ {renderVal md v}" else none
           if pts.isEmpty then none else some s!"{fn}: {", ".intercalate pts}"

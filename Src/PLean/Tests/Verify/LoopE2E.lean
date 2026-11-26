@@ -16,6 +16,7 @@ pmodule LoopT
   event eAck : tReq
 
   function peers : seq[PLean.MachineRef]
+  paxiom peers_machines : ∀ m : PLean.MachineRef, m ∈ peers → m ≠ PLean.MachineRef.null
 
   machine Node {
     var acks : Int
@@ -23,7 +24,8 @@ pmodule LoopT
     start state Init {
       entry {
         foreach (m in peers)
-          invariant only_req : new_sends e => e is eReq ∧ (eReq_payload_of e).origin = e.src ;
+          invariant only_req :
+            new_sends e => e is eReq ∧ (eReq_payload_of e).origin = e.src ∧ e.src = hs.ref ;
         {
           send m, eReq, (origin = this.ref)
         }
@@ -51,6 +53,7 @@ pmodule LoopT
 
   Theorem safety {
     invariant req_origin : ∀ e : eReq, sent e s → e.origin = e.src
+    invariant req_from_node : ∀ e : eReq, sent e s → is_Node e.src s
     invariant ack_origin : ∀ e : eAck, sent e s → e.origin = e.src
     invariant acks_nonneg : ∀ n : Node, n.acks ≥ 0
   }
@@ -70,6 +73,7 @@ pmodule LoopSetT
   system s
   event eReq
   function peers : set[PLean.MachineRef]
+  paxiom peers_machines : ∀ m : PLean.MachineRef, m ∈ peers → m ≠ PLean.MachineRef.null
   machine Node {
     start state Init {
       entry {

@@ -1,8 +1,10 @@
-# PLean transition-model redesign: plan
+# PLean transition model
 
-> **Status: draft for review (revision 3).** Nothing here is implemented
-> yet. It replaces the interim `PM := StateT (GlobalState P) Id` model
-> that the Lean v4.36 bump (`3db989bba`) left in place.
+> **Status: implemented (phases P0–P5), revision 4.** This document
+> describes the model as built. Where the original plan chose
+> differently, the implementation is described and the difference noted.
+> It replaced the interim `PM := StateT (GlobalState P) Id` model that
+> the Lean v4.36 bump (`3db989bba`) left in place.
 
 ## Revision history
 
@@ -12,6 +14,7 @@
 | 2.1 | crush defunctionalizes goal lambdas, so discharge is `vcgen; crush` with no normalisation pass (§4.4). |
 | 3 | Answers to the open questions recorded (§0). **User containers became finite history datatypes** instead of bare functions (§3.1). Without that, `sizeof` lemmas are unsound, and enumeration and model-checker state hashing are impossible for int/string keys. Crush still sees the same lookup equations. Explicit-state BMC is now the first model checker (§6). |
 | 3.1 | Loop invariants are evaluated over a tentative world, with PVerifier's `new` quantifier ranging over the handler's outbox, plus auto-generated frame conjuncts (§4.7). Model-checking items moved to a backlog (§10). P0 solver and sequencing notes. |
+| 4 | Aligned with the implementation: errors are exceptions of the handler monad, `raise` is a direct call, only top-level `receive`, loop invariants over the handler state (§4.7). Reference `0` is P's `null`, and a send to it fails. P's `==` on containers and map errors (§3.1). |
 
 ## 0. Decisions
 
@@ -52,10 +55,10 @@
 
 | Verdi | PLean |
 |---|---|
-| `Name` (fixed) | `MachineRef := Nat`. Allocation is dynamic via `new`, and refs at or above `nextRef` are unallocated. |
-| `State n` | `MachineState`: kind, P state tag, fields, pending control, `receive` wait |
+| `Name` (fixed) | `MachineRef := Nat`. `0` is P's `null`; allocation is dynamic via `new`, from `1`, and refs at or above `nextRef` are unallocated. |
+| `State n` | `MachineState`: P state tag (which determines the kind), fields, pending entry argument, `receive` wait |
 | packet `(src, dst, m)` in bag `P` | `net : Nat → Option Packet`, in-flight packets keyed by send-order id |
-| `HandleMsg` in a state+writer monad | `HandlerM := StateT HState Id`. It writes to `ms` and appends to the `out` / `spawn` / `obs` logs. |
+| `HandleMsg` in a state+writer monad | `HandlerM := StateT HState (Except PError)`. It writes to `ms` and appends to the `out` / `spawn` / `obs` logs; a runtime error aborts it. |
 | Rule DELIVER | `step w (.deliver i)`, which runs the handler and then `commit` |
 | Reordering vs other fault semantics | `NetSem.bag` (proofs) vs `NetSem.fifo` (P's semantics, used for model checking) |
 | Inductive state invariant on `(Σ, P)` | `Inv` on the ghost world, plus `Framework`, proved once |
@@ -130,8 +133,8 @@ Recursive datatypes with structurally recursive accessors are supported by crush
 | `x in s` / `k in m` | `s.mem x` / `(m.get k).isSome` | `isSome` is the datatype tester | ✓ |
 | `s += (x)`, `s -= (x)` | `.add`, `.del` (absent → no-op) | unfold `mem` | ✓ |
 | `m[k] = v`, `m -= (k)` | `.put` (upsert), `.del` (absent → no-op) | unfold `get` | ✓ |
-| `m += (k, v)` | `assert (m.get k = none)`, then `.put` | assert spec (§3.3) | ✓ |
-| `m[k]`, handler | `← mget m k` (absent → `err`) | `⦃(∀ v, m.get k = some v → Q v) ∧ (m.get k = none → Q_err)⦄` | ✓ |
+| `m += (k, v)` | `minsert`: a key already present fails (`duplicateKey`), else `.put` | `⦃(m.has k → Q_err) ∧ (¬m.has k → Q (m.put k v))⦄` | ✓ |
+| `m[k]`, handler | `(← cindex m k)`, which `#gen_module` writes for a read `m[k]` (absent → `keyNotFound`); `m[k] += (e)` reads the same way | `⦃(∀ v, m.get k = some v → Q v) ∧ (m.get k = none → Q_err)⦄` | ✓ |
 | `m[k]`, formula | `(m.get k).getD default` | guard with `k in m` where it matters | ✓ |
 | `x in keys(m)` | `(m.get x).isSome` | | ✓ |
 | `v in values(m)` | `∃ k, m.get k = some v` | quantifier | bounded by the support |
@@ -139,61 +142,65 @@ Recursive datatypes with structurally recursive accessors are supported by crush
 | `foreach (x in s)`, `foreach (k in keys(m))` | core `for x in s.support invariant …` | PVerifier's visited-set rule, with loop invariants as in §4.7. Lemma hints: `mem_support`, `List.mem_append`. | ✓ |
 | `choose(s)`, `choose(m)` | a coin indexes `support`; empty → `err` | `⦃(∀ x, s.mem x → Q x) ∧ (card s = 0 → Q_err)⦄` | ✓ |
 | `keys(m)`, `values(m)` as a seq | `List` from the support | seq: no SMT (as today) | ✓ |
-| `s1 == s2` | `∀ x, s1.mem x = s2.mem x` (Lean `=` is structural; not used for P's `==`) | extensional | decidable via supports |
+| `s1 == s2` | handlers: `==` (`PSet.beq` / `PMap.beq`). Specs and `function` bodies: `=` / `≠` between containers is read as `PSet.Equiv` / `PMap.Equiv` (Lean's `=` compares histories). A decided `=` between containers is rejected in both | `∀ x, s1.mem x = s2.mem x` | decidable via supports |
 
 Further details:
 - **Support and card.** `support : PSet T → List T` gives the members without duplicates, and `card := support.length`. Its lemmas are proved once, by induction on the history: membership iff in the support, no duplicates, the count updates, and pigeonhole.
 - **Quorums.** Keep `isQuorum` uninterpreted with the intersection `paxiom` (crush accepts it applied to a set; lean-auto did not). Or define it by `card`, which makes the axiom the theorem `quorum_intersect`.
 - **Opaque sets from `pure` functions** (`participants()`) are constants of type `PSet`. The model checker's concrete initial world supplies their values.
+- **Iteration order.** `foreach` and `values` follow `support`, whose order depends on the history. P leaves the order unspecified, so a property that depends on it (say, `≺` between two sends of one loop) is proved for this order only.
+- **Nested containers.** In handlers, `==` on a map's set values and on an anonymous tuple's sets compares contents (through the `Option` / `Prod` `BEq` instances). In specs, `PMap.Equiv` compares a map's values with `=`, so inner containers by history. Named tuples (which derive `DecidableEq`) and sets of sets compare inner containers structurally in both.
 - **History growth.** A history grows with every update. `compact`, a canonical rebuild with the same `mem`/`get`, is used for fingerprints (§6). It may also be applied at runtime, but never inside the verified definitions.
 
 ### 3.2 Machine-local state
 
 ```lean
-inductive Control (P : ProgramSig)
-  | entry (s : P.S) (arg : P.G)    -- run state s's entry with this argument
-  | raise (e : P.E)                -- handle e in the current state before any dequeue
-
-structure Wait (P : ProgramSig) where
-  site  : P.Site                   -- generated enum: one tag per `receive` statement
-  frame : P.Frame                  -- generated: the suspended handler's locals (§3.6)
-
-structure MachineState (P : ProgramSig) where
-  kind    : Option P.K             -- none = unallocated
-  state   : P.S
-  fields  : P.F                    -- vars, containers included (no hoisting)
-  pending : Option (Control P)     -- goto/raise continuation
-  waiting : Option (Wait P)        -- suspended in a `receive`
+structure MachineState (S E F G W : Type) where
+  state   : Option S      -- none = unallocated; the state tag determines the kind
+  fields  : F             -- vars, containers included (no hoisting)
+  pending : Option G      -- the state's entry still has to run, with this argument
+  waiting : Option W      -- suspended in a `receive`: one W constructor per site, with its locals
   halted  : Bool
 ```
+
+The program-specific types are parameters (`S` state tags, `E` events,
+`F` fields, `G` entry arguments, `W` suspended `receive`s), emitted by
+`#gen_module`. The plan's `raise` continuation is gone: `raise e` calls
+the current state's handler for `e` directly and returns. Handlers are
+emitted so that each comes after every handler it raises into; a cycle
+of raises is rejected, and so is raising an event the state neither
+handles nor ignores.
 
 ### 3.3 Handler monad and primitives
 
 ```lean
-structure HState (P : ProgramSig) where
-  ref   : MachineRef               -- read-only: `this`
-  base  : Nat                      -- read-only: world.nextRef
-  ms    : MachineState P
-  out   : Log (MachineRef × P.E)   -- sends, in program order
-  spawn : Log (MachineState P)     -- `new`: the k-th spawn gets ref base + k
-  obs   : Log (Obs P)              -- `announce` / monitor hook
-  coins : Nat → Nat                -- nondeterministic choices (a stream)
-  used  : Nat                      -- number of coins consumed
-  err   : Option (ErrorInfo P)     -- assert failure / bad lookup / bad choose; ends the handler
-abbrev HandlerM P := StateT (HState P) Id
+structure HState (S E F G W : Type) where
+  ref   : MachineRef                     -- read-only: `this`
+  ms    : MachineState S E F G W
+  out   : Log (Packet E)                 -- sends, at their packet ids (from the world's clock)
+  spawn : Log (MachineState S E F G W)   -- `new`, at their refs (from the world's nextRef)
+  obs   : Log E                          -- `announce`
+  coins : Nat → Nat                      -- nondeterministic choices (a stream)
+  used  : Nat                            -- number of coins consumed
+abbrev HandlerM S E F G W := StateT (HState S E F G W) (Except PError)
 ```
+
+A runtime error (`PError`: a failed `assert`, a missing or duplicate map
+key, an empty or negative `choose`, a send to `null`, a sequence index
+out of range) is an exception: the handler commits nothing and the world's
+`error` is set.
 
 | P construct | Effect | Spec, as `vcgen` sees it |
 |---|---|---|
 | field get / set | read or write `ms.fields` | standard `get`/`set` |
-| `send t, e` | `out := out.push (t, e)` | direct |
-| `new M(x)` | `spawn.push` a machine with `pending := entry start x`; return `base + spawn.size` | direct |
-| `goto S, x` | set `state := S` and `pending := entry S x`, then `return` (no `exit` handlers, D13) | direct |
-| `raise e` | `pending := raise e`, then `return` | direct |
+| `send t, e` | `t = null` fails; else `out := out.push ⟨this, t, e⟩` | `⦃(t = null → Q_err) ∧ Q (out.push …)⦄` |
+| `new M(x)` | `spawn.push` a machine with `pending := some x`; return its ref `spawn.size` | direct |
+| `goto S, x` | set `state := S` and `pending := some x`, then `return` (no `exit` handlers, D13). `on e goto S` passes `e`'s payload. The argument must match S's entry, as P checks | direct |
+| `raise e` | call the current state's handler for `e`, then `return` | the handler's code |
 | `$`, `$$` | `flip`: read the next coin; `true` iff it is even | `⦃Q true ∧ Q false⦄` |
 | `choose(n)`, int | a value in **`[0, n]`** (D10); `n < 0` gives `err` | `⦃(0 ≤ n → ∀ i, 0 ≤ i ≤ n → Q i) ∧ (n < 0 → Q_err)⦄` |
 | `choose(s)` / `choose(m)` | see §3.1 | see §3.1 |
-| `assert c` | if `¬c`, set `err` and `return` | `⦃(c → Q) ∧ (¬c → Q_err)⦄` |
+| `assert c` | if `¬c`, fail | `⦃(c → Q) ∧ (¬c → Q_err)⦄` |
 | `foreach` | see §3.1 | see §3.1 |
 | `receive { … }` | save the locals, set `waiting`, `return` (§3.6) | direct |
 
@@ -209,10 +216,10 @@ structure Packet (P : ProgramSig) where
 
 structure World (P : ProgramSig) where
   machines : MachineRef → MachineState P   -- Σ
-  nextRef  : Nat                           -- refs ≥ nextRef are unallocated
+  nextRef  : Nat                           -- refs ≥ nextRef, and `null` (0), are unallocated
   net      : Nat → Option (Packet P)       -- in-flight packets by id (Verdi's bag)
   clock    : Nat                           -- next packet id; ids record send order
-  error    : Option (ErrorInfo P)
+  error    : Option PError
 
 structure GWorld (P : ProgramSig) extends World P where
   log : Nat → Option (Packet P)            -- ghost: every packet ever sent, never cleared
@@ -253,15 +260,24 @@ Let `m := p.dst` where `net i = some p`. Then `Accepts w m ev` holds when:
 | Choice | Enabled under `bag` | Extra guard under `fifo` | Effect |
 |---|---|---|---|
 | `deliver i` | `net i = some p`; `m` allocated with `pending = none`; and either `Accepts w m p.ev` or `m` is halted | `∀ j < i, net j = some q → q.dst = m → ¬Accepts w m q.ev` | Set `net i := none`. If waiting: run the resumer for `(k, ev)`. Else run the handler for `(kind, state, ev)`. `ignore` is a no-op. A halted target drops the packet. An unhandled event sets `error` (D11). |
-| `control m` | `pending = some _` | none | `entry S x` runs S's entry; `raise e` runs the current state's handler for `e` |
+| `control m` | `pending = some x` | none | runs the current state's entry with `x` |
 
 Because `fifo` only adds a conjunct, `Reachable fifo ⊆ Reachable bag`.
 
 ### 3.6 `receive` as defunctionalized continuations
 
-`waiting := some ⟨k, frame⟩` stores the continuation as data. `k` is a
-static site tag, and `frame` holds the handler's locals and parameters.
-P declares locals at the top of a function. `#gen_module`:
+**As implemented,** only a `receive` at the top level of a handler or
+entry body is supported (not inside `if`, a loop or another `receive`
+case); steps 1 and 3's loop re-entry below are not implemented. The body
+is split there. The code before it suspends with `W.site<k>`, which holds
+the parameter and the `var` locals declared so far (a `let` before the
+`receive` that is used after it is rejected). Each case's resumer
+restores them, runs the case, then the rest of the body, which may
+suspend at the next site.
+
+The plan: `waiting := some ⟨k, frame⟩` stores the continuation as data.
+`k` is a static site tag, and `frame` holds the handler's locals and
+parameters. P declares locals at the top of a function. `#gen_module`:
 
 1. **Inlines receive-bearing functions** at their call sites. Recursion through a `receive` is rejected (D12).
 2. **At every site `k`:** save the locals, set `ms.waiting := some ⟨k, frame⟩`, and `return`.
@@ -278,27 +294,28 @@ the frame.
 
 ### 3.7 Commit
 
-`commit w c hs` (and `gcommit`, which also writes `log`) is the only
-function that changes the world. Here `this := hs.ref` and `i` is the
-consumed packet, if any.
+`commit w m hs` (and `gcommit`, which also writes `log`) applies a
+handler that completed; the delivered packet was removed before it ran
+(`consume`). The logs `out` and `spawn` are indexed by their final packet
+ids and refs: they start at the world's `clock` and `nextRef`.
 ```
-machines' r = if r = this then hs.ms
-              else if base ≤ r < base + spawn.size then spawn.get (r - base)
+machines' r = if r = m then hs.ms
+              else if nextRef ≤ r < spawn.size then spawn.get r
               else machines r
-nextRef'    = nextRef + spawn.size
-net' j      = if clock ≤ j < clock + out.size then (out.get (j - clock)).map (⟨this, ·.1, ·.2⟩)
-              else if j = i then none else net j
-clock'      = clock + out.size
-log' j      = (as net', without clearing j = i)          -- ghost only
-error'      = hs.err
+nextRef'    = max nextRef spawn.size
+net' j      = if clock ≤ j < out.size then out.get j else net j
+clock'      = max clock out.size
+log' j      = (as net')                                   -- ghost only
+error'      = error
 ```
+A handler that fails sets `error` and commits nothing.
 
 ### 3.8 Initial worlds (D7)
 
 - **Proofs:** any `g : GWorld` with `InitConditions g`. That means:
   - `clock = 0`, `net = log = fun _ => none`;
-  - every `r < nextRef` is allocated and in its start state, with its start entry pending (any argument) and no `waiting`;
-  - every `r ≥ nextRef` is unallocated;
+  - every `r` in `[1, nextRef)` is allocated and in its start state, with its start entry pending (any argument) and no `waiting`;
+  - every `r ≥ nextRef` is unallocated, and so is `null` (`0`), with `0 < nextRef`;
   - the user's `init-holds` facts, which describe the initial states symbolically.
 - **Model checking:** a concrete `World` that satisfies `InitConditions`. It is either given by the user, or generated, then validated with `decide` when `InitConditions` is decidable on concrete worlds (§6).
 
@@ -315,10 +332,16 @@ order. A failed monitor `assert` sets `error`.
 ### 4.1 What `#pverify` proves
 
 ```lean
-theorem <Mod>.<Thm>_holds      : ∀ g, Reachable .bag InitConditions g → Inv g ∧ g.error = none
-theorem <Mod>.<Thm>_holds_fifo : ∀ g, Reachable .fifo InitConditions g → Inv g ∧ g.error = none
-theorem <Mod>.<Thm>_holds_real : ∀ w, Reachable .fifo (toWorld '' InitConditions) w → …  -- when Inv never mentions `log`
+theorem <Mod>.safe      : ∀ g, GReachable prog .bag  InitConditions g → AllInv g ∧ g.error = none
+theorem <Mod>.safe_fifo : ∀ g, GReachable prog .fifo InitConditions g → AllInv g ∧ g.error = none
+theorem <Mod>.<T>_holds : ∀ g, GReachable prog .fifo InitConditions g → T g
 ```
+`AllInv` is the conjunction of the proved targets and the automatic
+invariants. A `_holds_real` theorem on the real world is not generated;
+`GReachable.erase` and `Reachable.lift` move between ghost and real runs.
+The report lists what `safe` assumes beyond Lean's axioms (`paxiom`s,
+`pinstance`s, the solver's word for trusted obligations, `sorry`), and
+warns when no world satisfies `InitConditions` (with the axioms).
 These are assembled by a generic lemma:
 - **Base case:** `InitConditions g → Inv g`.
 - **Step:** for every `c` and every coin stream, `Inv ∧ Framework ∧ Enabled bag g c` implies `Inv` and no error after `gstep g c`.
@@ -343,8 +366,11 @@ meaning: a premise that isn't proved is a `[missing premise]` error.
 `Framework g`:
 - **F1:** `∀ j ≥ clock, net j = none ∧ log j = none`.
 - **F2:** `net j = some p → log j = some p`.
-- **F3:** `∀ r ≥ nextRef, (machines r).kind = none`.
-- **F4:** `net j = some p → p.src < nextRef ∧ p.dst < nextRef`.
+- **F3:** `∀ r ≥ nextRef, (machines r).state = none`.
+- **F4:** `0 < nextRef` and `(machines null).state = none`.
+
+(The plan's F4, that packet endpoints are below `nextRef`, is not
+implemented.)
 
 These are proved inductive generically, about `gcommit`. As a result:
 - `DefaultInvariants`, `prove default`, `using default` and `pverify.autoProveDefault` are retired;
@@ -415,21 +441,22 @@ foreach (p in participants())
 
 **Meaning in this model.** Handlers are local (D2), so a send only
 appends to the outbox `hs.out`. The world `g` itself doesn't change until
-`commit`.
-- **Tentative world.** A loop invariant is a world formula evaluated on `T(hs) := gcommit g c hs`, the world as if the handler returned at that point. It uses the same vocabulary as top-level invariants (`sent`, `inflight`, `targets`, `≺`, field projections).
-  - Reading `m.x` for `m ≠ this` sees `g`.
-  - Reading it for `this` sees the current `hs.ms`.
-- **`new` events.** `new e` means `e`'s id is at least `g.clock`, i.e. `e` is in the outbox. `forall new (e: E) :: P e` becomes `∀ j < hs.out.size, hs.out.get j = some (dst, ev) → ev is E → P …`. Crush unfolds it through `gcommit`/`Log`.
-- **`visited`** (foreach only) is a reserved name for the set of items already iterated. It is optional, since none of the benchmarks need it.
+`commit`. A loop invariant is a predicate over the handler state `hs` and
+the loop's locals: `hs.ms` is this machine's state, `hs.out` its sends so
+far. (The plan evaluated loop invariants as world formulas over a
+tentative world `gcommit g c hs`; that is not implemented.)
+- **`new` events.** `new_sends e => P` is PVerifier's `forall new (e: E) :: P e`: every message the loop has sent so far (`sentSince __loop0 hs`) satisfies `P`.
+- **`pref` / `suff`** (foreach only) name the items already visited and still to visit. PVerifier's `visited` is not implemented.
 
 **Frame conjuncts are generated automatically.** A core `vcgen` loop
 invariant is a predicate on the whole `HState` plus the loop locals, so
-whatever the loop doesn't change must be restated. `#gen_module` adds
-these conjuncts from a syntactic write-set analysis of the loop body:
-- `hs.ref`, `hs.base` and `hs.used`-monotonicity are preserved;
-- `hs.err = none`;
-- the outbox only grows: the pre-loop outbox is a prefix;
-- fields and locals the body never assigns are unchanged.
+whatever the loop doesn't change must be restated. The loop macros add
+`HState.frame __loop0 hs …` from a syntactic write-set analysis of the
+loop body:
+- `hs.ref` is preserved, and the outbox only grows (the pre-loop outbox is a prefix);
+- the machine state, the outbox, the spawned machines and the announcements are unchanged when the body cannot change them.
+
+Errors are exceptions, so no `err = none` conjunct is needed.
 
 **Simpler than PVerifier.** `Inv g` and `Framework g` mention only the
 pre-state world, which is constant during the handler. They stay

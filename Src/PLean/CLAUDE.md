@@ -34,8 +34,10 @@ The user-facing pipeline:
    the specification definitions from the registered metadata.
 3. `#pwf M` reports well-formedness (a fast subset check).
 4. `#pverify M` emits and discharges the obligations, then assembles
-   `M.safe` (every reachable world satisfies `AllInv`) and
-   `M.<T>_holds` per proved target.
+   `M.safe` (every reachable world satisfies `AllInv` and has no error)
+   and `M.<T>_holds` per proved target. The report lists what `M.safe`
+   assumes beyond Lean's axioms (`paxiom`s, `pinstance`s, trusted solver
+   answers, `sorry`) and warns when no initial world exists.
 
 PLean is **not** a wrapper around PChecker or PVerifier.
 
@@ -90,6 +92,8 @@ PLean/
                         pnew / assert / assignments / var / choose / if ($)
     Loop.lean        -- foreach / while with invariants
     Containers.lean  -- set[T] / map[K, V] / seq[T] / option[T]
+    ExtEq.lean       -- P's `==` on containers: `=` in specs read as
+                        `PSet.Equiv` / `PMap.Equiv` (`pv_ext%`)
     Verify.lean      -- invariant / Lemma / Theorem / Proof / system /
                         paxiom / init-holds / function / pinstance,
                         field-projection sugar, kind-guard injection
@@ -133,8 +137,8 @@ Per proved target `T` (`prove T using U₁ … ;`), with premises `T ∧ U₁ �
 Assuming every invariant (`AllInv`), once per module:
 
 - `<M>.<S>.<ev>_safe` / `<M>.<S>.entry_safe` / `<M>.<S>.recv<k>_<ev>_safe`:
-  the handler never fails (`assert`, `choose` on an empty range, …)
-  (`RunSafe`);
+  the handler never fails (`assert`, a send to `null`, a missing or
+  duplicate map key, `choose` on an empty range, …) (`RunSafe`);
 - `<M>.<S>.<ev>_never` for each event a state neither handles, ignores
   nor defers: it is never delivered there.
 
@@ -142,11 +146,13 @@ Assuming every invariant (`AllInv`), once per module:
 when no machine can halt, `Transient` (a machine is never idle in a
 state whose entry always ends in a `goto`) and `Waiting` (a machine
 suspended at a `receive` is in that `receive`'s state). The framework invariants
-(packet ids below the clock, in-flight ⊆ log, unallocated references)
-are proved once, generically.
+(packet ids below the clock, in-flight ⊆ log, unallocated references,
+`null` never allocated) are proved once, generically.
 
-Initial worlds: every machine below `nextRef` is in its start state with
-its start entry pending (as in PVerifier), and no machine is halted or
+Reference `0` is P's `null` (the `default` of a machine reference);
+machines are allocated from `1`, and a send to `null` fails. Initial
+worlds: every machine in `[1, nextRef)` is in its start state with its
+start entry pending (as in PVerifier), and no machine is halted or
 suspended; `init-holds` clauses constrain the rest.
 
 ## Surface keywords
@@ -196,7 +202,20 @@ talk about a suspended machine through `(s.machines r).waiting = some
 `option[T]` → `Option T`. `PSet` / `PMap` are histories of updates
 (`add` / `del`, `put` / `del`) with recursive lookups (`mem`, `get`),
 `support` and `card` (P's `sizeof`). Mutation: `s += (e)`, `s -= (e)`,
-`m[k] = v`, `m[k] += (e)`, `m[k] -= (e)`.
+`m += ((k, v))` (fails on a key already present, as in P), `m[k] = v`,
+`m[k] += (e)`, `m[k] -= (e)`. In a handler, `m[k]` reads a key and fails
+when it is missing (and `l[i]` an index of a sequence).
+
+Lean's `=` on a set or map compares update histories. P's `==` compares
+contents: in handlers, write `==` (a decided `=` between containers is
+rejected); in invariants, `init-holds` and `paxiom`s, `=` / `≠` between
+sets or maps is read as P's `==` (`PSet.Equiv` / `PMap.Equiv`), and a
+decided `=` between them (`if s = t …`) is rejected. Inner containers:
+handler `==` compares a map's set values and an anonymous tuple's sets by
+content; `PMap.Equiv` compares a map's values with `=`, and named tuples
+compare structurally in both. `foreach` visits a set in an order its history fixes;
+P leaves the order unspecified, so a property that depends on it is
+proved for that one order.
 
 ### Loops (`foreach` / `while`)
 
@@ -217,13 +236,19 @@ Source comments cover the *why* in detail. The points below are the
 load-bearing invariants you need to respect when editing.
 
 - **`system <σ>` declares the state binder for a pmodule.** Every
-  subsequent `invariant` / `init-holds` / `paxiom` body may reference
-  `σ` as the (ghost) world. Soundness guard (`rejectStateShadowIn`,
-  pinned by `Tests/Syntax/SoundnessRegression.lean`) rejects bodies
-  that name the world type in any binder.
+  subsequent `invariant` / `init-holds` body may reference `σ` as the
+  (ghost) world. Soundness guards (pinned by
+  `Tests/Syntax/SoundnessRegression.lean`): `rejectStateShadowIn` rejects
+  bodies that name the world type in any binder, and a `paxiom` must
+  not depend on the state (it is assumed of every world).
 - **Kind guards are auto-injected on quantifiers.** `∀ n : <M>, body`
   becomes `∀ n : <M>, is_<M> n.ref s → body` (and similarly for `∃` and
   event quantifiers). `is_<M> r s` says `r`'s state belongs to `<M>`.
+  Only a guard that is the body's own antecedent (`∃`: first conjunct)
+  on exactly `n.ref` replaces the injected one.
+- **Parameters shadow machine variables** (as in P): a handler's,
+  entry's or `receive` case's parameter, or a `var` local, hides the
+  machine variable of the same name in that body.
 - **Type parameters, not a signature value.** The model is generic in
   `S E F G W` (state tags, events, fields, entry arguments, suspended
   `receive`s); `#gen_module` emits these per pmodule. Crush rejects

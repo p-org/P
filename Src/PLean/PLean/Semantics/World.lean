@@ -18,7 +18,7 @@ variable {S E F G W : Type}
 /-- The real world: what execution and model checking store. -/
 structure World (S E F G W : Type) where
   machines : MachineRef → MachineState S E F G W
-  /-- References `≥ nextRef` are unallocated. -/
+  /-- References `≥ nextRef` are unallocated, and so is `0` (`null`). -/
   nextRef  : Nat
   /-- In-flight packets by id; ids record send order. -/
   net      : Nat → Option (Packet E)
@@ -218,11 +218,12 @@ end
 /-! ## Framework invariants -/
 
 /-- Facts every reachable ghost world satisfies, proved once for all
-programs (`framework_gstep`). -/
+programs (`framework_gstep`). Reference `0` (`null`) is never allocated. -/
 def Framework (g : GWorld S E F G W) : Prop :=
   (∀ j, g.clock ≤ j → g.net j = none) ∧
   (∀ j, g.clock ≤ j → g.log j = none) ∧
   (∀ j p, g.net j = some p → g.log j = some p) ∧
-  (∀ r, g.nextRef ≤ r → (g.machines r).state = none)
+  (∀ r, g.nextRef ≤ r → (g.machines r).state = none) ∧
+  0 < g.nextRef ∧ (g.machines MachineRef.null).state = none
 
 end PLean

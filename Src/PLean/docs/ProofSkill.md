@@ -9,7 +9,8 @@ invariant, not a proof.
 ## Reading the report
 
 `#pverify M` prints one line per obligation and writes the full report,
-with the goals the solver failed on, to `.lake/pverify/M.txt`.
+with the goals the solver failed on, to `.lake/pverify/M.txt`. In the
+editor, each obligation is also reported as it finishes.
 
 | Outcome | Meaning | What to do |
 |---|---|---|
@@ -17,6 +18,21 @@ with the goals the solver failed on, to `.lake/pverify/M.txt`.
 | `✓ (trusted)` | the solver proved it, but its proof could not be replayed | usually fine; simplify the invariant if a checked proof matters |
 | `✗ [counterexample]` | z3 found a state where the step breaks the invariant | the invariant is false or not inductive: strengthen it |
 | `✗ [unknown]` | the solver timed out, and no counterexample was found | the step needs too much reasoning in one query: add intermediate invariants |
+
+A proved obligation's line says how its goals (one per invariant and
+path through the handler, after normalisation) were closed:
+
+| Mark | Meaning |
+|---|---|
+| `[norm]` | no goal was left after `vcgen` and normalisation |
+| `smt n` | `n` goals needed an SMT solver |
+| `pre n` | `n` goals were closed by crush before SMT translation (a checked Lean proof) |
+| `hyp n` | `n` goals were hypotheses |
+
+The summary line counts the obligations proved by normalisation or a
+hypothesis, by crush before SMT only, and with an SMT solver, and splits
+the time between `vcgen` and normalisation, crush, and the rest
+(elaborating the statement and checking the proof).
 
 A counterexample names the invariant and the step, and shows a smallest
 pre-state z3 finds:

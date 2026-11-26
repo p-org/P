@@ -18,10 +18,13 @@ PLean.Verify.Tactic — `pverify_close`, the automation for an obligation.
    with z3 and cvc5 without crush's ground instantiation, then with it at
    the full timeout (cvc5, then z3).
 
-When a goal is not proved, it logs the goal (`pverify-goal:`), the
-invariant it belongs to (`pverify-inv:`) and, when z3 finds one, a small
-model of the goal's encoding (`pverify-smt-script:` / `pverify-smt-model:`,
-see `PLean.Cex`), for `#pverify`'s report.
+It logs how its goals were closed and where the time went (`pverify-stats:
+<by a hypothesis> <by crush before SMT translation> <by an SMT solver>
+<ms in vcgen and normalisation> <ms in crush>`). When a goal is not
+proved, it logs the goal (`pverify-goal:`), the invariant it belongs to
+(`pverify-inv:`) and, when z3 finds one, a small model of the goal's
+encoding (`pverify-smt-script:` / `pverify-smt-model:`, see `PLean.Cex`),
+for `#pverify`'s report.
 -/
 import PLean.Verify.Norm
 import PLean.Verify.Cex
@@ -77,6 +80,7 @@ def evalPverifyClose : Tactic := fun stx => do
   let ds : Array Ident := stx[5].getSepArgs.map (⟨·⟩)
   let ls : Array (TSyntax `term) := stx[8].getSepArgs.map (⟨·⟩)
   let as : Array (TSyntax `term) := stx[11].getSepArgs.map (⟨·⟩)
+  let tStart ← IO.monoMsNow
   evalTactic (← `(tactic| intros))
   evalTactic (← `(tactic|
     try ((first | unfold PLean.RunPost | unfold PLean.RunSafe | unfold PLean.RunOK); intro coins)))
@@ -129,9 +133,11 @@ def evalPverifyClose : Tactic := fun stx => do
     let hints ← ((ls.zip hintKeys).filter fun (_, ks) => ks.isEmpty || ks.any used.contains).mapM
       fun (l, _) => `(Crush.crushHintElem| $l:term)
     let crush1 ← if hints.isEmpty then `(tactic| crush [*]) else `(tactic| crush [*, $[$hints],*])
+    -- `crush.result` traces say how crush closed the goal.
+    let traced ← `(tactic| set_option trace.crush.result true in $crush1:tactic)
     let prof ← if profile then
-        `(Lean.Parser.Tactic.tacticSeq| set_option crush.profile true in $crush1:tactic)
-      else `(Lean.Parser.Tactic.tacticSeq| $crush1:tactic)
+        `(Lean.Parser.Tactic.tacticSeq| set_option crush.profile true in $traced:tactic)
+      else `(Lean.Parser.Tactic.tacticSeq| $traced:tactic)
     return (crush1, [
       ("z3 (5s)", ← `(tactic| (set_option crush.backend "z3" in set_option crush.timeout 5 in
           set_option crush.inst.fuel 0 in ($prof)))),
@@ -146,7 +152,16 @@ def evalPverifyClose : Tactic := fun stx => do
       (Core.withCurrHeartbeats (evalTactic tac))
   -- Conjuncts that are hypotheses (a loop invariant carried through an
   -- iteration) need no solver.
+  let before := (← getGoals).length
   evalTactic (← `(tactic| all_goals (try assumption)))
+  -- How the goals were closed: by a hypothesis (here, or crush finding the
+  -- goal among its facts), by crush before SMT translation (a checked Lean
+  -- proof), or by an SMT solver.
+  let mut nHyp : Nat := before - (← getGoals).length
+  let mut nPre : Nat := 0
+  let mut nSmt : Nat := 0
+  let normMs := (← IO.monoMsNow) - tStart
+  let mut crushMs : Nat := 0
   for g in ← getGoals do
     let t0 ← IO.monoMsNow
     let mut closedBy : Option String := none
@@ -155,17 +170,31 @@ def evalPverifyClose : Tactic := fun stx => do
     for (solver, tac) in portfolio do
       setGoals [g]
       let s ← saveState
+      let traces0 ← getTraceState
+      modifyTraceState fun t => { t with traces := {} }
       try
         bounded tac
         closedBy := some solver
+        let mut route := 2
+        for t in (← getTraceState).traces.toList do
+          let m ← t.msg.toString
+          if has m "goal is one of the selected facts" then route := 0
+          else if has m "pre-translation checked proof succeeded" then route := 1
+        match route with
+        | 0 => nHyp := nHyp + 1
+        | 1 => nPre := nPre + 1
+        | _ => nSmt := nSmt + 1
+        modifyTraceState fun _ => traces0
         break
       catch e =>
         s.restore (restoreInfo := true)
+        modifyTraceState fun _ => traces0
         errs := errs.push (solver, e)
         -- A model of the whole query: the later attempts (the same query, plus
         -- instances of its quantified facts) cannot prove the goal either.
         let msg ← e.toMessageData.toString
         if has msg "found a model" && !has msg "refused part of the query" then break
+    crushMs := crushMs + ((← IO.monoMsNow) - t0)
     if profile then
       let ms := (← IO.monoMsNow) - t0
       let slow ← if ms > 5000 && closedBy.isSome then
@@ -194,7 +223,9 @@ def evalPverifyClose : Tactic := fun stx => do
           if rank ≥ bestRank then
             best := some e
             bestRank := rank
+      logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {normMs} {crushMs}"
       if let some e := best then throw e
+  logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {normMs} {crushMs}"
   setGoals []
 
 end PLean

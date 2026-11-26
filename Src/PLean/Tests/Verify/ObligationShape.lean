@@ -51,31 +51,32 @@ end ShapeT
 
 /--
 info: #pverify ShapeT: 25 obligations, 25 proved (0 trusting the solver), 0 failed
-  ✓ Node.A.ePing_correct_safety
-  ✓ Node.A.eGo_correct_safety
-  ✓ Node.B.ePing_correct_safety
-  ✓ Node.B.eGo_correct_safety
-  ✓ Node.B.eHold_correct_safety
-  ✓ Node.A.entry_correct_safety
-  ✓ Node.B.entry_correct_safety
-  ✓ base_safety
-  ✓ Node.A.ePing_correct_NoHalt
-  ✓ Node.A.eGo_correct_NoHalt
-  ✓ Node.B.ePing_correct_NoHalt
-  ✓ Node.B.eGo_correct_NoHalt
-  ✓ Node.B.eHold_correct_NoHalt
-  ✓ Node.A.entry_correct_NoHalt
-  ✓ Node.B.entry_correct_NoHalt
-  ✓ base_NoHalt
-  ✓ Node.A.ePing_safe
-  ✓ Node.A.eGo_safe
-  ✓ Node.B.ePing_safe
-  ✓ Node.B.eGo_safe
-  ✓ Node.B.eHold_safe
-  ✓ Node.A.entry_safe
-  ✓ Node.B.entry_safe
-  ✓ Node.A.eStray_never
-  ✓ Node.B.eStray_never
+  proved by normalisation or a hypothesis: 7, by crush before SMT: 0, with an SMT solver: 18
+  ✓ Node.A.ePing_correct_safety [smt 2]
+  ✓ Node.A.eGo_correct_safety [smt 2]
+  ✓ Node.B.ePing_correct_safety [smt 2]
+  ✓ Node.B.eGo_correct_safety [smt 2]
+  ✓ Node.B.eHold_correct_safety [smt 2]
+  ✓ Node.A.entry_correct_safety [smt 1, pre 1]
+  ✓ Node.B.entry_correct_safety [smt 1, pre 1]
+  ✓ base_safety [smt 2]
+  ✓ Node.A.ePing_correct_NoHalt [smt 1]
+  ✓ Node.A.eGo_correct_NoHalt [smt 1]
+  ✓ Node.B.ePing_correct_NoHalt [smt 1]
+  ✓ Node.B.eGo_correct_NoHalt [smt 1]
+  ✓ Node.B.eHold_correct_NoHalt [smt 1]
+  ✓ Node.A.entry_correct_NoHalt [smt 1]
+  ✓ Node.B.entry_correct_NoHalt [smt 1]
+  ✓ base_NoHalt [smt 1]
+  ✓ Node.A.ePing_safe [norm]
+  ✓ Node.A.eGo_safe [norm]
+  ✓ Node.B.ePing_safe [norm]
+  ✓ Node.B.eGo_safe [norm]
+  ✓ Node.B.eHold_safe [norm]
+  ✓ Node.A.entry_safe [norm]
+  ✓ Node.B.entry_safe [norm]
+  ✓ Node.A.eStray_never [smt 1]
+  ✓ Node.B.eStray_never [smt 1]
 -/
 #guard_msgs in
 set_option pverify.showTimes false in

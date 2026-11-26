@@ -253,6 +253,11 @@ load-bearing invariants you need to respect when editing.
 - `pverify.timeout` (seconds), `pverify.trust` (`reconstructOrTrust` by
   default: obligations whose proof could not be replayed are reported
   `✓ (trusted)`), `pverify.heartbeats`.
+- Each obligation line says how its goals were closed (`[norm]`: nothing
+  left after `vcgen` and normalisation; `smt n` / `pre n` / `hyp n`: by an
+  SMT solver, by crush before SMT translation, as a hypothesis). In the
+  editor, `#pverify` reports each obligation as it finishes
+  (`pverify.progress`); the command line prints only the final report.
 - A goal that is not proved gets a counterexample when z3 finds one
   (`pverify.cex`, on by default): the report names the failing invariant
   and the step, and shows a minimised pre-state (machines by kind with

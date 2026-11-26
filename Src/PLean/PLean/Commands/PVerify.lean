@@ -24,6 +24,11 @@ module:
 * `<M>.<S>.<ev>_never` per event a state neither handles, ignores nor
   defers.
 
+Each proved obligation is reported with how its goals were closed (`[norm]`
+when none was left after `vcgen` and normalisation; else how many needed
+an SMT solver, were closed by crush before SMT translation, or were
+hypotheses). In the editor, each obligation is reported as it finishes.
+
 A failing obligation is reported (with its time, and a counterexample
 when z3 finds one: the invariant that fails, the step, and a minimised
 pre-state, see `PLean.Cex`) and left as `sorry`, so the remaining
@@ -58,11 +63,23 @@ register_option pverify.only : String := {
   descr := "Comma-separated name fragments: run only the obligations whose name contains one \
             (and skip the assembly). For iterating on a few obligations." }
 
+register_option pverify.progress : Bool := {
+  defValue := true
+  descr := "Report each obligation as it finishes (in the editor, while `#pverify` runs)." }
+
 register_option pverify.trust : String := {
   defValue := "reconstructOrTrust"
   descr := "`crush.trust` for each obligation: reconstruct (checked proofs only), \
             reconstructOrTrust (checked when crush can replay the proof, otherwise trust the \
             solver; reported as `trusted`), or trust." }
+
+/-- The kind of a failed obligation, from its error message. -/
+def failureKind (msg : String) : String :=
+  let has (s : String) := (msg.splitOn s).length > 1
+  if has "returned `sat`" || has "found a model" then "counterexample"
+  else if has "reconstruction failed" then "reconstruct-failed"
+  else if has "`unknown`" || has "timeout" then "unknown"
+  else "error"
 
 /-- One obligation's outcome. -/
 structure ObResult where
@@ -84,14 +101,34 @@ structure ObResult where
   cex : Array String := #[]
   /-- The SMT script and z3 model it was decoded from. -/
   smt : String := ""
+  /-- How its goals were closed: by a hypothesis, by crush before SMT
+  translation, by an SMT solver (`none`: no goal was left after `vcgen` and
+  normalisation). -/
+  stats : Option (Nat × Nat × Nat) := none
+  /-- Time in `vcgen` and normalisation, and in crush (ms). -/
+  normMs : Nat := 0
+  crushMs : Nat := 0
 
-/-- The kind of a failed obligation, from its error message. -/
-def failureKind (msg : String) : String :=
-  let has (s : String) := (msg.splitOn s).length > 1
-  if has "returned `sat`" || has "found a model" then "counterexample"
-  else if has "reconstruction failed" then "reconstruct-failed"
-  else if has "`unknown`" || has "timeout" then "unknown"
-  else "error"
+/-- How an obligation's goals were closed: `[norm]` when none was left after
+`vcgen` and normalisation, otherwise the number closed by an SMT solver, by
+crush before SMT translation, and by a hypothesis. -/
+def ObResult.route (r : ObResult) : String :=
+  match r.stats with
+  | none => "[norm]"
+  | some (h, p, s) =>
+    if h + p + s == 0 then "[norm]"
+    else
+      let parts := [(s, "smt"), (p, "pre"), (h, "hyp")].filterMap fun (n, l) =>
+        if n == 0 then none else some s!"{l} {n}"
+      "[" ++ ", ".intercalate parts ++ "]"
+
+/-- The report line of an obligation. -/
+def ObResult.line (r : ObResult) (showTimes : Bool) : String :=
+  let kind := if !r.cex.isEmpty then "counterexample" else failureKind r.msg
+  let status := if !r.ok then s!"✗ [{kind}]" else if r.trusted then "✓ (trusted)" else "✓"
+  let tm := if showTimes then s!" ({r.ms} ms)" else ""
+  let detail := if !r.ok then (if r.cex.isEmpty then ": " ++ r.msg else "") else s!" {r.route}"
+  s!"{status} {r.name}{tm}{detail}"
 
 /-- Elaborate `cmd`, returning its error messages and the goals `crush`
 failed on (both removed from the log). -/
@@ -103,6 +140,9 @@ private structure Captured where
   inv : Option Name := none
   script : String := ""
   model : String := ""
+  stats : Option (Nat × Nat × Nat) := none
+  normMs : Nat := 0
+  crushMs : Nat := 0
 
 /-- Elaborate `cmd`, returning its error messages and what `pverify_close`
 logged (all removed from the log). -/
@@ -122,6 +162,11 @@ private def elabCaptureGoals (cmd : Syntax) : CommandElabM Captured := do
       c := { c with script := (s.drop "pverify-smt-script:\n".length).toString }
     else if s.startsWith "pverify-smt-model:\n" then
       c := { c with model := (s.drop "pverify-smt-model:\n".length).toString }
+    else if s.startsWith "pverify-stats: " then
+      match ((s.drop "pverify-stats: ".length).toString.splitOn " ").map String.toNat? with
+      | [some h, some p, some n, some tn, some tc] =>
+        c := { c with stats := some (h, p, n), normMs := tn, crushMs := tc }
+      | _ => pure ()
     else if s.startsWith "pverify-time:" || s.startsWith "crush profile" then
       c := { c with notes := c.notes.push s }
     else if (s.splitOn "crushSorry").length > 1 then c := { c with trusted := true }
@@ -160,8 +205,26 @@ private def arrows (hyps : Array (TSyntax `term)) (concl : TSyntax `term) :
 
 syntax (name := pVerify) "#pverify " ident : command
 
-@[command_elab pVerify]
-def elabPVerify : CommandElab := fun stx => do
+open Language in
+/-- Report `msg` now, as the next link of the progress chain (a snapshot the
+language server reports as soon as it is resolved). -/
+private def progressAt (chain : IO.Ref (Option (IO.Promise SnapshotTree))) (ref : Syntax)
+    (msg : MessageData) : CommandElabM Unit := do
+  let some p ← chain.get | return
+  let next ← IO.Promise.new
+  let fileMap ← getFileMap
+  let log := MessageLog.empty.add {
+    fileName := ← getFileName
+    pos := fileMap.toPosition (ref.getPos?.getD 0)
+    endPos := ref.getTailPos?.map fileMap.toPosition
+    severity := .information
+    data := msg }
+  p.resolve (SnapshotTree.mk { diagnostics := ← Snapshot.Diagnostics.ofMessageLog log }
+    #[{ stx? := none, cancelTk? := none, task := next.resultD default }])
+  chain.set (some next)
+
+private def pverifyBody (stx : Syntax) (progress : MessageData → CommandElabM Unit) :
+    CommandElabM Unit := do
   let `(#pverify $name:ident) := stx | throwUnsupportedSyntax
   let modName := name.getId
   let some ctx ← getPModule? modName | throwError "no `pmodule {modName}` is registered"
@@ -253,10 +316,14 @@ def elabPVerify : CommandElab := fun stx => do
              fFields := ((structFields "F").getD #[])
              structFields
              functions := ctx.pures.toList.toArray.map (·.1.toString) }
+  -- The obligations, run once all are generated (so progress can count them).
+  let queue ← IO.mkRef (#[] : Array (Name × TSyntax `command × (Option String → Cex.Kind)))
+  let queueOb (obName : Name) (cmd : TSyntax `command) (kind : Option String → Cex.Kind) :
+      CommandElabM Unit := do
+    if only.isEmpty || only.any (fun o => (obName.toString.splitOn o).length > 1) then
+      queue.modify (·.push (obName, cmd, kind))
   let runOb (obName : Name) (cmd : TSyntax `command) (kind : Option String → Cex.Kind) :
-      CommandElabM (Array ObResult) := do
-    unless only.isEmpty || only.any (fun o => (obName.toString.splitOn o).length > 1) do
-      return #[]
+      CommandElabM ObResult := do
     let t0 ← IO.monoMsNow
     let c ← elabCaptureGoals (← wrap cmd)
     let t1 ← IO.monoMsNow
@@ -265,10 +332,11 @@ def elabPVerify : CommandElab := fun stx => do
       (Cex.render cexNames (kind (c.inv.map (·.toString))) c.script c.model).getD #[]
     let smt := if c.model.isEmpty then "" else
       c.script ++ "\n\n; z3's model:\n" ++ "\n".intercalate ((c.model.splitOn "\n").map ("; " ++ ·))
-    return #[{ name := obName, ok := errs.isEmpty, ms := t1 - t0, goals := c.goals,
-                 trusted := c.trusted, notes := c.notes, inv := c.inv, cex, smt,
-                 fullMsg := if errs.isEmpty then "" else errs[0]!,
-                 msg := if errs.isEmpty then "" else excerpt errs[0]! }]
+    return { name := obName, ok := errs.isEmpty, ms := t1 - t0, goals := c.goals,
+             trusted := c.trusted, notes := c.notes, inv := c.inv, cex, smt, stats := c.stats,
+             normMs := c.normMs, crushMs := c.crushMs,
+             fullMsg := if errs.isEmpty then "" else errs[0]!,
+             msg := if errs.isEmpty then "" else excerpt errs[0]! }
   let (g, i, src, dst, pl, m, arg) :=
     (mkIdent `g, mkIdent `i, mkIdent `src, mkIdent `dst, mkIdent `pl, mkIdent `m, mkIdent `arg)
   let gwTy := mkIdent `GW
@@ -342,8 +410,8 @@ def elabPVerify : CommandElab := fun stx => do
       let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat)
           ($src:ident $dst:ident : PLean.MachineRef) $(← plBinder ev)* : $stmt := by
         $(← closeTac #[hname]))
-      results := results ++ (← runOb obName cmd
-        (.correct (.deliver mname.toString sname.toString ev.toString) t.toString))
+      queueOb obName cmd
+        (.correct (.deliver mname.toString sname.toString ev.toString) t.toString)
     for (mname, sname) in stateTags do
       let tag := mkIdent (`S ++ stateTagName mname sname)
       let obName := mname ++ sname ++ Name.mkSimple ("entry_correct_" ++ t.toString)
@@ -355,8 +423,8 @@ def elabPVerify : CommandElab := fun stx => do
       let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($m:ident : PLean.MachineRef)
           ($arg:ident : $(mkIdent `G)) : $(← arrows hyps concl) := by
         $(← closeTac #[entryFn]))
-      results := results ++ (← runOb obName cmd
-        (.correct (.entry mname.toString sname.toString) t.toString))
+      queueOb obName cmd
+        (.correct (.entry mname.toString sname.toString) t.toString)
     for s in sites do
       for c in s.cases do
         let obName := (s.mname ++ resumerName s.sname s.idx c.ev).appendAfter ("_correct_" ++ t.toString)
@@ -369,8 +437,8 @@ def elabPVerify : CommandElab := fun stx => do
             ($src:ident $dst:ident : PLean.MachineRef) $((← siteBinders s) ++ (← plBinder c.ev))* :
             $(← arrows hyps concl) := by
           $(← closeTac #[fn]))
-        results := results ++ (← runOb obName cmd
-          (.correct (.resume s.mname.toString s.sname.toString c.ev.toString) t.toString))
+        queueOb obName cmd
+          (.correct (.resume s.mname.toString s.sname.toString c.ev.toString) t.toString)
     if !hasNoHalt then
       let obName := Name.mkSimple ("drop_correct_" ++ t.toString)
       let p := mkIdent `p
@@ -378,12 +446,12 @@ def elabPVerify : CommandElab := fun stx => do
           PLean.Framework $g → ($g).error = none → $pre → ($g).net $i = some $p →
           (($g).machines ($p).dst).halted = true → $(← markedPost t (← `(($g).consume $i))) := by
         $(← closeTac #[]))
-      results := results ++ (← runOb obName cmd (.correct .drop t.toString))
+      queueOb obName cmd (.correct .drop t.toString)
     let baseName := Name.mkSimple ("base_" ++ t.toString)
     let cmd ← `(command| theorem $(mkIdent baseName) ($g:ident : $gwTy) :
         $(mkIdent `InitConditions) $g → $(← markedPost t g) := by
       $(← closeTac #[]))
-    results := results ++ (← runOb baseName cmd (.correct .base t.toString))
+    queueOb baseName cmd (.correct .base t.toString)
   let allPre ← `($(mkIdent `AllInv) $g)
   -- error freedom (under every invariant)
   for (mname, sname, ev, act) in handled do
@@ -395,8 +463,8 @@ def elabPVerify : CommandElab := fun stx => do
     let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat)
         ($src:ident $dst:ident : PLean.MachineRef) $(← plBinder ev)* : $(← arrows hyps concl) := by
       $(← closeTac #[hname]))
-    results := results ++ (← runOb obName cmd
-      fun _ => .safe (.deliver mname.toString sname.toString ev.toString))
+    queueOb obName cmd
+      fun _ => .safe (.deliver mname.toString sname.toString ev.toString)
   for (mname, sname) in stateTags do
     let tag := mkIdent (`S ++ stateTagName mname sname)
     let obName := mname ++ sname ++ `entry_safe
@@ -408,7 +476,7 @@ def elabPVerify : CommandElab := fun stx => do
     let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($m:ident : PLean.MachineRef)
         ($arg:ident : $(mkIdent `G)) : $(← arrows hyps concl) := by
       $(← closeTac #[entryFn]))
-    results := results ++ (← runOb obName cmd fun _ => .safe (.entry mname.toString sname.toString))
+    queueOb obName cmd fun _ => .safe (.entry mname.toString sname.toString)
   for s in sites do
     for c in s.cases do
       let obName := (s.mname ++ resumerName s.sname s.idx c.ev).appendAfter "_safe"
@@ -420,8 +488,8 @@ def elabPVerify : CommandElab := fun stx => do
           ($src:ident $dst:ident : PLean.MachineRef) $((← siteBinders s) ++ (← plBinder c.ev))* :
           $(← arrows hyps concl) := by
         $(← closeTac #[fn]))
-      results := results ++ (← runOb obName cmd
-        fun _ => .safe (.resume s.mname.toString s.sname.toString c.ev.toString))
+      queueOb obName cmd
+        fun _ => .safe (.resume s.mname.toString s.sname.toString c.ev.toString)
   -- never-receives
   for (mname, sname, ev) in never do
     let tag := mkIdent (`S ++ stateTagName mname sname)
@@ -430,7 +498,16 @@ def elabPVerify : CommandElab := fun stx => do
     let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat)
         ($src:ident $dst:ident : PLean.MachineRef) $(← plBinder ev)* : $(← arrows hyps (← `(False))) := by
       $(← closeTac #[]))
-    results := results ++ (← runOb obName cmd fun _ => .never mname.toString sname.toString ev.toString)
+    queueOb obName cmd fun _ => .never mname.toString sname.toString ev.toString
+  -- discharge, reporting progress
+  let queued ← queue.get
+  let showT := pverify.showTimes.get opts
+  progress m!"#pverify {modName}: {queued.size} obligations"
+  for (obName, cmd, kind) in queued, k in [0:queued.size] do
+    let r ← runOb obName cmd kind
+    results := results.push r
+    let verdict := if r.cex.isEmpty then "" else "\n" ++ r.cex[0]!
+    progress m!"[{k + 1}/{queued.size}] {r.line showT}{verdict}"
   -- assembly (not counted as obligations; skipped under `pverify.only`)
   let asm (cmd : TSyntax `command) : CommandElabM Unit := do
     if only.isEmpty then elabCommand cmd
@@ -601,15 +678,27 @@ def elabPVerify : CommandElab := fun stx => do
   -- report
   let failed := results.filter (!·.ok)
   let total := results.foldl (· + ·.ms) 0
-  let showT := pverify.showTimes.get opts
   let tm (ms : Nat) : String := if showT then s!" ({ms} ms)" else ""
   let nTrusted := (results.filter fun r => r.ok && r.trusted).size
-  let mut lines : Array String := #[s!"#pverify {modName}: {results.size} obligations, {results.size - failed.size} proved ({nTrusted} trusting the solver), {failed.size} failed{tm total}"]
+  let proved := results.filter (·.ok)
+  let (nNorm, nPre, nSmt) := proved.foldl (init := (0, 0, 0)) fun (a, b, c) r =>
+    match r.stats with
+    | some (_, _, s) => if s > 0 then (a, b, c + 1) else
+        match r.stats with
+        | some (_, p, _) => if p > 0 then (a, b + 1, c) else (a + 1, b, c)
+        | none => (a + 1, b, c)
+    | none => (a + 1, b, c)
+  let secs (ms : Nat) : String := s!"{(ms + 500) / 1000} s"
+  let normT := results.foldl (· + ·.normMs) 0
+  let crushT := results.foldl (· + ·.crushMs) 0
+  let timeSplit := if showT then
+      s!" (time: {secs normT} in vcgen and normalisation, {secs crushT} in crush, \
+        {secs (total - min total (normT + crushT))} elaborating and checking)"
+    else ""
+  let mut lines : Array String := #[s!"#pverify {modName}: {results.size} obligations, {results.size - failed.size} proved ({nTrusted} trusting the solver), {failed.size} failed{tm total}",
+    s!"  proved by normalisation or a hypothesis: {nNorm}, by crush before SMT: {nPre}, with an SMT solver: {nSmt}{timeSplit}"]
   for r in results do
-    let kind := if !r.cex.isEmpty then "counterexample" else failureKind r.msg
-    let status := if !r.ok then s!"✗ [{kind}]" else if r.trusted then "✓ (trusted)" else "✓"
-    let detail := if r.ok || !r.cex.isEmpty then "" else ": " ++ r.msg
-    lines := lines.push s!"  {status} {r.name}{tm r.ms}{detail}"
+    lines := lines.push s!"  {r.line showT}"
     for l in r.cex do lines := lines.push s!"      {l}"
   for e in asmErrs do lines := lines.push s!"  assembly error: {excerpt e}"
   let report := "\n".intercalate lines.toList
@@ -637,5 +726,24 @@ def elabPVerify : CommandElab := fun stx => do
   if failed.isEmpty && asmErrs.isEmpty then logInfo report
   else if pverify.failOnIncomplete.get opts then logError report
   else logWarning report
+
+open Language in
+/-- `#pverify`. Incremental, so it can report progress: it resolves its
+snapshot at once with a chain of snapshots, one per finished obligation,
+which the language server shows while the command still runs. -/
+@[command_elab pVerify, incremental]
+def elabPVerify : CommandElab := fun stx => do
+  let chain ← IO.mkRef (none : Option (IO.Promise SnapshotTree))
+  if let some snap := (← read).snap? then
+    if pverify.progress.get (← getOptions) then
+      let p ← IO.Promise.new
+      snap.new.resolve (.ofTyped (SnapshotTree.mk { diagnostics := .empty }
+        #[{ stx? := none, cancelTk? := none, task := p.resultD default }]))
+      chain.set (some p)
+  try
+    -- The obligations are commands themselves; they must not take over the snapshot.
+    withReader ({ · with snap? := none }) (pverifyBody stx (progressAt chain stx))
+  finally
+    if let some p ← chain.get then p.resolve default
 
 end PLean

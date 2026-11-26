@@ -69,7 +69,8 @@ set_option pverify.showTimes false
 
 /--
 warning: #pverify CexT: 21 obligations, 15 proved (0 trusting the solver), 6 failed
-  ✓ Pinger.Start.ePong_correct_counts
+  proved by normalisation or a hypothesis: 4, by crush before SMT: 0, with an SMT solver: 11
+  ✓ Pinger.Start.ePong_correct_counts [smt 2]
   ✗ [counterexample] Ponger.Serve.ePing_correct_counts
       invariant `count_small` can fail after Ponger #0, in state Serve, handles ePing (packet #0 from #2 (unallocated)).
       Pre-state (it satisfies the premises; it need not be reachable):
@@ -79,8 +80,8 @@ warning: #pverify CexT: 21 obligations, 15 proved (0 trusting the solver), 6 fai
         (references from #1 on are unallocated)
       In flight:
         #0  #2 (unallocated) → Ponger #0  ePing {n := 2}  ◀
-  ✓ Pinger.Start.entry_correct_counts
-  ✓ Ponger.Serve.entry_correct_counts
+  ✓ Pinger.Start.entry_correct_counts [smt 2]
+  ✓ Ponger.Serve.entry_correct_counts [smt 2]
   ✗ [counterexample] base_counts
       invariant `count_pos` can fail in an initial world.
       Initial world:
@@ -90,8 +91,8 @@ warning: #pverify CexT: 21 obligations, 15 proved (0 trusting the solver), 6 fai
         (references from #1 on are unallocated)
       In flight:
         (none)
-  ✓ Pinger.Start.ePong_correct_pinger
-  ✓ Ponger.Serve.ePing_correct_pinger
+  ✓ Pinger.Start.ePong_correct_pinger [smt 1]
+  ✓ Ponger.Serve.ePing_correct_pinger [smt 1]
   ✗ [counterexample] Pinger.Start.entry_correct_pinger
       invariant `sent_zero` can fail after Pinger #0 runs the entry of state Start.
       Pre-state (it satisfies the premises; it need not be reachable):
@@ -101,14 +102,14 @@ warning: #pverify CexT: 21 obligations, 15 proved (0 trusting the solver), 6 fai
         (references from #1 on are unallocated)
       In flight:
         (none)
-  ✓ Ponger.Serve.entry_correct_pinger
-  ✓ base_pinger
-  ✓ Pinger.Start.ePong_correct_NoHalt
-  ✓ Ponger.Serve.ePing_correct_NoHalt
-  ✓ Pinger.Start.entry_correct_NoHalt
-  ✓ Ponger.Serve.entry_correct_NoHalt
-  ✓ base_NoHalt
-  ✓ Pinger.Start.ePong_safe
+  ✓ Ponger.Serve.entry_correct_pinger [smt 1]
+  ✓ base_pinger [hyp 1]
+  ✓ Pinger.Start.ePong_correct_NoHalt [smt 1]
+  ✓ Ponger.Serve.ePing_correct_NoHalt [smt 1]
+  ✓ Pinger.Start.entry_correct_NoHalt [smt 1]
+  ✓ Ponger.Serve.entry_correct_NoHalt [smt 1]
+  ✓ base_NoHalt [smt 1]
+  ✓ Pinger.Start.ePong_safe [norm]
   ✗ [counterexample] Ponger.Serve.ePing_safe
       Ponger #0, in state Serve, can fail handling ePing (packet #0 from #2 (unallocated)) (an `assert` fails, or `choose` has nothing to choose from).
       Pre-state (it satisfies the premises; it need not be reachable):
@@ -118,8 +119,8 @@ warning: #pverify CexT: 21 obligations, 15 proved (0 trusting the solver), 6 fai
         (references from #1 on are unallocated)
       In flight:
         #0  #2 (unallocated) → Ponger #0  ePing {n := -2}  ◀
-  ✓ Pinger.Start.entry_safe
-  ✓ Ponger.Serve.entry_safe
+  ✓ Pinger.Start.entry_safe [norm]
+  ✓ Ponger.Serve.entry_safe [norm]
   ✗ [counterexample] Pinger.Start.ePing_never
       ePing (packet #0 from #2 (unallocated)) can reach Pinger #0 in state Start, which neither handles, defers nor ignores it.
       Pre-state (it satisfies the premises; it need not be reachable):
@@ -179,6 +180,7 @@ end CexSetT
 
 /--
 warning: #pverify CexSetT: 1 obligations, 0 proved (0 trusting the solver), 1 failed
+  proved by normalisation or a hypothesis: 0, by crush before SMT: 0, with an SMT solver: 0
   ✗ [counterexample] Hub.Run.eJoin_correct_small
       invariant `one_member` can fail after Hub #0, in state Run, handles eJoin (packet #0 from #2 (unallocated)).
       Pre-state (it satisfies the premises; it need not be reachable):

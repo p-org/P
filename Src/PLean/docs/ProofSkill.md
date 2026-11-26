@@ -173,6 +173,15 @@ lake env lean -Dweak.pverify.only=Waiting.eGlobalResponse -Dweak.pverify.profile
   Examples/ClockBound.lean
 ```
 
+- Proofs are cached between runs (`pverify.cache`). An obligation whose
+  statement and the definitions it uses did not change replays its proof
+  (`[cached]`), and in one that changed, each goal that is the same as
+  before (the same conclusion, from hypotheses it still has) reuses its
+  proof (`cache n`). Adding an invariant or editing one therefore sends
+  only the goals it affects to the solver; editing a handler re-solves
+  that handler's goals. The final theorems (`step_AllInv`, `M.safe`) are
+  reused the same way when nothing they depend on changed. Every reused
+  proof is checked by the kernel.
 - `pverify.only` runs the obligations whose names contain one of the
   comma-separated fragments, and skips the assembly of the theorems.
 - `pverify.profile` records, for each goal handed to the solver, its

@@ -111,9 +111,10 @@ lean_lib Examples where
   extraDepTargets := #[``downloadDependencies]
 
 -- The regression tests prove each file's obligations one at a time (lake
--- builds several files at once, and solver timeouts are wall-clock), so their
--- pinned output does not depend on the machine's load.
+-- builds several files at once, and solver timeouts are wall-clock), and
+-- without the proof cache, so their pinned output depends neither on the
+-- machine's load nor on earlier runs.
 lean_lib Tests where
   globs := #[Glob.submodules `Tests]
   extraDepTargets := #[``downloadDependencies]
-  leanOptions := #[⟨`weak.pverify.jobs, .ofNat 1⟩]
+  leanOptions := #[⟨`weak.pverify.jobs, .ofNat 1⟩, ⟨`weak.pverify.cache, .ofBool false⟩]

@@ -36,6 +36,11 @@ when z3 finds one: the invariant that fails, the step, and a minimised
 pre-state, see `PLean.Cex`) and left as `sorry`, so the remaining
 obligations and the assembly still run.
 
+Proofs are reused across runs (`PLean.Cache`): an obligation whose statement
+and module dependencies did not change replays its proof, and a goal of a
+changed obligation that matches a cached lemma reuses it; both are
+kernel-checked.
+
 Obligations are proved in parallel, `pverify.jobs` at a time (default: one
 per hardware thread), each kernel-checked on its own copy of the
 environment; the report keeps their order.
@@ -118,14 +123,16 @@ structure ObResult where
   /-- The SMT script and z3 model it was decoded from. -/
   smt : String := ""
   /-- How its goals were closed: by a hypothesis, by crush before SMT
-  translation, by an SMT solver (`none`: no goal was left after `vcgen` and
-  normalisation). -/
-  stats : Option (Nat × Nat × Nat) := none
+  translation, by an SMT solver, by a cached lemma (`none`: no goal was left
+  after `vcgen` and normalisation). -/
+  stats : Option (Nat × Nat × Nat × Nat) := none
   /-- Time in `vcgen` and normalisation, and in crush (ms). -/
   normMs : Nat := 0
   crushMs : Nat := 0
   /-- Proved by a `@[pverifyProof]` theorem. -/
   manual : Bool := false
+  /-- Its proof was replayed from the cache (`PLean.Cache`). -/
+  cached : Bool := false
   /-- The statement of a failed obligation, as a `@[pverifyProof]` skeleton. -/
   skeleton : String := ""
 
@@ -133,12 +140,13 @@ structure ObResult where
 `vcgen` and normalisation, otherwise the number closed by an SMT solver, by
 crush before SMT translation, and by a hypothesis. -/
 def ObResult.route (r : ObResult) : String :=
+  if r.cached then "[cached]" else
   match r.stats with
   | none => "[norm]"
-  | some (h, p, s) =>
-    if h + p + s == 0 then "[norm]"
+  | some (h, p, s, c) =>
+    if h + p + s + c == 0 then "[norm]"
     else
-      let parts := [(s, "smt"), (p, "pre"), (h, "hyp")].filterMap fun (n, l) =>
+      let parts := [(s, "smt"), (c, "cache"), (p, "pre"), (h, "hyp")].filterMap fun (n, l) =>
         if n == 0 then none else some s!"{l} {n}"
       "[" ++ ", ".intercalate parts ++ "]"
 
@@ -163,7 +171,7 @@ private structure Captured where
   inv : Option Name := none
   script : String := ""
   model : String := ""
-  stats : Option (Nat × Nat × Nat) := none
+  stats : Option (Nat × Nat × Nat × Nat) := none
   normMs : Nat := 0
   crushMs : Nat := 0
 
@@ -187,8 +195,8 @@ private def elabCaptureGoals (cmd : Syntax) : CommandElabM Captured := do
       c := { c with model := (s.drop "pverify-smt-model:\n".length).toString }
     else if s.startsWith "pverify-stats: " then
       match ((s.drop "pverify-stats: ".length).toString.splitOn " ").map String.toNat? with
-      | [some h, some p, some n, some tn, some tc] =>
-        c := { c with stats := some (h, p, n), normMs := tn, crushMs := tc }
+      | [some h, some p, some n, some k, some tn, some tc] =>
+        c := { c with stats := some (h, p, n, k), normMs := tn, crushMs := tc }
       | _ => pure ()
     else if s.startsWith "pverify-time:" || s.startsWith "crush profile" then
       c := { c with notes := c.notes.push s }
@@ -226,19 +234,24 @@ private def arrows (hyps : Array (TSyntax `term)) (concl : TSyntax `term) :
     CommandElabM (TSyntax `term) :=
   hyps.foldrM (init := concl) fun h acc => `($h → $acc)
 
-/-- Why the `@[pverifyProof]` theorem `full` does not prove obligation `cmd`
-(`theorem <name> <binders> : <statement> := …`), if it does not: its
-statement must be the obligation's (up to definitional unfolding). -/
-private def manualMismatch? (full : Name) (cmd : Syntax) : CommandElabM (Option String) := do
-  let `(command| theorem $_:ident $bs:bracketedBinder* : $ty := $_) := cmd
-    | return some "internal: unexpected obligation shape"
-  let some ci := (← getEnv).find? full | return some s!"`{full}` is missing"
+/-- The statement of obligation `cmd` (`theorem <name> <binders> : <statement>
+:= …`), as a closed type. -/
+private def statementOf (cmd : Syntax) : CommandElabM (Option Expr) := do
+  let `(command| theorem $_:ident $bs:bracketedBinder* : $ty := $_) := cmd | return none
   liftTermElabM do
-    let expected ← Term.elabBinders bs fun xs => do
+    let e ← Term.elabBinders bs fun xs => do
       let t ← Term.elabType ty
       Term.synthesizeSyntheticMVarsNoPostponing
       Meta.mkForallFVars xs t
-    let expected ← instantiateMVars expected
+    instantiateMVars e
+
+/-- Why the `@[pverifyProof]` theorem `full` does not prove obligation `cmd`, if
+it does not: its statement must be the obligation's (up to definitional
+unfolding), with the same explicit binders. -/
+private def manualMismatch? (full : Name) (cmd : Syntax) : CommandElabM (Option String) := do
+  let some ci := (← getEnv).find? full | return some s!"`{full}` is missing"
+  let some expected ← statementOf cmd | return some "internal: unexpected obligation shape"
+  liftTermElabM do
     -- the same binders, explicit as the obligation's (the assembly applies it)
     let rec sameBinders : Expr → Expr → Bool
       | .forallE _ _ a bi, .forallE _ _ b bi' => bi == bi' && sameBinders a b
@@ -328,8 +341,19 @@ open Lean Elab Tactic in
     set_option pverify.cex false in
     pverify_close [$[$hs],*] [$[$ds],*] [$[$ls],*] [$[$fs],*]))
 
+/-- `#pverify_cache M`: how many obligation proofs and goal lemmas of `M` are
+cached (`PLean.Cache`). -/
+syntax (name := pVerifyCache) "#pverify_cache " ident : command
+
+@[command_elab pVerifyCache] def elabPVerifyCache : CommandElab := fun stx => do
+  let modName := stx[1].getId
+  Cache.ensureLoaded modName
+  let (o, g) ← Cache.counts modName
+  logInfo m!"{modName}: {o} obligation proofs and {g} goal lemmas cached"
+
 syntax (name := pVerify) "#pverify " ident : command
 
+set_option maxHeartbeats 1000000 in
 private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let `(#pverify $name:ident) := stx | throwUnsupportedSyntax
   let modName := name.getId
@@ -340,6 +364,8 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let opts ← getOptions
   let timeout := pverify.timeout.get opts
   let trust := pverify.trust.get opts
+  let cacheOn := Cache.pverify.cache.get opts
+  if cacheOn then Cache.ensureLoaded modName
   -- targets
   let tgts := proofTargets ctx
   let mut usingOf : NameMap (Array Name) := {}
@@ -382,6 +408,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       set_option crush.trust $(Syntax.mkStrLit trust):str in
       set_option maxHeartbeats 0 in
       set_option Elab.async false in
+      set_option pverify.cacheModule $(Syntax.mkStrLit (if cacheOn then modName.toString else "")):str in
       $cmd:command)
   elabCommand (← `(namespace $name))
   elabCommand (← `(open PLean Std.WP))
@@ -410,6 +437,41 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       CommandElabM Unit := do
     if only.isEmpty || only.any (fun o => (obName.toString.splitOn o).length > 1) then
       queue.modify (·.push (obName, cmd, kind))
+  -- The proof cache (`PLean.Cache`): a theorem's statement and key, replaying a
+  -- cached proof of it (kernel-checked), and recording its proof.
+  let cacheKeyOf (cmd : Syntax) : CommandElabM (Option (Expr × UInt64)) := do
+    unless cacheOn do return none
+    let some stmt ← statementOf cmd | return none
+    return some (stmt, Cache.obKey (← getEnv) stmt ((hintNames ++ factNames).map (modName ++ ·)))
+  let replayCached (full : Name) (stmt : Expr) (key : UInt64) : CommandElabM Bool := do
+    let dbg := (← IO.getEnv "PVERIFY_DEBUG_CACHE").isSome
+    let some ci ← Cache.find? modName (Cache.obName key) |
+      if dbg then IO.eprintln s!"NOENTRY {full}"
+      return false
+    let some v := ci.value? (allowOpaque := true) | return false
+    if trust == "reconstruct" && Cache.trustsSolver v then return false
+    -- (the stored statement may differ up to `let` / `have`; the kernel checks
+    -- the proof against this one)
+    let ok ← liftCoreM do
+      unless ← Cache.ensureAux modName v do
+        if dbg then IO.eprintln s!"NOAUXFOR {full}"
+        return false
+      try
+        withOptions (fun o => ((o.setBool `Elab.async false).insert `maxHeartbeats (.ofNat 0)
+            ).setBool `warn.sorry false) <|
+          addDecl (.thmDecl { name := full, levelParams := [], «type» := stmt, value := v })
+        return true
+      catch e =>
+        if dbg then IO.eprintln ((s!"REJECT {full}: {← e.toMessageData.toString}").take 400).toString
+        return false
+    if ok then Cache.touch modName (Cache.obName key)
+    return ok
+  let recordCached (full : Name) (key : UInt64) : CommandElabM Unit := do
+    if let some ci := (← getEnv).find? full then
+      if let some v := ci.value? (allowOpaque := true) then
+        Cache.insert modName
+          (.thmInfo { name := Cache.obName key, levelParams := [], «type» := ci.type, value := v,
+                      all := [full] })
   let runOb (obName : Name) (cmd : TSyntax `command) (kind : Option String → Cex.Kind) :
       CommandElabM ObResult := do
     let t0 ← IO.monoMsNow
@@ -422,9 +484,17 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       let trusted := err?.isNone && (← collectAxioms full).contains ``Crush.crushSorry
       return { name := obName, ok := err?.isNone, ms := (← IO.monoMsNow) - t0, manual := true,
                trusted, msg := (err?.map excerpt).getD "", fullMsg := err?.getD "" }
+    -- a cached proof (kernel-checked)
+    let key? ← cacheKeyOf cmd
+    if let some (stmt, key) := key? then
+      if ← replayCached full stmt key then
+        let trusted := (← collectAxioms full).contains ``Crush.crushSorry
+        return { name := obName, ok := true, ms := (← IO.monoMsNow) - t0, cached := true, trusted }
     let c ← elabCaptureGoals (← wrap cmd)
     let t1 ← IO.monoMsNow
     let errs := c.errs
+    if let some (_, key) := key? then
+      if errs.isEmpty then recordCached full key
     -- Under `pverify.trust trust` crush trusts the solver without a warning.
     let trusted ← if errs.isEmpty then
         pure (c.trusted || (← collectAxioms (modName ++ obName)).contains ``Crush.crushSorry)
@@ -651,6 +721,10 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       let r ← runOb obName cmd kind
       let added := (← getEnv).constants.map₂.foldl (init := #[]) fun acc n ci =>
         if baseConsts.contains n then acc else acc.push ci
+      -- the auxiliary declarations a proof uses, for the cache
+      if cacheOn && r.ok then
+        for ci in added do
+          unless ci.name == modName ++ obName do Cache.insert modName ci
       return (r, added)
     work := work.push (k, obName, act)
   let nextRef ← IO.mkRef (0 : Nat)
@@ -683,6 +757,9 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     Progress.details.set true
   let wallMs := (← IO.monoMsNow) - tProve
   let nJobs := min jobs work.size
+  let tdbg := (← IO.getEnv "PVERIFY_DEBUG_TIME").isSome
+  let mut tPh ← IO.monoMsNow
+  if tdbg then IO.eprintln s!"TIME proving done"
   -- add the obligations' theorems (and their auxiliary declarations)
   for added in ← declSlots.get do
     for ci in added do
@@ -717,8 +794,27 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   if only.isEmpty then
     Progress.setHead (status queued.size results) s!"[Assembling] {modName}.safe"
   -- assembly (not counted as obligations; skipped under `pverify.only`)
+  -- An assembly theorem, from the cache when its proof is there (with the
+  -- auxiliary declarations its elaboration adds); its errors.
+  let asmCached (cmd : TSyntax `command) (capture : Bool) : CommandElabM (Array String) := do
+    let t0 ← IO.monoMsNow
+    let doElab : CommandElabM (Array String) := do
+      if capture then elabCapture (← wrap cmd) else do elabCommand cmd; pure #[]
+    let some (stmt, key) ← cacheKeyOf cmd | doElab
+    let `(command| theorem $nm:ident $_* : $_ := $_) := cmd.raw | doElab
+    let full := (← getCurrNamespace) ++ nm.getId
+    if ← replayCached full stmt key then return #[]
+    let before : NameSet := (← getEnv).constants.map₂.foldl (init := {}) fun acc n _ => acc.insert n
+    let errs ← doElab
+    if (← IO.getEnv "PVERIFY_DEBUG_TIME").isSome then
+      IO.eprintln s!"TIME asm {nm.getId} {(← IO.monoMsNow) - t0} ms"
+    if errs.isEmpty then
+      recordCached full key
+      for (n, ci) in (← getEnv).constants.map₂.toList do
+        unless before.contains n || n == full do Cache.insert modName ci
+    return errs
   let asm (cmd : TSyntax `command) : CommandElabM Unit := do
-    if only.isEmpty then elabCommand cmd
+    if only.isEmpty then discard <| asmCached cmd false
   let n := allTargets.size
   let hName (k : Nat) : Ident := mkIdent (Name.mkSimple s!"hpre{k}")
   let preNames := (List.range n).toArray.map hName
@@ -733,11 +829,14 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     let parts ← allTargets.mapM mk
     let body ← parts.pop.foldrM (init := parts.back!) fun p acc => `(PLean.RunPost.and $p $acc)
     `(PLean.RunPost.mono (fun _ h => h) $body)
-  let mut caseNames : Array Name := #[]
+  -- each (state, event) case of the step, with its lemma: `cases s <;> cases ev`
+  -- tags the case `<state>.<event>`
+  let mut caseInfo : Array (Name × Name × Bool) := #[]
   for (mname, sname, ev, _) in handled do
     let tag := mkIdent (`S ++ stateTagName mname sname)
     let cn := mname ++ sname ++ Name.mkSimple (ev.toString ++ "_case")
-    caseNames := caseNames.push cn
+    caseInfo := caseInfo.push (stateTagName mname sname ++ ev, cn,
+      (ctx.events.find? ev).any (·.hasPayload))
     let hyps ← deliverHyps g i src dst allPre (← evVal ev) tag
     let concl ← `(∃ act, $(mkIdent `prog).handler $tag $(← evVal ev) = some act ∧
         PLean.RunOK $(mkIdent `AllInv) (($g).consume $i) $dst (($g).machines $dst) act)
@@ -759,7 +858,8 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   for (mname, sname, ev) in never do
     let tag := mkIdent (`S ++ stateTagName mname sname)
     let cn := mname ++ sname ++ Name.mkSimple (ev.toString ++ "_case")
-    caseNames := caseNames.push cn
+    caseInfo := caseInfo.push (stateTagName mname sname ++ ev, cn,
+      (ctx.events.find? ev).any (·.hasPayload))
     let hyps ← deliverHyps g i src dst allPre (← evVal ev) tag
     let concl ← `(∃ act, $(mkIdent `prog).handler $tag $(← evVal ev) = some act ∧
         PLean.RunOK $(mkIdent `AllInv) (($g).consume $i) $dst (($g).machines $dst) act)
@@ -771,11 +871,11 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
         ($src:ident $dst:ident : PLean.MachineRef) $(← plBinder ev)* : $(← arrows hyps concl) := by
       intro hF herr hpre hnet hlog hlt hs hpend hwait hhalt
       exact ($app).elim))
-  let mut entryCases : Array Name := #[]
+  let mut entryCases : Array (Name × Name) := #[]
   for (mname, sname) in stateTags do
     let tag := mkIdent (`S ++ stateTagName mname sname)
     let cn := mname ++ sname ++ `entry_case
-    entryCases := entryCases.push cn
+    entryCases := entryCases.push (stateTagName mname sname, cn)
     let body ← combineRun fun t => do
       let ob := mkIdent (mname ++ sname ++ Name.mkSimple ("entry_correct_" ++ t.toString))
       `($ob $g $m $arg hF herr $(← preOf t) hs hpend hhalt)
@@ -820,12 +920,17 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
                  obtain ⟨src, dst, ev⟩ := p
                  cases k <;> cases ev <;> simp [$(mkIdent `prog):ident] at hr <;> subst hr <;>
                    first $[| $recvTacs:tactic]*))
-  let caseTacs ← caseNames.mapM fun cn =>
-    `(tactic| exact $(mkIdent cn) g i src dst _ hF herr hpre hnet (PLean.Framework.log_of_net hF hnet) (PLean.Framework.lt_clock_of_net hF hnet) hs hpend hwait hhalt)
-  let caseTacs2 ← caseNames.mapM fun cn =>
-    `(tactic| exact $(mkIdent cn) g i src dst hF herr hpre hnet (PLean.Framework.log_of_net hF hnet) (PLean.Framework.lt_clock_of_net hF hnet) hs hpend hwait hhalt)
-  let entryTacs ← entryCases.mapM fun cn =>
-    `(tactic| exact $(mkIdent cn) g m arg hF herr hpre hs hpend hhalt)
+  -- each case goes straight to its lemma (the remaining ones are deferred)
+  let caseTacs ← caseInfo.mapM fun (tag, cn, hasPl) => do
+    let pfs : Array (TSyntax `term) := #[← `(PLean.Framework.log_of_net hF hnet),
+      ← `(PLean.Framework.lt_clock_of_net hF hnet)]
+    let app ← if hasPl then
+        `($(mkIdent cn) g i src dst _ hF herr hpre hnet $pfs* hs hpend hwait hhalt)
+      else `($(mkIdent cn) g i src dst hF herr hpre hnet $pfs* hs hpend hwait hhalt)
+    `(tactic| case $(mkIdent tag):ident => exact $app)
+  let entryTacs ← entryCases.mapM fun (tag, cn) => do
+    let app ← `($(mkIdent cn) g m arg hF herr hpre hs hpend hhalt)
+    `(tactic| case $(mkIdent tag):ident => exact $app)
   let dropTac ← if hasNoHalt then
       `(tactic| (intro g i p _ _ hpre _ hh; exfalso; have := (hpre : $(mkIdent `AllInv) g);
                  simp only [$(mkIdent `AllInv):ident, $(mkIdent `NoHalt):ident] at this;
@@ -845,13 +950,13 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       apply PLean.step_ok $(mkIdent `prog) $(mkIdent `AllInv) $(mkIdent `AllInv)
       · intro g i p s hF herr hpre hnet hs hpend hwait hhalt hdef
         obtain ⟨src, dst, ev⟩ := p
-        cases s <;> cases ev <;> first
-          $[| $caseTacs:tactic]*
-          $[| $caseTacs2:tactic]*
-          | (simp [$(mkIdent `prog):ident] at hdef)
+        cases s <;> cases ev
+        $[$caseTacs:tactic]*
+        all_goals (simp [$(mkIdent `prog):ident] at hdef)
       · $resumeTac:tactic
       · intro g m s arg hF herr hpre hs hpend hhalt
-        cases s <;> first $[| $entryTacs:tactic]*
+        cases s
+        $[$entryTacs:tactic]*
       · $dropTac:tactic)
   let baseParts := allTargets.map fun t => mkIdent (Name.mkSimple ("base_" ++ t.toString))
   let baseApps ← baseParts.mapM fun b => `($b g hI)
@@ -874,9 +979,10 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let safeFifo ← `(command|
     theorem $(mkIdent `safe_fifo) : ∀ g, PLean.GReachable $(mkIdent `prog) .fifo $(mkIdent `InitConditions) g →
         $(mkIdent `AllInv) g ∧ g.error = none := fun g hg => $(mkIdent `safe) g hg.fifo_bag)
+  if tdbg then IO.eprintln s!"TIME merge+asm-build {(← IO.monoMsNow) - tPh} ms"; tPh ← IO.monoMsNow
   let mut asmErrs : Array String := #[]
   for cmd in (if only.isEmpty then #[stepThm, baseThm, safeThm, safeFifo] else #[]) do
-    asmErrs := asmErrs ++ (← elabCapture (← wrap cmd))
+    asmErrs := asmErrs ++ (← asmCached cmd true)
   for (t, k) in allTargets.toList.zipIdx do
     if t == `NoHalt || t == `Transient || t == `Waiting || !only.isEmpty then continue
     let (gq, hgq) := (mkIdent `g, mkIdent `hg)
@@ -886,6 +992,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       theorem $(mkIdent (Name.mkSimple (t.toString ++ "_holds"))) : ∀ g,
           PLean.GReachable $(mkIdent `prog) .fifo $(mkIdent `InitConditions) g → $(mkIdent t) g :=
         fun $gq $hgq => $proj)))
+  if tdbg then IO.eprintln s!"TIME assembly {(← IO.monoMsNow) - tPh} ms"; tPh ← IO.monoMsNow
   -- `InitConditions` (with the axioms) must be satisfiable, or every theorem
   -- holds vacuously: a quick attempt to refute it.
   let mut vacuous := false
@@ -902,6 +1009,11 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     set saved
     vacuous := errs.isEmpty
   elabCommand (← `(end $name))
+  if tdbg then IO.eprintln s!"TIME vacuity {(← IO.monoMsNow) - tPh} ms"; tPh ← IO.monoMsNow
+  -- keep the cache, assembly included (a full run keeps only what it used)
+  if cacheOn then
+    try Cache.save modName (prune := only.isEmpty)
+    catch e => logWarning m!"#pverify: cannot save the proof cache: {e.toMessageData}"
   -- What `M.safe` rests on besides Lean's own axioms.
   let mut assumes : Array String := #[]
   let mut usesSorry := false
@@ -918,19 +1030,21 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
         if ctx.axioms.contains short then assumes := assumes.push s!"paxiom `{short}`"
         else if ctx.instances.contains short then assumes := assumes.push s!"pinstance `{short}`"
         else assumes := assumes.push s!"`{ax}`"
+  if tdbg then IO.eprintln s!"TIME axioms {(← IO.monoMsNow) - tPh} ms"; tPh ← IO.monoMsNow
   -- report
   let failed := results.filter (!·.ok)
   let total := results.foldl (· + ·.ms) 0
   let nTrusted := (results.filter fun r => r.ok && r.trusted).size
   let proved := results.filter fun r => r.ok && !r.manual
   let nManual := (results.filter fun r => r.ok && r.manual).size
-  let (nNorm, nPre, nSmt) := proved.foldl (init := (0, 0, 0)) fun (a, b, c) r =>
+  -- an obligation counts under the strongest means one of its goals needed
+  let (nNorm, nPre, nSmt, nCached) := proved.foldl (init := (0, 0, 0, 0)) fun (a, b, c, d) r =>
+    if r.cached then (a, b, c, d + 1) else
     match r.stats with
-    | some (_, _, s) => if s > 0 then (a, b, c + 1) else
-        match r.stats with
-        | some (_, p, _) => if p > 0 then (a, b + 1, c) else (a + 1, b, c)
-        | none => (a + 1, b, c)
-    | none => (a + 1, b, c)
+    | some (_, p, s, k) =>
+      if s > 0 then (a, b, c + 1, d) else if k > 0 then (a, b, c, d + 1)
+      else if p > 0 then (a, b + 1, c, d) else (a + 1, b, c, d)
+    | none => (a + 1, b, c, d)
   let secs (ms : Nat) : String := s!"{(ms + 500) / 1000} s"
   let normT := results.foldl (· + ·.normMs) 0
   let crushT := results.foldl (· + ·.crushMs) 0
@@ -939,7 +1053,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
         {secs (total - min total (normT + crushT))} elaborating and checking)"
     else ""
   let mut lines : Array String := #[s!"#pverify {modName}: {results.size} obligations, {results.size - failed.size} proved ({nTrusted} trusting the solver), {failed.size} failed{if showT then s!" ({wallMs} ms, {nJobs} at a time)" else ""}",
-    s!"  proved by normalisation or a hypothesis: {nNorm}, by crush before SMT: {nPre}, with an SMT solver: {nSmt}{if nManual > 0 then s!", by hand: {nManual}" else ""}{timeSplit}"]
+    s!"  proved by normalisation or a hypothesis: {nNorm}, by crush before SMT: {nPre}, with an SMT solver: {nSmt}{if nCached > 0 then s!", from the cache: {nCached}" else ""}{if nManual > 0 then s!", by hand: {nManual}" else ""}{timeSplit}"]
   for r in results do
     lines := lines.push s!"  {r.line showT}"
     for l in r.cex do lines := lines.push s!"      {l}"

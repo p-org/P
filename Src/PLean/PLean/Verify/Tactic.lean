@@ -29,6 +29,7 @@ for `#pverify`'s report.
 import PLean.Verify.Norm
 import PLean.Verify.Cex
 import PLean.Verify.Progress
+import PLean.Verify.Cache
 import PLean.Semantics.Msg
 import Crush
 
@@ -180,8 +181,19 @@ def evalPverifyClose : Tactic := fun stx => do
   let goals ← getGoals
   let leave := pverify.leaveGoals.get (← getOptions)
   let mut left : List MVarId := []
+  -- the goal cache of `#pverify`'s module (`PLean.Cache`)
+  let cacheMod := (Cache.pverify.cacheModule.get (← getOptions)).toName
+  let cacheOn := Cache.pverify.cache.get (← getOptions) && !cacheMod.isAnonymous
+  let allowTrusted := (← getOptions).get `crush.trust "reconstructOrTrust" != "reconstruct"
+  let mut nCache : Nat := 0
   for g in goals, k in [0:goals.length] do
     let t0 ← IO.monoMsNow
+    if cacheOn then
+      if ← Cache.tryGoal cacheMod g allowTrusted then
+        nCache := nCache + 1
+        crushMs := crushMs + ((← IO.monoMsNow) - t0)
+        continue
+    let target ← g.getType
     let mut closedBy : Option String := none
     let mut errs : Array (String × Exception) := #[]
     let (crushTac, portfolio) ← portfolioFor g
@@ -208,6 +220,8 @@ def evalPverifyClose : Tactic := fun stx => do
         | 1 => nPre := nPre + 1
         | _ => nSmt := nSmt + 1
         modifyTraceState fun _ => traces0
+        if cacheOn then
+          Cache.recordGoal cacheMod g target ((← Term.getDeclName?).getD .anonymous)
         break
       catch e =>
         s.restore (restoreInfo := true)
@@ -250,9 +264,9 @@ def evalPverifyClose : Tactic := fun stx => do
           if rank ≥ bestRank then
             best := some e
             bestRank := rank
-      logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {normMs} {crushMs}"
+      logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {nCache} {normMs} {crushMs}"
       if let some e := best then throw e
-  unless leave do logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {normMs} {crushMs}"
+  unless leave do logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {nCache} {normMs} {crushMs}"
   setGoals left
 
 end PLean

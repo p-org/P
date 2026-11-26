@@ -358,7 +358,7 @@ These are proved inductive generically, about `gcommit`. As a result:
    - Container updates are constructor terms, which crush unfolds through `mem`/`get`.
    - A `dsimp` projection pass is kept only if P1 shows it helps.
 3. **Trust (D14):** `pverify.trust` defaults to `reconstructOrTrust`: an obligation that the solver proves but reconstruction can't replay is reported as `✓ (trusted)` (its theorem then depends on crush's trust axiom). `reconstruct` makes such obligations fail.
-4. **Counterexamples:** decoded from crush's `get-model` output. A decoded world can be re-checked with `decide`.
+4. **Counterexamples:** each post-condition invariant is marked with its name (`PostInv`), so a goal that is not proved names its invariant. For such a goal, crush writes the SMT encoding; z3 is asked for a model of it with the recursive well-formedness predicates dropped, and the model is minimised (fewest machines, fewest packet ids, fewest packets in flight and delivered, smallest integers). `#pverify` decodes the model into the pre-state world: the machines by kind, with their state and fields, and the packets.
 
 **Removed:**
 - `PLean/Verify/Smt.lean`;

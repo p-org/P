@@ -93,8 +93,8 @@ info: ShapeT.Node.A.ePing_correct_safety : ∀ (g : ShapeT.GW) (i : Nat) (src ds
                 (g.machines dst).pending = none →
                   (g.machines dst).waiting = none →
                     (g.machines dst).halted = false →
-                      RunPost (fun g' ↦ ShapeT.safety g') (GWorld.consume g i) dst (g.machines dst)
-                        ShapeT.Node.A.ePing_handler
+                      RunPost (fun g' ↦ PostInv "nonneg" (ShapeT.nonneg g') ∧ PostInv "no_stray" (ShapeT.no_stray g'))
+                        (GWorld.consume g i) dst (g.machines dst) ShapeT.Node.A.ePing_handler
 -/
 #guard_msgs in
 #check @ShapeT.Node.A.ePing_correct_safety

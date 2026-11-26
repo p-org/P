@@ -12,20 +12,18 @@ design the phases below implement.
 | P1 Prototype | ☑ | Hand-written model and obligations (`Tests/Prototype/HandDL`) |
 | P2 Semantics library | ☑ | `Semantics/*`: logs, containers, handler monad, worlds, steps, `Framework`, `step_ok`, `safety_of_step`, `fifo ⊆ bag`, ghost erasure |
 | P3 Code generation | ☑ | `#gen_module` over the new model: handlers, entries, `prog`, `defer`, loops, locals, `choose` / `$`, `receive` |
-| P4 Obligations | ☑ | Per-handler `RunPost` obligations, error freedom (`RunSafe`), never-receives, base cases, generic assembly into `M.safe` / `M.<T>_holds`; automatic `NoHalt` / `Transient` / `Waiting` |
+| P4 Obligations | ☑ | Per-handler `RunPost` obligations, error freedom (`RunSafe`), never-receives, base cases, generic assembly into `M.safe` / `M.<T>_holds`; automatic `NoHalt` / `Transient` / `Waiting`; counterexamples |
 | P5 Ports | ☑ | All examples verify (see `STATUS.md`) |
 | P6 Explicit-state BMC | ☐ backlog | `#prun`, BFS with a visited set, coin enumeration, counterexample replay |
 
 ## Next
 
-1. **Counterexamples.** Decode crush's models of failed obligations
-   into a readable pre-state (machine table, in-flight packets).
-2. **Spec monitors.** P's `spec X observes …` as world state updated
+1. **Spec monitors.** P's `spec X observes …` as world state updated
    at send time; `assert` failures inside a monitor become error
    freedom obligations.
-3. **Benchmarks.** `Tutorial/Advanced/1_ChainReplicationVerification`
+2. **Benchmarks.** `Tutorial/Advanced/1_ChainReplicationVerification`
    (needs spec monitors), `4_Paxos`.
-4. **P6: explicit-state BMC** on the executable model.
+3. **P6: explicit-state BMC** on the executable model.
 
 ## Smaller items
 

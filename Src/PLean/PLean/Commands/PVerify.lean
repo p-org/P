@@ -24,8 +24,10 @@ module:
 * `<M>.<S>.<ev>_never` per event a state neither handles, ignores nor
   defers.
 
-A failing obligation is reported (with its time and the error) and left
-as `sorry`, so the remaining obligations and the assembly still run.
+A failing obligation is reported (with its time, and a counterexample
+when z3 finds one: the invariant that fails, the step, and a minimised
+pre-state, see `PLean.Cex`) and left as `sorry`, so the remaining
+obligations and the assembly still run.
 -/
 import Lean
 import PLean.Commands.GenModule
@@ -76,6 +78,12 @@ structure ObResult where
   trusted : Bool := false
   /-- Per-goal times (`pverify.profile`, report file only). -/
   notes : Array String := #[]
+  /-- The invariant of the goal that was not proved, if known. -/
+  inv : Option Name := none
+  /-- The decoded counterexample (`PLean.Cex.render`). -/
+  cex : Array String := #[]
+  /-- The SMT script and z3 model it was decoded from. -/
+  smt : String := ""
 
 /-- The kind of a failed obligation, from its error message. -/
 def failureKind (msg : String) : String :=
@@ -87,27 +95,41 @@ def failureKind (msg : String) : String :=
 
 /-- Elaborate `cmd`, returning its error messages and the goals `crush`
 failed on (both removed from the log). -/
-private def elabCaptureGoals (cmd : Syntax) :
-    CommandElabM (Array String × Array String × Bool × Array String) := do
+private structure Captured where
+  errs : Array String := #[]
+  goals : Array String := #[]
+  trusted : Bool := false
+  notes : Array String := #[]
+  inv : Option Name := none
+  script : String := ""
+  model : String := ""
+
+/-- Elaborate `cmd`, returning its error messages and what `pverify_close`
+logged (all removed from the log). -/
+private def elabCaptureGoals (cmd : Syntax) : CommandElabM Captured := do
   let saved := (← get).messages
   modify fun s => { s with messages := {} }
   elabCommand cmd
   let msgs := (← get).messages
-  let mut errs : Array String := #[]
-  let mut goals : Array String := #[]
-  let mut notes : Array String := #[]
-  let mut trusted := false
+  let mut c : Captured := {}
   for m in msgs.toList do
     let s ← m.data.toString
-    if m.severity == .error then errs := errs.push (← m.toString)
-    else if s.startsWith "pverify-goal:" then goals := goals.push s
-    else if s.startsWith "pverify-time:" || s.startsWith "crush profile" then notes := notes.push s
-    else if (s.splitOn "crushSorry").length > 1 then trusted := true
+    if m.severity == .error then c := { c with errs := c.errs.push (← m.toString) }
+    else if s.startsWith "pverify-goal:" then c := { c with goals := c.goals.push s }
+    else if s.startsWith "pverify-inv: " then
+      c := { c with inv := some ((s.drop "pverify-inv: ".length).toString.toName) }
+    else if s.startsWith "pverify-smt-script:\n" then
+      c := { c with script := (s.drop "pverify-smt-script:\n".length).toString }
+    else if s.startsWith "pverify-smt-model:\n" then
+      c := { c with model := (s.drop "pverify-smt-model:\n".length).toString }
+    else if s.startsWith "pverify-time:" || s.startsWith "crush profile" then
+      c := { c with notes := c.notes.push s }
+    else if (s.splitOn "crushSorry").length > 1 then c := { c with trusted := true }
   modify fun s => { s with messages := saved }
-  return (errs, goals, trusted, notes)
+  return c
 
 private def elabCapture (cmd : Syntax) : CommandElabM (Array String) :=
-  return (← elabCaptureGoals cmd).1
+  return (← elabCaptureGoals cmd).errs
 
 private def excerpt (s : String) (n : Nat := 300) : String :=
   let s := s.replace "\n" " "
@@ -191,6 +213,15 @@ def elabPVerify : CommandElab := fun stx => do
   let closeTac (handlers : Array Ident) : CommandElabM (TSyntax ``Lean.Parser.Tactic.tacticSeq) :=
     `(Lean.Parser.Tactic.tacticSeq|
         pverify_close [$[$handlers],*] [$[$defs],*] [$[$hints],*] [$[$facts],*])
+  -- `T x` as a conjunction of its invariants, each marked with its name
+  -- (`PostInv`), so a failing goal names its invariant.
+  let markedPost (t : Name) (x : TSyntax `term) : CommandElabM (TSyntax `term) := do
+    let invsOf := ((ctx.lemmas.find? t).map (·.invariants)).getD #[t]
+    let parts ← invsOf.mapM fun n =>
+      `(PLean.PostInv $(Syntax.mkStrLit n.toString) ($(mkIdent n) $x))
+    match parts.back? with
+    | none => `(True)
+    | some last => parts.pop.foldrM (init := last) fun p acc => `($p ∧ $acc)
   let wrap (cmd : TSyntax `command) : CommandElabM (TSyntax `command) :=
     `(command|
       set_option experimental.vcgen true in
@@ -208,13 +239,34 @@ def elabPVerify : CommandElab := fun stx => do
       $(← conjAt allTargets gI)))
   let mut results : Array ObResult := #[]
   let only := ((pverify.only.get opts).splitOn ",").map (fun s => s.trimAscii.toString) |>.filter (!·.isEmpty)
-  let runOb (obName : Name) (cmd : TSyntax `command) : CommandElabM (Array ObResult) := do
+  -- what the counterexample decoder needs to know about the program
+  let cexNames : Cex.Names := Id.run do
+    let mut tags : Std.HashMap String (String × String) := {}
+    for mname in ctx.machineOrder do
+      let some md := ctx.machines.find? mname | continue
+      for (sname, _, _) in machineStates md.body do
+        tags := tags.insert (stateTagName mname sname).toString (mname.toString, sname.toString)
+    let structFields (base : String) : Option (Array String) :=
+      [modName ++ base.toName, `PLean ++ base.toName, base.toName].findSome? fun n =>
+        if isStructure env n then some ((getStructureFields env n).map (·.toString)) else none
+    return { tags, machines := ctx.machineOrder.map (·.toString)
+             fFields := ((structFields "F").getD #[])
+             structFields
+             functions := ctx.pures.toList.toArray.map (·.1.toString) }
+  let runOb (obName : Name) (cmd : TSyntax `command) (kind : Option String → Cex.Kind) :
+      CommandElabM (Array ObResult) := do
     unless only.isEmpty || only.any (fun o => (obName.toString.splitOn o).length > 1) do
       return #[]
     let t0 ← IO.monoMsNow
-    let (errs, goals, trusted, notes) ← elabCaptureGoals (← wrap cmd)
+    let c ← elabCaptureGoals (← wrap cmd)
     let t1 ← IO.monoMsNow
-    return #[{ name := obName, ok := errs.isEmpty, ms := t1 - t0, goals, trusted, notes,
+    let errs := c.errs
+    let cex := if errs.isEmpty || c.model.isEmpty then #[] else
+      (Cex.render cexNames (kind (c.inv.map (·.toString))) c.script c.model).getD #[]
+    let smt := if c.model.isEmpty then "" else
+      c.script ++ "\n\n; z3's model:\n" ++ "\n".intercalate ((c.model.splitOn "\n").map ("; " ++ ·))
+    return #[{ name := obName, ok := errs.isEmpty, ms := t1 - t0, goals := c.goals,
+                 trusted := c.trusted, notes := c.notes, inv := c.inv, cex, smt,
                  fullMsg := if errs.isEmpty then "" else errs[0]!,
                  msg := if errs.isEmpty then "" else excerpt errs[0]! }]
   let (g, i, src, dst, pl, m, arg) :=
@@ -278,7 +330,7 @@ def elabPVerify : CommandElab := fun stx => do
   -- per-target obligations
   for t in allTargets do
     let pre ← conjAt (premisesOf t #[]) g
-    let post ← `(fun g' => $(mkIdent t) g')
+    let post ← `(fun g' => $(← markedPost t (← `(g'))))
     for (mname, sname, ev, act) in handled do
       let tag := mkIdent (`S ++ stateTagName mname sname)
       let obName := mname ++ sname ++ Name.mkSimple (ev.toString ++ "_correct_" ++ t.toString)
@@ -290,7 +342,8 @@ def elabPVerify : CommandElab := fun stx => do
       let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat)
           ($src:ident $dst:ident : PLean.MachineRef) $(← plBinder ev)* : $stmt := by
         $(← closeTac #[hname]))
-      results := results ++ (← runOb obName cmd)
+      results := results ++ (← runOb obName cmd
+        (.correct (.deliver mname.toString sname.toString ev.toString) t.toString))
     for (mname, sname) in stateTags do
       let tag := mkIdent (`S ++ stateTagName mname sname)
       let obName := mname ++ sname ++ Name.mkSimple ("entry_correct_" ++ t.toString)
@@ -302,7 +355,8 @@ def elabPVerify : CommandElab := fun stx => do
       let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($m:ident : PLean.MachineRef)
           ($arg:ident : $(mkIdent `G)) : $(← arrows hyps concl) := by
         $(← closeTac #[entryFn]))
-      results := results ++ (← runOb obName cmd)
+      results := results ++ (← runOb obName cmd
+        (.correct (.entry mname.toString sname.toString) t.toString))
     for s in sites do
       for c in s.cases do
         let obName := (s.mname ++ resumerName s.sname s.idx c.ev).appendAfter ("_correct_" ++ t.toString)
@@ -315,20 +369,21 @@ def elabPVerify : CommandElab := fun stx => do
             ($src:ident $dst:ident : PLean.MachineRef) $((← siteBinders s) ++ (← plBinder c.ev))* :
             $(← arrows hyps concl) := by
           $(← closeTac #[fn]))
-        results := results ++ (← runOb obName cmd)
+        results := results ++ (← runOb obName cmd
+          (.correct (.resume s.mname.toString s.sname.toString c.ev.toString) t.toString))
     if !hasNoHalt then
       let obName := Name.mkSimple ("drop_correct_" ++ t.toString)
       let p := mkIdent `p
       let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat) ($p:ident : PLean.Packet $(mkIdent `E)) :
           PLean.Framework $g → ($g).error = none → $pre → ($g).net $i = some $p →
-          (($g).machines ($p).dst).halted = true → $(mkIdent t) (($g).consume $i) := by
+          (($g).machines ($p).dst).halted = true → $(← markedPost t (← `(($g).consume $i))) := by
         $(← closeTac #[]))
-      results := results ++ (← runOb obName cmd)
+      results := results ++ (← runOb obName cmd (.correct .drop t.toString))
     let baseName := Name.mkSimple ("base_" ++ t.toString)
     let cmd ← `(command| theorem $(mkIdent baseName) ($g:ident : $gwTy) :
-        $(mkIdent `InitConditions) $g → $(mkIdent t) $g := by
+        $(mkIdent `InitConditions) $g → $(← markedPost t g) := by
       $(← closeTac #[]))
-    results := results ++ (← runOb baseName cmd)
+    results := results ++ (← runOb baseName cmd (.correct .base t.toString))
   let allPre ← `($(mkIdent `AllInv) $g)
   -- error freedom (under every invariant)
   for (mname, sname, ev, act) in handled do
@@ -340,7 +395,8 @@ def elabPVerify : CommandElab := fun stx => do
     let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat)
         ($src:ident $dst:ident : PLean.MachineRef) $(← plBinder ev)* : $(← arrows hyps concl) := by
       $(← closeTac #[hname]))
-    results := results ++ (← runOb obName cmd)
+    results := results ++ (← runOb obName cmd
+      fun _ => .safe (.deliver mname.toString sname.toString ev.toString))
   for (mname, sname) in stateTags do
     let tag := mkIdent (`S ++ stateTagName mname sname)
     let obName := mname ++ sname ++ `entry_safe
@@ -352,7 +408,7 @@ def elabPVerify : CommandElab := fun stx => do
     let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($m:ident : PLean.MachineRef)
         ($arg:ident : $(mkIdent `G)) : $(← arrows hyps concl) := by
       $(← closeTac #[entryFn]))
-    results := results ++ (← runOb obName cmd)
+    results := results ++ (← runOb obName cmd fun _ => .safe (.entry mname.toString sname.toString))
   for s in sites do
     for c in s.cases do
       let obName := (s.mname ++ resumerName s.sname s.idx c.ev).appendAfter "_safe"
@@ -364,7 +420,8 @@ def elabPVerify : CommandElab := fun stx => do
           ($src:ident $dst:ident : PLean.MachineRef) $((← siteBinders s) ++ (← plBinder c.ev))* :
           $(← arrows hyps concl) := by
         $(← closeTac #[fn]))
-      results := results ++ (← runOb obName cmd)
+      results := results ++ (← runOb obName cmd
+        fun _ => .safe (.resume s.mname.toString s.sname.toString c.ev.toString))
   -- never-receives
   for (mname, sname, ev) in never do
     let tag := mkIdent (`S ++ stateTagName mname sname)
@@ -373,7 +430,7 @@ def elabPVerify : CommandElab := fun stx => do
     let cmd ← `(command| theorem $(mkIdent obName) ($g:ident : $gwTy) ($i:ident : Nat)
         ($src:ident $dst:ident : PLean.MachineRef) $(← plBinder ev)* : $(← arrows hyps (← `(False))) := by
       $(← closeTac #[]))
-    results := results ++ (← runOb obName cmd)
+    results := results ++ (← runOb obName cmd fun _ => .never mname.toString sname.toString ev.toString)
   -- assembly (not counted as obligations; skipped under `pverify.only`)
   let asm (cmd : TSyntax `command) : CommandElabM Unit := do
     if only.isEmpty then elabCommand cmd
@@ -549,8 +606,11 @@ def elabPVerify : CommandElab := fun stx => do
   let nTrusted := (results.filter fun r => r.ok && r.trusted).size
   let mut lines : Array String := #[s!"#pverify {modName}: {results.size} obligations, {results.size - failed.size} proved ({nTrusted} trusting the solver), {failed.size} failed{tm total}"]
   for r in results do
-    let status := if !r.ok then s!"✗ [{failureKind r.msg}]" else if r.trusted then "✓ (trusted)" else "✓"
-    lines := lines.push s!"  {status} {r.name}{tm r.ms}{if r.ok then "" else ": " ++ r.msg}"
+    let kind := if !r.cex.isEmpty then "counterexample" else failureKind r.msg
+    let status := if !r.ok then s!"✗ [{kind}]" else if r.trusted then "✓ (trusted)" else "✓"
+    let detail := if r.ok || !r.cex.isEmpty then "" else ": " ++ r.msg
+    lines := lines.push s!"  {status} {r.name}{tm r.ms}{detail}"
+    for l in r.cex do lines := lines.push s!"      {l}"
   for e in asmErrs do lines := lines.push s!"  assembly error: {excerpt e}"
   let report := "\n".intercalate lines.toList
   -- Always keep the full report (with failing goals) on disk.
@@ -567,6 +627,12 @@ def elabPVerify : CommandElab := fun stx => do
     for r in failed do
       h.putStrLn s!"--- {r.name}\n{r.fullMsg}"
       for gl in r.goals do h.putStrLn gl
+    -- the SMT script and model of each counterexample
+    for r in failed do
+      unless r.smt.isEmpty do
+        let p := path.withExtension "" / s!"{r.name}.smt2"
+        if let some dir := p.parent then IO.FS.createDirAll dir
+        IO.FS.writeFile p r.smt
   catch _ => pure ()
   if failed.isEmpty && asmErrs.isEmpty then logInfo report
   else if pverify.failOnIncomplete.get opts then logError report

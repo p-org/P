@@ -102,6 +102,8 @@ PLean/
     SimpAttrs.lean   -- the pverifySimp attribute
     Norm.lean        -- pverifySimp rules, pv_destruct, pv_cursor_mem
     Tactic.lean      -- pverify_close (vcgen + normalisation + crush)
+    Cex.lean         -- counterexamples: a minimised z3 model of a goal
+                        that is not proved, decoded into a world
 
 Examples/            -- protocol ports
 Tests/               -- regressions; Tests.** is globbed
@@ -251,6 +253,12 @@ load-bearing invariants you need to respect when editing.
 - `pverify.timeout` (seconds), `pverify.trust` (`reconstructOrTrust` by
   default: obligations whose proof could not be replayed are reported
   `✓ (trusted)`), `pverify.heartbeats`.
+- A goal that is not proved gets a counterexample when z3 finds one
+  (`pverify.cex`, on by default): the report names the failing invariant
+  and the step, and shows a minimised pre-state (machines by kind with
+  their state and fields, packets in flight and delivered). The SMT
+  script and model go to `.lake/pverify/<Mod>/<obligation>.smt2`. See
+  `docs/ProofSkill.md`.
 
 ## Style guide
 

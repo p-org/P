@@ -100,6 +100,42 @@ elab "pv_cursor_mem" : tactic => do
     out := out ++ [g']
   setGoals out
 
+/-- An invariant `p`, named `name`, in an obligation's post-condition. `vcgen`
+keeps it whole, so `pv_split_post` can tag the goal with the invariant. -/
+def PostInv (_name : String) (p : Prop) : Prop := p
+
+@[pverifySimp] theorem PostInv.eq (n : String) (p : Prop) : PostInv n p = p := rfl
+
+/-- The tag `pv_split_post` gives a goal of invariant `inv`. -/
+def invTag (inv : String) : Lean.Name := .str (.mkSimple "pv_inv") inv
+
+/-- The invariant a goal tag (`invTag`, possibly extended by later tactics)
+names. -/
+def invOfTag (tag : Lean.Name) : Option String :=
+  match tag.components with
+  | .str .anonymous "pv_inv" :: .str .anonymous inv :: _ => some inv
+  | _ => none
+
+open Lean Meta in
+/-- Split conjunctions, and for a goal `PostInv inv P` tag it `invTag inv`,
+replace it by `P` and introduce `P`'s binders. -/
+partial def splitPost (g : MVarId) : MetaM (List MVarId) := do
+  let t := (← instantiateMVars (← g.getType)).consumeMData.headBeta
+  if t.isAppOfArity ``And 2 then
+    let gs ← g.apply (mkConst ``And.intro)
+    return (← gs.mapM splitPost).flatten
+  if t.isAppOfArity ``PostInv 2 then
+    let .lit (.strVal inv) := t.appFn!.appArg!.consumeMData | return [g]
+    let g' ← g.replaceTargetDefEq t.appArg!
+    g'.setTag (invTag inv)
+    return [(← g'.intros).2]
+  return [g]
+
+open Lean Elab Tactic in
+/-- Split each goal by the invariants of its post-condition (`splitPost`). -/
+elab "pv_split_post" : tactic => do
+  setGoals ((← (← getGoals).mapM fun g => splitPost g).flatten)
+
 open Lean Meta Elab Tactic in
 /-- Clear the let-bound locals nothing refers to any more (handler locals and
 `do` join points, inlined by normalisation). -/

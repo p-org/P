@@ -12,7 +12,7 @@ The phases are those of [`TransitionModel.md`](TransitionModel.md); see
 | P1 Prototype | ☑ | |
 | P2 Semantics library | ☑ | metatheory proved, no `sorry` |
 | P3 Code generation | ☑ | `receive` as a top-level statement of a handler / entry body |
-| P4 Obligations | ☑ | |
+| P4 Obligations | ☑ | counterexamples for obligations that are not proved |
 | P5 Ports | ☑ | every example verifies |
 | P6 Explicit-state BMC | ☐ | backlog |
 
@@ -25,16 +25,18 @@ Times are the total solving time of `#pverify` on one machine.
 | Example | Obligations | Trusted | Time |
 |---|---|---|---|
 | [`PingPongTrivial`](../Examples/PingPongTrivial.lean) | 8 | 0 | 1 s |
-| [`PingPongAuto`](../Examples/PingPongAuto.lean) | 16 | 1 | 10 s |
-| [`DistributedLock`](../Examples/DistributedLock.lean) | 11 | 0 | 18 s |
-| [`ShardedKV`](../Examples/ShardedKV.lean) | 11 | 0 | 15 s |
-| [`LockServer`](../Examples/LockServer.lean) | 36 | 0 | 108 s |
-| [`RingLeader`](../Examples/RingLeader.lean) | 19 | 1 | 87 s |
-| [`Consensus`](../Examples/Consensus.lean) | 27 | 0 | 107 s |
-| [`TwoPhaseCommit`](../Examples/TwoPhaseCommit.lean) | 203 | 0 | 116 s |
-| [`ClockBound`](../Examples/ClockBound.lean) | 118 | 0 | 524 s |
+| [`PingPongAuto`](../Examples/PingPongAuto.lean) | 16 | 1 | 7 s |
+| [`DistributedLock`](../Examples/DistributedLock.lean) | 11 | 0 | 12 s |
+| [`ShardedKV`](../Examples/ShardedKV.lean) | 11 | 0 | 11 s |
+| [`LockServer`](../Examples/LockServer.lean) | 36 | 0 | 82 s |
+| [`RingLeader`](../Examples/RingLeader.lean) | 19 | 1 | 81 s |
+| [`Consensus`](../Examples/Consensus.lean) | 27 | 0 | 110 s |
+| [`TwoPhaseCommit`](../Examples/TwoPhaseCommit.lean) | 203 | 0 | 81 s |
+| [`ClockBound`](../Examples/ClockBound.lean) | 118 | 0 | 514 s |
 
-No example needs a manual proof.
+No example needs a manual proof. An obligation that is not proved is
+reported with a counterexample when z3 finds one (see
+[`ProofSkill.md`](ProofSkill.md)).
 
 ## Document index
 

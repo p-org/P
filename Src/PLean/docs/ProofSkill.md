@@ -15,13 +15,41 @@ with the goals the solver failed on, to `.lake/pverify/M.txt`.
 |---|---|---|
 | `✓` | proved, with a checked proof | — |
 | `✓ (trusted)` | the solver proved it, but its proof could not be replayed | usually fine; simplify the invariant if a checked proof matters |
-| `✗ [counterexample]` | the solver found a state where the step breaks the invariant | the invariant is false or not inductive: strengthen it |
-| `✗ [unknown]` | the solver timed out | the step needs too much reasoning in one query: add intermediate invariants |
+| `✗ [counterexample]` | z3 found a state where the step breaks the invariant | the invariant is false or not inductive: strengthen it |
+| `✗ [unknown]` | the solver timed out, and no counterexample was found | the step needs too much reasoning in one query: add intermediate invariants |
 
-A counterexample is a pre-state satisfying the premises, not necessarily
-a reachable one. The usual cause is a fact that holds in every reachable
-state but is not among the premises: add it as an invariant (and
-`prove` it).
+A counterexample names the invariant and the step, and shows a smallest
+pre-state z3 finds:
+
+```
+✗ [counterexample] Coordinator.WaitForResponses.eYes_correct_commit_sent
+    invariant `commit_sent_implies_all_yes` can fail after Coordinator #1, in state WaitForResponses, handles eYes (packet #0 from Coordinator #1).
+    Pre-state (it satisfies the premises; it need not be reachable):
+    Machines:
+      Coordinator
+        #1 (coordinator)  WaitForResponses  yesVotes = {0}  ◀
+      Participant
+        #0  Rejected
+      (references from #2 on are unallocated)
+    In flight:
+      #0  Coordinator #1 → Coordinator #1  eYes {source := 2}  ◀
+    Functions:
+      preference: #0 ↦ false, #1 ↦ false
+      coordinator = 1
+      participants = {0}
+```
+
+`◀` marks the machine taking the step and the packet it takes. The
+pre-state satisfies the premises but need not be reachable (here, the
+Coordinator holds a yes vote from a participant that prefers no). The
+usual cause is a fact that holds in every reachable state but is not
+among the premises: add it as an invariant (and `prove` it), here
+`votes_all_prefer`.
+
+Counterexamples are found with the well-formedness of recursive
+datatypes dropped, so a value where the program has a `Nat` (inside a
+set, say) can be negative. The SMT script and model are kept in
+`.lake/pverify/<M>/<obligation>.smt2`.
 
 ## Patterns
 

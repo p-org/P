@@ -16,7 +16,7 @@ namespace PLean.Tests.Containers
 
 /-! ## Surface macros: type-level desugaring -/
 
-example : set[Nat] = PSet Nat := rfl
+example : set[Nat] = Set Nat := rfl
 example : seq[Nat] = List Nat := rfl
 example : map[Nat, Nat] = PMap Nat Nat := rfl
 example : map[Nat, Nat] = (Nat → Option Nat) := rfl
@@ -79,6 +79,6 @@ example (s : Set Nat) (x e : Nat) :
 example (s : Set Nat) (x e : Nat) :
     x ∈ s \ Set.singleton e ↔ x ∈ s ∧ x ≠ e := by
   simp only [pverifySimp]
-  simp only [Set.mem_singleton_iff]
+  tauto
 
 end PLean.Tests.Containers

@@ -2,7 +2,7 @@
 PLean.Syntax.Containers — type-level sugar for P's container types.
 
 Four term-level macros parse P's container syntax:
-  `set[T]`     ↝ `PLean.PSet T`        (first-order opaque set theory)
+  `set[T]`     ↝ `Set T`              (Mathlib)
   `map[K, V]`  ↝ `K → Option V`        (PVerifier's encoding)
   `seq[T]`     ↝ `List T`              (core; no SMT support)
   `option[T]`  ↝ `Option T`            (core inductive)
@@ -12,9 +12,9 @@ type aliases, and payload-field annotations. Element / key / value
 slots are arbitrary `term`s; nesting (`set[map[K, option[Machine]]]`)
 falls out of normal Lean term parsing.
 
-`default(set[T])` reads as the empty `PSet` through Lean's `Inhabited`
-resolution (`PSet α`'s instance gives `PSet.empty`).
-`default(map[K, V])` reads as the always-`none` function.
+`default(set[T])` reads as the Mathlib empty set through Lean's
+`Inhabited` resolution (`Set α` has an `Inhabited` instance giving
+`∅`). `default(map[K, V])` reads as the always-`none` function.
 `default(option[T])` is `Option.none`.
 -/
 import Lean
@@ -42,7 +42,7 @@ scoped syntax (name := pOptionType) "option[" term "]" : term
 -- directly bypasses the issue — `PMap` remains available as a
 -- public alias for users who want to talk about the encoding by name.
 scoped macro_rules
-  | `(set[$t:term])          => `(PLean.PSet $t)
+  | `(set[$t:term])          => `(Set $t)
   | `(map[$k:term, $v:term]) => `($k → Option $v)
   | `(seq[$t:term])          => `(List $t)
   | `(option[$t:term])       => `(Option $t)

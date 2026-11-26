@@ -54,49 +54,34 @@ structure VarInfo where
       instead of `Prop` (lean-auto rejects `Prop`-codomain functions
       under quantifiers as higher-order), and the accessor / field
       projection bridges between the storage Bool and the surface
-      `Set T`. Unreachable via the current `set[T]` surface (which
-      desugars to the opaque `PSet`, not `T → Prop`); kept for the raw
-      `Set`-typed `var` escape hatch. -/
+      `Set T`. -/
   isSetProp : Bool
-  /-- True iff the var is a `PLean.PSet T` (P's `set[T]`). `PSet` is a
-      sealed first-order sort, so it can't be a struct field reachable
-      from `GlobalState` (lean-auto chokes translating the enclosing
-      datatype). It hoists into `Containers` as a whole-value row
-      `MachineRef → PSet T`; the prep chain's state destructure then
-      exposes it as a free `MachineRef → PSet T` function, which
-      translates. The field projection reads the whole set (no `(ref,
-      elem)` uncurry), so `isQuorum n.votes` and `a ∈ n.votes` are both
-      first-order. -/
-  isPSet : Bool
 
 /-- Classify a container `var`'s declared type. Returns `(isContainer,
-isSetProp, isPSet)`. `map[K,V]` / `seq[T]` desugar to arrows; `set[T]`
-desugars to the sealed `PLean.PSet` (not an arrow) and is detected by
-its head constant. -/
+isSetProp)`. `set[T]` desugars to `T → Prop` whose codomain is `Prop`
+— that's flagged so the hoisted field uses `Bool` storage. -/
 private def classifyTypeAsContainer (ty : TSyntax `term) :
-    CommandElabM (Bool × Bool × Bool) := do
+    CommandElabM (Bool × Bool) := do
   try
     Lean.Elab.Command.runTermElabM fun _ => do
       let e ← Lean.Elab.Term.elabType ty
       let n ← Lean.Meta.whnf e
-      if n.getAppFn.isConstOf ``PLean.PSet then
-        return (true, false, true)
-      else if n.isForall || n.isArrow then
+      if n.isForall || n.isArrow then
         let codom ← Lean.Meta.whnf n.bindingBody!
-        return (true, codom.isProp, false)
+        return (true, codom.isProp)
       else
-        return (false, false, false)
-  catch _ => return (false, false, false)
+        return (false, false)
+  catch _ => return (false, false)
 
 private def collectVars (body : Array Syntax) : CommandElabM (Array VarInfo) := do
   let mut vars : Array VarInfo := #[]
   for it in body do
     match it with
     | `(pMachineBodyItem| var $vname:ident : $vty:term) =>
-      let (isC, isSP, isPS) ← classifyTypeAsContainer vty
+      let (isC, isSP) ← classifyTypeAsContainer vty
       vars := vars.push
         { name := vname.getId, ty := vty,
-          isContainer := isC, isSetProp := isSP, isPSet := isPS }
+          isContainer := isC, isSetProp := isSP }
     | _ => pure ()
   return vars
 
@@ -943,7 +928,6 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   let sName : Name := ctx.sBinder.getD `s
@@ -995,7 +979,7 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
         let rewritten ← liftMacroM <|
           PLean.rewriteFieldProjections machineKinds eventKinds
             machineFields machineContainerFields machineSetPropFields
-            machinePSetFields eventPayloadFields sName stx[1]
+            eventPayloadFields sName stx[1]
         let raw ← liftMacroM <|
           PLean.injectKindGuards machineKinds eventKinds sName rewritten
         props := props.push ⟨raw⟩
@@ -1089,19 +1073,6 @@ def elabPGenModule : CommandElab := fun stx => do
           fun s v => if v.isSetProp then s.insert v.name else s
         out := out.insert mname s
       out
-    -- machinePSetFields[M] is the subset of M's container vars that are
-    -- `set[T] = PLean.PSet T`. The hoisted slot stores the whole set per
-    -- machine (`MachineRef → PSet T`), so `n.<v>` projects to the `PSet`
-    -- value directly (no `(ref, elem)` uncurry) — first-order both as a
-    -- membership target and as a whole-value predicate argument.
-    let machinePSetFields : NameMap NameSet := Id.run do
-      let mut out : NameMap NameSet := {}
-      for mname in ctx.machineOrder do
-        let some vars := machineVars.find? mname | continue
-        let s := vars.foldl (init := ({} : NameSet))
-          fun s v => if v.isPSet then s.insert v.name else s
-        out := out.insert mname s
-      out
     let eventPayloadFields : NameMap NameSet := Id.run do
       let mut out : NameMap NameSet := {}
       for ename in ctx.eventOrder do
@@ -1149,7 +1120,7 @@ def elabPGenModule : CommandElab := fun stx => do
     for (_, d) in ctx.axioms.toList do
       materialiseAxiom machineKindsForAx eventKindsForAx
         machineFields machineContainerFields machineSetPropFields
-        machinePSetFields eventPayloadFields d
+        eventPayloadFields d
     for (_, d) in ctx.instances.toList do  materialiseInstance d
     -- State-tag aliases emit before machine handler bodies so handler
     -- bodies' `goto <S>` resolves to `<S>_st`, and before invariant
@@ -1172,8 +1143,7 @@ def elabPGenModule : CommandElab := fun stx => do
       ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
     for (_, d) in ctx.invariants.toList do
       materialiseInvariant machineKindsEarly eventKindsEarly machineFields
-        machineContainerFields machineSetPropFields machinePSetFields
-        eventPayloadFields d
+        machineContainerFields machineSetPropFields eventPayloadFields d
     emitLemmaBundles ctx
     -- Per-machine var accessors + handler defs, replayed inside each
     -- machine namespace.
@@ -1220,8 +1190,7 @@ def elabPGenModule : CommandElab := fun stx => do
     -- Aggregate `init-holds` clauses into `<Mod>.InitConditions` (the
     -- base-case precondition for each invariant).
     emitInitConditions machineKinds eventKinds machineFields
-      machineContainerFields machineSetPropFields machinePSetFields
-      eventPayloadFields ctx
+      machineContainerFields machineSetPropFields eventPayloadFields ctx
     -- Aggregate every free-standing invariant into `<Mod>.UserInv`
     -- (empty → `True`).
     emitUserInv ctx

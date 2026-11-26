@@ -17,23 +17,14 @@ is *derived* (not assumed) from the `quorum_votes` bundle plus the
 assumption from classical consensus: any two quorum-strength vote
 sets share a member.
 
-Closure rate: **17 / 17** — 12 by SMT, 5 by manual `@[pverifyProof]`.
-`votes : set[MachineRef]` is backed by the first-order opaque `PSet`
-theory, so `isQuorum` on a vote set and `a ∈ n.votes` membership both
-translate — the whole set is a first-order sort, not an `α → Prop`
-lean-auto rejects. `quorum_intersect` is a state-independent `paxiom`
-lifted into every obligation's SMT context, so the `election_safety`
-derivation discharges by SMT. The faithful set-based `isQuorum` is what
-makes the quorum-intersection axiom expressible; a flat `MachineRef →
-Bool` oracle could only re-assert the safety conclusion, begging the
-question.
-
-The 5 residual manual proofs are the cases SMT can't close on its own:
-the two "no Node is Won at init" base cases; the `eVote` handler's
-inductive `quorum_votes` step (the freshly-added voter must be linked to
-the handled label — a cross-invariant fact the WP severs at the `+=`)
-and the `election_safety` step that reduces to it; and the entry
-broadcast loop's `prove default`.
+Closure rate: **17 / 17** — 7 by SMT, 10 by manual `@[pverifyProof]`.
+Lean-auto rejects every VC mentioning `isQuorum` on a `Set MachineRef`
+(`Set ℕ is not a ∀`) or quantifying a `Set`-valued predicate, so the
+whole `quorum_votes` bundle and the `election_safety` derivation are
+hand-proved. The faithful set-based `isQuorum` is what makes the
+quorum-intersection axiom expressible; a flat `MachineRef → Bool`
+oracle would translate first-order but couldn't state intersection —
+it could only re-assert the safety conclusion, begging the question.
 
 The `quorum_votes` bundle (with the manual-proof rationale):
 - `one_vote_per_voter`: two sent `eVote`s with the same voter are the
@@ -58,8 +49,8 @@ import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
-set_option crush.backend "cvc5"
-set_option crush.timeout 10
+set_option loom.solver "cvc5"
+set_option loom.solver.smt.timeout 10
 
 pmodule Consensus
 
@@ -112,19 +103,7 @@ pmodule Consensus
   }
 
   init-holds ∀ n : Node, n.voted = false
-  init-holds ∀ (n : Node) (k : PLean.MachineRef), ¬ (k ∈ n.votes)
-
-  -- Quorum-intersection assumption on *vote sets*, exactly as P's
-  -- source: any two quorum-strength vote sets share a member. The
-  -- topology assumption — no equality conclusion, so it doesn't beg the
-  -- safety question. A `paxiom` with a state-independent body (the
-  -- materialiser emits it unwrapped); the obligation generator lifts it
-  -- into every obligation's SMT context, so `election_safety` derives by
-  -- SMT rather than a hand `have`.
-  paxiom quorum_intersect :
-    ∀ (q1 q2 : set[PLean.MachineRef]),
-      isQuorum q1 = true → isQuorum q2 = true →
-      ∃ a : PLean.MachineRef, a ∈ q1 ∧ a ∈ q2
+  init-holds ∀ (n : Node) (k : PLean.MachineRef), ¬ (n.votes k)
 
   -- Inductive bundle. The first three are PLean strengthening
   -- invariants that PVerifier derives implicitly from its frame
@@ -152,7 +131,7 @@ pmodule Consensus
 
     invariant votes_linked :
       ∀ (n : Node) (a : PLean.MachineRef),
-        a ∈ n.votes →
+        n.votes a →
         ∃ e : Sig.Label,
           is_eVote e ∧ s.sent e = true ∧
           (eVote_payload_of e).voter = a ∧ e.target = n.ref
@@ -186,21 +165,29 @@ end Consensus
 namespace Consensus
 open PartialCorrectness DemonicChoice
 
+-- Quorum-intersection axiom, phrased on *vote sets* exactly as P's
+-- source: any two quorum-strength vote sets share a member. This is
+-- the topology assumption — there's no equality conclusion here, so
+-- it does not beg the safety question; `election_safety` is derived
+-- from it via `one_vote_per_voter` + `votes_linked`.
+--
+-- Declared as a top-level `axiom` (not a `paxiom`) so it carries no
+-- `s : GlobalState Sig` and doesn't pollute every obligation's local
+-- context. Manual proofs invoke it via `have`.
+axiom quorum_intersect :
+  ∀ (q1 q2 : Set PLean.MachineRef),
+    isQuorum q1 = true → isQuorum q2 = true →
+    ∃ a : PLean.MachineRef, a ∈ q1 ∧ a ∈ q2
+
 /-! ## Manual proofs
 
-With `votes : set[MachineRef]` now backed by the first-order opaque
-`PSet` theory, most of the `quorum_votes` bundle and the
-`election_safety` derivation discharge by SMT — including the headline
-derivation, since `quorum_intersect` (a `paxiom` over `PSet`) is lifted
-into every obligation's SMT context. The residual manual proofs cover
-the cases SMT still can't close on its own:
-
-- the two base cases that need "no Node is Won at init" (`stateOf ≠
-  Won`, a constructor-distinctness + init-start-state chain);
-- the `eVote` handler's inductive `quorum_votes` step, whose
-  freshly-added voter must be linked to the handled label (a
-  cross-invariant fact the WP severs at the `+=`);
-- the entry broadcast loop's `prove default` (loop scaffolding).
+Lean-auto's monomorphizer rejects every obligation whose VC mentions
+`isQuorum` on a `Set MachineRef` (`Set ℕ is not a ∀`) or quantifies a
+`Set`-valued predicate, so the entire `quorum_votes` bundle and the
+`election_safety` derivation are discharged by hand. This is the cost
+of the *faithful* set-based semantics: a flat `MachineRef → Bool`
+oracle would translate first-order but couldn't express the genuine
+quorum-intersection property.
 
 The headline derivation (`election_safety` from `quorum_votes`):
 two Won-state Nodes both have quorum vote sets (`won_implies_quorum_votes`);
@@ -335,13 +322,12 @@ theorem Node.RequestVoting.eVote_correct_block0_quorum_votes
     pverify_machine_has_type hnKind' : Node n.ref from hnKind
     by_cases hnt : n.ref = this.ref
     · rw [if_pos hnt] at hmem
-      simp only [PSet.mem_def, PSet.insert_eq, PSet.mem_insert] at hmem
+      simp only [decide_eq_true_eq] at hmem
       rcases hmem with rfl | hold
       · -- newly-added voter: `lbl` is the backing eVote.
         exact ⟨lbl, hisLbl, by rw [Bool.or_eq_true]; right; exact hSentLbl,
                by rw [hPay], by rw [hTgt, hnt]⟩
-      · have hmem' : a ∈ s.containers.Node_votes n.ref := by
-          rw [PSet.mem_def, hnt]; exact hold
+      · have hmem' : s.containers.Node_votes (n.ref, a) = true := by rw [hnt]; exact hold
         exact votes_linked_carry (hLinked n hnKind' a hmem')
     · rw [if_neg hnt] at hmem
       exact votes_linked_carry (hLinked n hnKind' a hmem)
@@ -371,11 +357,10 @@ theorem Node.RequestVoting.eVote_correct_block0_quorum_votes
     pverify_machine_has_type hnKind' : Node n.ref from hnKind
     by_cases hnt : n.ref = this.ref
     · rw [if_pos hnt] at hmem
-      simp only [PSet.mem_def, PSet.insert_eq, PSet.mem_insert] at hmem
+      simp only [decide_eq_true_eq] at hmem
       rcases hmem with rfl | hold
       · exact ⟨lbl, hisLbl, hSentLbl, by rw [hPay], by rw [hTgt, hnt]⟩
-      · have hmem' : a ∈ s.containers.Node_votes n.ref := by
-          rw [PSet.mem_def, hnt]; exact hold
+      · have hmem' : s.containers.Node_votes (n.ref, a) = true := by rw [hnt]; exact hold
         exact hLinked n hnKind' a hmem'
     · rw [if_neg hnt] at hmem
       exact hLinked n hnKind' a hmem
@@ -391,11 +376,159 @@ theorem Node.RequestVoting.eVote_correct_block0_quorum_votes
       exfalso; rw [hnt, stateOf, hSt] at hWonPre; exact S.noConfusion hWonPre
     · simp only [if_neg hnt]; convert hq using 2
 
--- `eRequestVote` block0 `quorum_votes` and the `entry` broadcast's
--- `quorum_votes` step now close by SMT: with `votes : PSet` first-order
--- and the `_payload_of`/`is_<ev>` bridges, the solver discharges both
--- the fresh-eVote reasoning (eRequestVote) and the no-eVote-sent frame
--- (entry loop). Removed, along with the `send_eReq_preserves_qv` helper.
+-- `eRequestVote` handler: on `¬voted`, sends a fresh `eVote (voter=this.ref)`
+-- and sets `voted := true`. The `voted_after_eVote_sent` invariant +
+-- the `¬voted` guard rule out a pre-existing eVote from `this`, so
+-- `one_vote_per_voter` survives the new label.
+set_option maxHeartbeats 4000000 in
+@[pverifyProof]
+theorem Node.RequestVoting.eRequestVote_correct_block0_quorum_votes
+    (this : Node) (param : eRequestVote_payload) (lbl : Sig.Label) :
+    triple (l := PProp Sig)
+      (fun s => quorum_votes s ∧
+        inflight lbl s ∧ lbl.target = this.ref ∧ is_Node this.ref s ∧
+        (s.machines this.ref).currentState = Node.RequestVoting_st ∧
+        lbl.action = EventOrGoto.event (E.eRequestVote param))
+      (do PLean.markReceived (P := Sig) lbl;
+          Node.RequestVoting.eRequestVote_handler this param)
+      (fun _ s => quorum_votes s) := by
+  unfold Node.RequestVoting.eRequestVote_handler
+  unfold quorum_votes one_vote_per_voter voted_after_eVote_sent
+         votes_linked won_implies_quorum_votes
+  try unfold Node.votes_get Node.votes_set Node.voted_get Node.voted_set
+  try unfold PLean.send PLean.goto PLean.markReceived
+  pverify_step_wp
+  intro s hOne hVoted hLinked hWon hInfl hTgt hKind hSt hAct
+  obtain ⟨hSentLbl, _⟩ := hInfl
+  refine ⟨fun hGuard => ⟨?t_one, ?t_voted, ?t_linked, ?t_won⟩,
+          fun hNoGuard => ⟨?e_one, ?e_voted, ?e_linked, ?e_won⟩⟩
+  -- then-branch (¬voted): fresh eVote with `voter = this.ref`, set `voted`.
+  case t_one =>
+    intro e1 hisE1 e2 hisE2 hs1 hs2 hveq
+    rw [Bool.or_eq_true, decide_eq_true_eq] at hs1 hs2
+    have hNotVoted : (s.machines this.ref).fields.Node_voted ≠ true := hGuard
+    have oldVoterNeThis : ∀ e, is_eVote e → s.sent e = true →
+        (eVote_payload_of e).voter ≠ this.ref := by
+      intro e hisE hse hq
+      exact hNotVoted (hVoted e hisE this hKind hse hq)
+    rcases hs1 with rfl | h1 <;> rcases hs2 with rfl | h2
+    · rfl
+    · exfalso; rw [eVote_payload_of_mk] at hveq
+      exact oldVoterNeThis e2 hisE2 h2 hveq.symm
+    · exfalso; rw [eVote_payload_of_mk] at hveq
+      exact oldVoterNeThis e1 hisE1 h1 hveq
+    · exact hOne e1 hisE1 e2 hisE2 h1 h2 hveq
+  case t_voted =>
+    intro e hisE n hnKind hsent hveq
+    rw [Bool.or_eq_true, decide_eq_true_eq] at hsent
+    pverify_machine_has_type hnKind' : Node n.ref from hnKind
+    rcases hsent with rfl | hold
+    · rw [eVote_payload_of_mk] at hveq
+      by_cases hnt : n.ref = this.ref <;> simp_all
+    · have hvd := hVoted e hisE n hnKind' hold hveq
+      by_cases hnt : n.ref = this.ref <;> simp_all
+  case t_linked =>
+    intro n hnKind a hmem
+    pverify_machine_has_type hnKind' : Node n.ref from hnKind
+    exact votes_linked_carry (hLinked n hnKind' a hmem)
+  case t_won =>
+    intro n hnKind hWonPost
+    pverify_machine_has_type hnKind' : Node n.ref from hnKind
+    have hWonPre : stateOf n.ref s = Node.Won_st := by
+      simp only [stateOf] at hWonPost ⊢
+      by_cases hnt : n.ref = this.ref <;> simp_all
+    exact hWon n hnKind' hWonPre
+  -- else-branch (already voted): only markReceived; everything transfers.
+  case e_one =>
+    intro e1 hisE1 e2 hisE2 hs1 hs2 hveq
+    exact hOne e1 hisE1 e2 hisE2 hs1 hs2 hveq
+  case e_voted =>
+    intro e hisE n hnKind hsent hveq
+    pverify_machine_has_type hnKind' : Node n.ref from hnKind
+    exact hVoted e hisE n hnKind' hsent hveq
+  case e_linked =>
+    intro n hnKind a hmem
+    pverify_machine_has_type hnKind' : Node n.ref from hnKind
+    exact hLinked n hnKind' a hmem
+  case e_won =>
+    intro n hnKind hWonPost
+    pverify_machine_has_type hnKind' : Node n.ref from hnKind
+    have hWonPre : stateOf n.ref s = Node.Won_st := by
+      simp only [stateOf] at hWonPost ⊢; exact hWonPost
+    exact hWon n hnKind' hWonPre
+
+-- A single iteration of the entry broadcast: `send m eRequestVote`
+-- preserves `quorum_votes` (no eVote sent, no machine touched). Used
+-- by the entry `triple_pforeach_with` step below.
+set_option maxHeartbeats 4000000 in
+private theorem send_eReq_preserves_qv (tgt : MachineRef) (this : Node) :
+    triple (l := PProp Sig)
+      (fun s => quorum_votes s ∧ is_Node this.ref s)
+      (PLean.send (P := Sig) tgt (E.eRequestVote { src := this.ref }))
+      (fun _ s => quorum_votes s ∧ is_Node this.ref s) := by
+  unfold PLean.send
+  unfold quorum_votes one_vote_per_voter voted_after_eVote_sent
+         votes_linked won_implies_quorum_votes
+  pverify_step_wp
+  intro s hOne hVoted hLinked hWon hThis
+  refine ⟨⟨?c_one, ?c_voted, ?c_linked, ?c_won⟩, ?c_this⟩
+  case c_one =>
+    intro e1 hisE1 e2 hisE2 hs1 hs2 hveq
+    -- Fresh label is an `eRequestVote` (not an eVote); both eVotes
+    -- were already sent.
+    exact hOne e1 hisE1 e2 hisE2
+      (sent_of_post_eVote hisE1 (by simp [is_eVote]) hs1)
+      (sent_of_post_eVote hisE2 (by simp [is_eVote]) hs2) hveq
+  case c_voted =>
+    intro e hisE n hnKind hsent hveq
+    exact hVoted e hisE n hnKind (sent_of_post_eVote hisE (by simp [is_eVote]) hsent) hveq
+  case c_linked =>
+    intro n hnKind a hmem
+    obtain ⟨e, hisE, hse, hve, hte⟩ := hLinked n hnKind a hmem
+    exact ⟨e, hisE, by rw [Bool.or_eq_true]; right; exact hse, hve, hte⟩
+  case c_won =>
+    intro n hnKind hWonPost
+    exact hWon n hnKind hWonPost
+  case c_this => exact hThis
+
+-- Entry handler: broadcast `eRequestVote` to every node. The loop
+-- preserves `quorum_votes` (carried via `triple_pforeach_with` since
+-- the user loop invariant `quorum_votes` doesn't pin `is_Node this`).
+set_option maxHeartbeats 4000000 in
+@[pverifyProof]
+theorem Node.RequestVoting.entry_correct_block0_quorum_votes
+    (this : Node) :
+    triple (l := PProp Sig)
+      (fun s => quorum_votes s ∧ is_Node this.ref s ∧
+        (s.machines this.ref).currentState = Node.RequestVoting_st)
+      (Node.RequestVoting.entry this)
+      (fun _ s => quorum_votes s) := by
+  apply triple_cons (pre := fun s => quorum_votes s ∧ is_Node this.ref s)
+    (post := fun _ s => quorum_votes s)
+  · intro s ⟨h, hk, _⟩; exact ⟨h, hk⟩
+  · intro _ s h; exact h
+  unfold Node.RequestVoting.entry
+  show triple (l := PProp Sig) _ (Node.voted_get this.ref >>= fun _ => _) _
+  apply triple_bind (cut := fun _ : Bool =>
+    (fun s => quorum_votes s ∧ is_Node this.ref s : PProp Sig))
+  · unfold Node.voted_get
+    pverify_step_wp
+    intro s h hk; exact ⟨h, hk⟩
+  intro _
+  show triple (l := PProp Sig) _ (Node.votes_get this.ref >>= fun _ => _) _
+  apply triple_bind (cut := fun _ : Set MachineRef =>
+    (fun s => quorum_votes s ∧ is_Node this.ref s : PProp Sig))
+  · unfold Node.votes_get
+    pverify_step_wp
+    intro s h hk; exact ⟨h, hk⟩
+  intro _
+  apply triple_cons (pre := fun s => quorum_votes s ∧ is_Node this.ref s)
+    (post := fun _ s => quorum_votes s ∧ is_Node this.ref s)
+  · intro s h; exact h
+  · intro _ s ⟨h, _⟩; exact h
+  apply triple_pforeach_with (Q := fun s => quorum_votes s ∧ is_Node this.ref s)
+  intro m
+  exact send_eReq_preserves_qv m this
 
 /-! ### `election_safety` steps.
 
@@ -404,10 +537,27 @@ Each handler preserves `quorum_votes` (proved above), and
 So each reduces via `triple_cons` to the matching block0 obligation,
 then maps the post `quorum_votes` to `election_safety`. -/
 
--- `eRequestVote` / `entry` block1 `election_safety` now close by SMT
--- (their block0 `quorum_votes` steps do, and `quorum_intersect` is a
--- lifted `paxiom`) — removed. `eVote` block1 still reduces to its
--- manual block0 below.
+set_option maxHeartbeats 4000000 in
+@[pverifyProof]
+theorem Node.RequestVoting.eRequestVote_correct_block1_election_safety_using_quorum_votes
+    (this : Node) (param : eRequestVote_payload) (lbl : Sig.Label) :
+    triple (l := PProp Sig)
+      (fun s => (election_safety s ∧ quorum_votes s) ∧
+        inflight lbl s ∧ lbl.target = this.ref ∧ is_Node this.ref s ∧
+        (s.machines this.ref).currentState = Node.RequestVoting_st ∧
+        lbl.action = EventOrGoto.event (E.eRequestVote param))
+      (do PLean.markReceived (P := Sig) lbl;
+          Node.RequestVoting.eRequestVote_handler this param)
+      (fun _ s => election_safety s) := by
+  apply triple_cons
+    (pre := fun s => quorum_votes s ∧
+      inflight lbl s ∧ lbl.target = this.ref ∧ is_Node this.ref s ∧
+      (s.machines this.ref).currentState = Node.RequestVoting_st ∧
+      lbl.action = EventOrGoto.event (E.eRequestVote param))
+    (post := fun _ s => quorum_votes s)
+  · intro s ⟨⟨_, hQV⟩, rest⟩; exact ⟨hQV, rest⟩
+  · intro _ s hQV; exact quorum_votes_implies_safety s hQV
+  exact Node.RequestVoting.eRequestVote_correct_block0_quorum_votes this param lbl
 
 set_option maxHeartbeats 4000000 in
 @[pverifyProof]
@@ -431,6 +581,24 @@ theorem Node.RequestVoting.eVote_correct_block1_election_safety_using_quorum_vot
   · intro _ s hQV; exact quorum_votes_implies_safety s hQV
   exact Node.RequestVoting.eVote_correct_block0_quorum_votes this param lbl
 
+set_option maxHeartbeats 4000000 in
+@[pverifyProof]
+theorem Node.RequestVoting.entry_correct_block1_election_safety_using_quorum_votes
+    (this : Node) :
+    triple (l := PProp Sig)
+      (fun s => (election_safety s ∧ quorum_votes s) ∧
+        is_Node this.ref s ∧
+        (s.machines this.ref).currentState = Node.RequestVoting_st)
+      (Node.RequestVoting.entry this)
+      (fun _ s => election_safety s) := by
+  apply triple_cons
+    (pre := fun s => quorum_votes s ∧ is_Node this.ref s ∧
+      (s.machines this.ref).currentState = Node.RequestVoting_st)
+    (post := fun _ s => quorum_votes s)
+  · intro s ⟨⟨_, hQV⟩, rest⟩; exact ⟨hQV, rest⟩
+  · intro _ s hQV; exact quorum_votes_implies_safety s hQV
+  exact Node.RequestVoting.entry_correct_block0_quorum_votes this
+
 /-! ### `prove default` steps for the loop-bearing / goto-bearing handlers.
 
 `eVote` (container write + `goto`) and `entry` (broadcast loop) don't
@@ -439,8 +607,55 @@ close through the auto-default chain — the loop's user invariant
 guard branches. Discharge structurally with `triple_pforeach_with`
 (entry) and the standard step chain (eVote). -/
 
--- `eVote_correct_block1_default` now closes by SMT (its footprint is a
--- container write + goto, both DefaultInvariants-preserving) — removed.
+@[pverifyProof]
+theorem Node.RequestVoting.eVote_correct_block1_default
+    (this : Node) (param : eVote_payload) (lbl : Sig.Label) :
+    triple (l := PProp Sig)
+      (fun s => DefaultInvariants s ∧
+        inflight lbl s ∧ lbl.target = this.ref ∧ is_Node this.ref s ∧
+        (s.machines this.ref).currentState = Node.RequestVoting_st ∧
+        lbl.action = EventOrGoto.event (E.eVote param))
+      (do PLean.markReceived (P := Sig) lbl;
+          Node.RequestVoting.eVote_handler this param)
+      (fun _ s => DefaultInvariants s) := by
+  apply triple_cons
+    (pre := fun s => DefaultInvariants s ∧ inflight lbl s)
+    (post := fun _ => DefaultInvariants)
+  · intro s ⟨h, hInf, _⟩; exact ⟨h, hInf⟩
+  · intro _ s h; exact h
+  apply triple_bind (cut := fun _ => DefaultInvariants)
+  · unfold PLean.markReceived
+    pverify_step_wp
+    intro x ⟨hUA, hIC, hRSS⟩ hInf
+    obtain ⟨hSent, _⟩ := hInf
+    refine ⟨hUA, hIC, ?_⟩
+    intro a ha
+    rw [Bool.or_eq_true, decide_eq_true_eq] at ha
+    rcases ha with hEq | hOld
+    · rw [hEq]; exact hSent
+    · exact hRSS a hOld
+  intro _
+  unfold Node.RequestVoting.eVote_handler
+  apply triple_bind (cut := fun _ => DefaultInvariants)
+  · unfold Node.voted_get; pverify
+  intro _
+  apply triple_bind (cut := fun _ => DefaultInvariants)
+  · unfold Node.votes_get; pverify
+  intro _
+  apply triple_bind (cut := fun _ => DefaultInvariants)
+  · unfold Node.votes_get; pverify
+  intro _
+  apply triple_bind (cut := fun _ => DefaultInvariants)
+  · unfold Node.votes_set; pverify
+  intro _
+  apply triple_bind (cut := fun _ => DefaultInvariants)
+  · unfold Node.votes_get; pverify
+  intro _
+  -- `if isQuorum votes then goto Won else pure ()`: both branches
+  -- preserve `DefaultInvariants` (goto only touches machines + sent).
+  split
+  · unfold PLean.goto; pverify
+  · pverify
 
 @[pverifyProof]
 theorem Node.RequestVoting.entry_correct_block1_default

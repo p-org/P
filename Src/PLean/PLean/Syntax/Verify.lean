@@ -191,28 +191,6 @@ keyword token because that would break uses of `default` as a term
 syntax (name := pProofProve)
   "prove " ident (" using " ident,+)? ";" : pProofItem
 
-/-- `prove <name> from <prem1>, <prem2>, … via <thm>;` — the
-*derived-invariant* form.
-
-Use it when `<name>` is not separately inductive but follows
-*pointwise* from already-proven lemmas: `∀ s, prem1 s → … → name s`.
-That is the situation whenever the real argument is a well-founded
-induction over a data value (Paxos ballots, Raft terms, version
-numbers) rather than a single Hoare step — per-handler consecution
-cannot express such an argument, and forcing it into that shape means
-re-proving every premise's preservation inside the derived lemma's own
-obligation.
-
-Soundness: if each `premᵢ` is invariant and `prem1 ∧ … → name`
-pointwise, then `name` is invariant. So the generator emits no
-consecution VC and no base case for a derived target; instead it emits
-one `derive_<name>` obligation whose statement is exactly the
-implication, discharged by `exact @<thm>`. A wrong-type or sorried
-`<thm>` fails that obligation. The premises must still be `prove`d —
-the existing missing-premise check enforces it. -/
-syntax (name := pProofDerive)
-  "prove " ident " from " ident,+ " via " ident ";" : pProofItem
-
 syntax (name := pProofDeclSyntax)
   "Proof " (ident)? "{" pProofItem* "}" : command
 
@@ -283,37 +261,6 @@ def elabPProof : CommandElab := fun stx => do
       directives := directives.push
         { target := tgtName, isDefault := isDefault
           usingLemmas := useIds, ref := it }
-    | `(pProofItem| prove $tgt:ident from $premIds,* via $thm:ident ;) =>
-      let premTokens : Array (TSyntax `ident) := premIds.getElems
-      let tgtName := tgt.getId
-      -- `default` can't be derived: its content is framework-fixed and
-      -- its obligations are what establish the buffer well-formedness
-      -- every other clause implicitly rests on.
-      if tgtName == `default then
-        throwErrorAt tgt
-          "`prove default from … via …`: the default invariants cannot \
-           be derived — drop the `from … via …` clause and use \
-           `prove default ;`"
-      unless ctx.lemmas.contains tgtName do
-        throwErrorAt tgt
-          s!"`prove … from`: no `Lemma` or `Theorem` named '{tgtName}' in pmodule '{ctx.name}'"
-      for tok in premTokens do
-        let uid := tok.getId
-        unless uid == `default || ctx.lemmas.contains uid do
-          throwErrorAt tok
-            s!"`prove … from`: no `Lemma` or `Theorem` named '{uid}' in pmodule '{ctx.name}' (must be `default` or a previously-declared lemma)"
-      -- A target that derives from itself would be circular: the
-      -- implication `X s → X s` holds trivially and would let `X`
-      -- verify with no inductive content at all.
-      if premTokens.any (·.getId == tgtName) then
-        throwErrorAt tgt
-          s!"`prove {tgtName} from …`: '{tgtName}' cannot be among its own \
-             premises (the implication would be vacuous, so nothing would \
-             be verified)"
-      directives := directives.push
-        { target := tgtName, isDefault := false
-          usingLemmas := premTokens.map (·.getId)
-          deriveVia := some thm.getId, ref := it }
     | _ => throwErrorAt it "unrecognised Proof item"
   addProof { name := nm, directives := directives, ref := stx }
 
@@ -742,7 +689,6 @@ private def buildFieldProjection
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (binder : Ident) (field : Name) (kind : KindRef) :
     MacroM (Option (TSyntax `term)) := do
@@ -756,30 +702,19 @@ private def buildFieldProjection
     -- under any quantifier (matches PVerifier's UCLID5 2D-array
     -- encoding).
     --
-    -- `set[T]` vars (`PSet T`) store the *whole set* per machine
-    -- (`MachineRef → PSet T`): `PSet` is a sealed first-order sort, so
-    -- `n.<v>` projects to `s.containers.<M>_<v> n.ref` — a `PSet T`
-    -- value. Membership `a ∈ n.<v>` and whole-set predicates
-    -- (`isQuorum n.<v>`) both stay first-order. No uncurry, unlike the
-    -- map case.
-    --
-    -- The legacy `set[T] = T → Prop` Bool-array encoding
-    -- (`machineSetPropFields`) is unreachable via the current surface
-    -- but kept for a raw `Set`-typed `var`: it stores `Bool` and the
-    -- projection wraps the lookup as `… = true`.
+    -- `set[T]` vars store `Bool` (Prop-codomain trips lean-auto);
+    -- the projection wraps the Bool lookup as `... = true` so the
+    -- surface invariant body still sees `n.<v> : T → Prop` (= `Set
+    -- T`). The lambda itself never appears applied-to-nothing in
+    -- well-formed invariants: every container access feeds a
+    -- membership check, lookup, or update at the same syntactic
+    -- depth.
     if let some cflds := machineContainerFields.find? mName then
       if cflds.contains field then
         let sIdent : Ident := mkIdent sBinder
         let qualField : Ident :=
           mkIdent (Name.mkSimple (mName.toString ++ "_" ++ field.toString))
         let xId : Ident := mkIdent `x
-        let isPSet :=
-          match machinePSetFields.find? mName with
-          | some s => s.contains field
-          | none   => false
-        if isPSet then
-          -- Whole-value projection: `n.<v> : PSet T`.
-          return some (← `(($sIdent).containers.$qualField:ident ($binder).ref))
         let isSet :=
           match machineSetPropFields.find? mName with
           | some s => s.contains field
@@ -815,7 +750,6 @@ private partial def rewriteFieldProjectionsAux
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (kindEnv : NameMap KindRef)
     (stx : Syntax) : MacroM Syntax := do
@@ -835,7 +769,7 @@ private partial def rewriteFieldProjectionsAux
         let bIdent : Ident := ⟨lhs⟩
         let rebuilt? ← buildFieldProjection
           machineFields machineContainerFields machineSetPropFields
-          machinePSetFields eventPayloadFields sBinder bIdent fName kind
+          eventPayloadFields sBinder bIdent fName kind
         if let some out := rebuilt? then
           return out.raw
   if stx.isIdent then
@@ -847,7 +781,7 @@ private partial def rewriteFieldProjectionsAux
         let bIdent : Ident := mkIdent headN
         let rebuilt? ← buildFieldProjection
           machineFields machineContainerFields machineSetPropFields
-          machinePSetFields eventPayloadFields sBinder bIdent fieldN kind
+          eventPayloadFields sBinder bIdent fieldN kind
         if let some out := rebuilt? then
           return out.raw
     | _ => pure ()
@@ -865,8 +799,8 @@ private partial def rewriteFieldProjectionsAux
         env := env.insert xRaw.getId (.event tName)
   let args' ← stx.getArgs.mapM
     (rewriteFieldProjectionsAux machineKinds eventKinds machineFields
-      machineContainerFields machineSetPropFields machinePSetFields
-      eventPayloadFields sBinder env)
+      machineContainerFields machineSetPropFields eventPayloadFields
+      sBinder env)
   return stx.setArgs args'
 
 def rewriteFieldProjections
@@ -874,18 +808,16 @@ def rewriteFieldProjections
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (stx : Syntax) : MacroM Syntax :=
   rewriteFieldProjectionsAux machineKinds eventKinds machineFields
-    machineContainerFields machineSetPropFields machinePSetFields
-    eventPayloadFields sBinder {} stx
+    machineContainerFields machineSetPropFields eventPayloadFields
+    sBinder {} stx
 
 def materialiseInvariant (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (d : PInvariantDecl) : CommandElabM Unit := do
   match d.defStx with
@@ -907,7 +839,7 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
         let rewritten ← liftMacroM <|
           rewriteFieldProjections machineKinds eventKinds
             machineFields machineContainerFields machineSetPropFields
-            machinePSetFields eventPayloadFields sName prop.raw
+            eventPayloadFields sName prop.raw
         let stxOut ← liftMacroM <|
           injectKindGuards machineKinds eventKinds sName rewritten
         pure ⟨stxOut⟩
@@ -916,27 +848,10 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
       @[reducible] def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop')
     elabCommand cmd
 
-/-- Leftmost atomic component of a (possibly dotted) name: `s.machines`
-→ `s`, `s` → `s`. -/
-private def leftmostComponent : Name → Name
-  | .str .anonymous s => Name.mkSimple s
-  | .str p _          => leftmostComponent p
-  | n                 => n
-
-/-- Whether `stx` mentions the identifier `name` anywhere, including as
-the head of a dotted projection (`n.held` where `n = name`). Used to
-decide whether a `paxiom` body actually depends on the state binder. -/
-private partial def syntaxMentionsName (name : Name) (stx : Syntax) : Bool :=
-  if stx.isIdent then
-    leftmostComponent stx.getId == name
-  else
-    stx.getArgs.any (syntaxMentionsName name)
-
 def materialiseAxiom (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (d : PAxiomDecl) : CommandElabM Unit := do
   match d.defStx with
@@ -944,19 +859,7 @@ def materialiseAxiom (machineKinds eventKinds : NameSet)
   | some stx =>
     let `(paxiom $id:ident : $prop:term) := stx
       | throwErrorAt stx "internal error: paxiom defStx malformed"
-    -- A `system <σ>` pmodule whose axiom body never names `<σ>` is
-    -- state-independent: emit it verbatim, WITHOUT the `∀ <σ> :
-    -- GlobalState Sig` wrapper. The wrapper is not merely redundant —
-    -- after `sdestruct_state` destructures the bound state into its
-    -- fields, the resulting `containers : Containers` binder is a struct
-    -- carrying function-typed (`PSet` / array) fields that lean-auto
-    -- rejects ("Higher order input?"), poisoning every obligation this
-    -- axiom is lifted into. A closed body (e.g. a `set[T]`-quantified
-    -- topology axiom like Consensus's `quorum_intersect`) needs none of
-    -- the state plumbing.
-    let stateBinder? :=
-      d.stateBinder.filter (syntaxMentionsName · prop.raw)
-    match stateBinder? with
+    match d.stateBinder with
     | none =>
       elabCommand (← `(axiom $id : $prop))
     | some sName =>
@@ -971,7 +874,7 @@ def materialiseAxiom (machineKinds eventKinds : NameSet)
       let rewritten ← liftMacroM <|
         rewriteFieldProjections machineKinds eventKinds
           machineFields machineContainerFields machineSetPropFields
-          machinePSetFields eventPayloadFields sName prop.raw
+          eventPayloadFields sName prop.raw
       let guarded ← liftMacroM <|
         injectKindGuards machineKinds eventKinds sName rewritten
       let prop' : TSyntax `term := ⟨guarded⟩

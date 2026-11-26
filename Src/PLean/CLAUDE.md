@@ -101,11 +101,6 @@ Tests/               -- regressions; Tests.** is globbed
 - [`docs/ProofSkill.md`](docs/ProofSkill.md) — practical workflow for
   finding inductive invariants, writing manual proofs, and coping with
   SMT complexity (higher-order rejection, bundle sizing, `using` chains).
-- [`docs/LEAN_AUTO_SUPPORT.md`](docs/LEAN_AUTO_SUPPORT.md) — every
-  technique that keeps obligations first-order for lean-auto (the
-  `pverifySimp` set, state destructure, `PSet` container theory, axiom
-  lifting, loop annotation) + a failure-diagnosis table and cache
-  discipline.
 
 ## Verification benchmarks
 
@@ -117,13 +112,12 @@ Phase 3+ targets the verified benchmarks under
   machine-kind `is`, multi-Lemma `using` chains.
 - **Phase 4 (specs)**: `1_ChainReplicationVerification`.
 - **Phase 5 (foreach/maps)**: `5_Consensus`,
-  `2_TwoPhaseCommitVerification`, `7_ShardedKV`. All three ports
-  verify: `ShardedKV` fully by SMT, `Consensus` and 2PC with manual
-  proofs for the container/loop steps SMT can't reach.
-- **Phase 6 stretch**: `4_Paxos` — the ballot argument is
-  machine-checked and the port is `sorry`-free; 6 support-lemma
-  obligations remain `unknown` on `∃`-over-`sent` carry (see
-  `docs/PAXOS_TODO.md`).
+  `2_TwoPhaseCommitVerification`, `7_ShardedKV`. Maps + `foreach`
+  shipped (the `ShardedKV` port verifies); `Consensus` / 2PC blocked
+  on a stronger loop-aware `default_inv` so the auto-emitted `prove
+  default;` obligations under loops close without a hand-written
+  `DefaultInvariants` loop invariant.
+- **Phase 6 stretch**: `4_Paxos`.
 
 Most Tutorial/Advanced benchmarks need surface features that aren't
 built yet — check `docs/ROADMAP.md`'s workstream breakdown before
@@ -158,17 +152,6 @@ reserved word or builtin. Mechanical replacements when porting `.p`:
 new-in-PLean keywords for the verification-declaration surface
 (Phase 3); `default` is a reserved sentinel inside `Proof` blocks.
 
-`prove <X> from <p1>, <p2> via <thm> ;` is the **derived-invariant**
-form: `X` is not separately inductive but follows pointwise from the
-premises, and `<thm>` is a user theorem `∀ s, p1 s → p2 s → X s`. A
-derived target gets **no per-handler consecution VC and no base case** —
-only an implication VC discharged by `exact @<thm>`. Use it when the
-real argument is a well-founded induction over a data value (Paxos
-ballots), which no Hoare step can express. The cited theorem is
-type-checked against the emitted statement and its value is checked for
-`sorry`; premises must still be `prove`d. See `docs/ProofSkill.md` §1.8
-and [`Tests/Syntax/DerivedInvariant.lean`](Tests/Syntax/DerivedInvariant.lean).
-
 `PLean.choose : Int → PM Int` returns a nondeterministically-chosen
 `Int` in `[0, bound]`. Implemented via `MonadNonDet.pickSuchThat`;
 the WP spec (registered as `@[loomSpec]`) gives the verifier `0 ≤ x
@@ -177,23 +160,12 @@ the WP spec (registered as `@[loomSpec]`) gives the verifier `0 ≤ x
 
 ### Container types
 
-Surface macros: `set[T]` → `PLean.PSet T`, `map[K, V]` → `K → Option V`,
+Surface macros: `set[T]` → `Set T`, `map[K, V]` → `K → Option V`,
 `seq[T]` → `List T` (no SMT), `option[T]` → `Option T`. Mutation
 macros: `s += (e)`, `s -= (e)`, `m[k] = v`, `m[k] += (e)`,
 `m[k] -= (e)`. Lookup-after-mutation lemmas are tagged
 `@[pverifySimp]` so SMT prep reduces post-state lookups directly.
 See [`Examples/ShardedKV.lean`](Examples/ShardedKV.lean).
-
-`PSet` (`Semantics/PSet.lean`) is P's `set[T]` as a first-order sort: a
-`Set`-backed `def` whose membership/insert/empty/erase spec lemmas are
-proven as theorems, then sealed `@[irreducible]` so lean-auto treats
-`PSet.mem`/`PSet` as an uninterpreted relation/sort — the encoding
-UCLID5/PVerifier use for sets, with an empty trusted base. Membership
-`a ∈ n.<v>`, applicative `n.<v> a` (via `CoeFun`), and whole-set
-predicates (`isQuorum n.<v>`) all translate first-order. A `PSet` must
-NOT appear as a struct field reachable from `GlobalState`; `set[T]` vars
-therefore hoist into `Containers` as a whole-value row `MachineRef →
-PSet T` (see below).
 
 ### Loops (`foreach` / `while`)
 
@@ -231,18 +203,13 @@ load-bearing invariants you need to respect when editing.
   becomes `∀ n : <M>, is_<M> n.ref s → body` (and similarly for `∃`
   and event quantifiers). Skipped when the body already mentions the
   guard. Pinned by `Tests/Syntax/SoundnessRegression.lean`.
-- **Container `var`s are hoisted into `Containers`.** `map[K, V]`
-  vars hoist out of `Fields` into a per-pmodule `Containers` struct
-  uncurried with `MachineRef` (`MachineRef × K → Option V`), so
-  `n.<v>` reduces to a flat applied symbol lean-auto can translate —
-  PVerifier's UCLID5 2D-array layout. `set[T]` (`PSet T`) vars also
-  hoist, but as a **whole-value row** `MachineRef → PSet T` (no
-  `(ref, elem)` uncurry): `PSet` is already a first-order sort, and it
-  must not be a `Fields`/`MachineState` struct field (the enclosing
-  datatype translation would choke). `seq[T]` and first-order vars
-  stay in `Fields`. Exercised by
-  [`Examples/ShardedKV`](Examples/ShardedKV.lean) (map) and
-  [`Examples/Consensus`](Examples/Consensus.lean) (set).
+- **Container `var`s are hoisted into `Containers`.** `set[T]` /
+  `map[K, V]` vars hoist out of `Fields` into a per-pmodule
+  `Containers` struct uncurried with `MachineRef`, so `n.<v>`
+  reduces to a flat applied symbol lean-auto can translate.
+  `seq[T]` and first-order vars stay in `Fields`. Mirrors
+  PVerifier's UCLID5 2D-array layout. Exercised by
+  [`Examples/ShardedKV`](Examples/ShardedKV.lean).
 - **`MachineRef := Nat`; per-machine type is a wrapper.** Dynamic
   kind check (`<M>_allocated`, public alias `is_<M>`) goes through
   a `Nat` kind tag plus `currentState ∈ <M>'s states` (load-bearing

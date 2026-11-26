@@ -28,7 +28,6 @@ Inhabited, DecidableEq`, satisfying the prerequisites.
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Set.Insert
 import PLean.Verify.SimpAttrs
-import PLean.Semantics.PSet
 
 namespace PLean
 
@@ -80,7 +79,7 @@ instance [DecidableEq K] (m : PMap K V) (k : K) :
     Decidable (k ∈ m) :=
   match h : m k with
   | .some v => isTrue ⟨v, h⟩
-  | .none   => isFalse (fun ⟨_, hv⟩ => by simp [h] at hv)
+  | .none   => isFalse (fun ⟨_, hv⟩ => by rw [h] at hv; exact Option.noConfusion hv)
 
 /-! ## Removal — one operator over `Set` and `PMap`
 
@@ -94,9 +93,6 @@ class PContainerErase (C : Type) (E : outParam Type) where
 
 instance {T : Type} [DecidableEq T] : PContainerErase (Set T) T where
   erase s e := s \ Set.singleton e
-
-noncomputable instance {T : Type} : PContainerErase (PSet T) T where
-  erase s e := PSet.erase e s
 
 instance {K V : Type} [DecidableEq K] : PContainerErase (PMap K V) K where
   erase m k := mapErase m k

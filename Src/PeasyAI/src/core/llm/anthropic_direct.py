@@ -29,19 +29,17 @@ class AnthropicProvider(LLMProvider):
     Configuration:
         api_key: Anthropic API key
         base_url: Optional custom base URL
-        model: Default model name (e.g., 'claude-3-5-sonnet-20241022')
+        model: Default model name (e.g., 'claude-sonnet-4-6')
         timeout: Request timeout in seconds (default: 600)
     """
     
     AVAILABLE_MODELS = [
-        "claude-3-5-sonnet-20241022",
-        "claude-3-5-haiku-20241022",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-        "claude-3-haiku-20240307",
+        "claude-sonnet-4-6",
+        "claude-opus-4-6",
+        "claude-haiku-4-5",
     ]
     
-    DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
+    DEFAULT_MODEL = "claude-sonnet-4-6"
     
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)

@@ -130,7 +130,7 @@ class LLMProviderFactory:
             logger.info("Auto-detected: Direct Anthropic API")
             config = {
                 "api_key": anthropic_api_key,
-                "model": os.environ.get("ANTHROPIC_MODEL_NAME", "claude-3-5-sonnet-20241022"),
+                "model": os.environ.get("ANTHROPIC_MODEL_NAME", "claude-sonnet-4-6"),
                 "timeout": float(os.environ.get("LLM_TIMEOUT", "600")),
             }
             
@@ -166,7 +166,7 @@ class LLMProviderFactory:
         elif provider_name in ("anthropic", "anthropic_direct"):
             config = {
                 "api_key": os.environ.get("ANTHROPIC_API_KEY"),
-                "model": os.environ.get("ANTHROPIC_MODEL_NAME", "claude-3-5-sonnet-20241022"),
+                "model": os.environ.get("ANTHROPIC_MODEL_NAME", "claude-sonnet-4-6"),
                 "timeout": float(os.environ.get("LLM_TIMEOUT", "600")),
             }
             

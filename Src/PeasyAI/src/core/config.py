@@ -119,7 +119,7 @@ class PeasyAISettings:
                 env["ANTHROPIC_API_KEY"] = pc.api_key
             if pc.base_url:
                 env["ANTHROPIC_BASE_URL"] = pc.base_url
-            model = self.llm.model or pc.model or "claude-3-5-sonnet-20241022"
+            model = self.llm.model or pc.model or "claude-sonnet-4-6"
             env["ANTHROPIC_MODEL_NAME"] = model
 
         elif name in ("bedrock", "aws_bedrock"):
@@ -263,7 +263,7 @@ def init_settings() -> Path:
                 },
                 "anthropic": {
                     "api_key": "",
-                    "model": "claude-3-5-sonnet-20241022",
+                    "model": "claude-sonnet-4-6",
                 },
                 "bedrock": {
                     "region": "us-west-2",

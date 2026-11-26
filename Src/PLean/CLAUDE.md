@@ -259,7 +259,10 @@ load-bearing invariants you need to respect when editing.
 - **`#pverify` reports, it does not retry.** A failing obligation is
   left as `sorry` (so `<T>_holds` then depends on `sorryAx`); the
   report goes to `.lake/pverify/<Mod>.txt` with the goals crush failed
-  on.
+  on and a `@[pverifyProof]` skeleton of the obligation's statement. A
+  `@[pverifyProof]` theorem named like an obligation (inside `namespace
+  M`, before `#pverify M`) replaces its automatic proof once its
+  statement is checked (`Tests/Verify/ManualProof.lean`).
 - **Tag new state-update helpers `@[pverifySimp]`.** The normalisation
   before crush uses this set.
 - **Macro hygiene through `mkIdent`.** Identifiers that resolve against

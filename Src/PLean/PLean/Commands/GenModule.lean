@@ -19,7 +19,10 @@ Emitted inside `namespace M`:
   automatic invariants `NoHalt` (when no machine ever halts),
   `Transient` (a machine is never idle in a state whose entry always ends
   in a `goto`) and `Waiting` (a machine suspended at a `receive` is in
-  that `receive`'s state).
+  that `receive`'s state);
+* `AllInv`, the conjunction of the proved targets and the automatic
+  invariants, which `#pverify`'s obligations assume (so a manual proof of
+  one can be stated before `#pverify` runs).
 -/
 import Lean
 import PLean.Internal.Decls
@@ -780,6 +783,14 @@ end Emit
 
 syntax (name := pGenModule) "#gen_module " ident : command
 
+/-- The targets of the `prove` directives, in order (not `default`). -/
+def proofTargets (ctx : LocalPModuleCtx) : Array Name := Id.run do
+  let mut tgts : Array Name := #[]
+  for pd in ctx.proofs do
+    for d in pd.directives do
+      unless d.isDefault || tgts.contains d.target do tgts := tgts.push d.target
+  return tgts
+
 /-- `#gen_module`'s emission, after the checks. -/
 private def genModuleBody (ctx : LocalPModuleCtx) (modName : Name) (name : Ident)
     (plans : Array ((Name × Name × Name) × BodyPlan)) (sites : Array RecvSite) :
@@ -871,6 +882,11 @@ private def genModuleBody (ctx : LocalPModuleCtx) (modName : Name) (name : Ident
           (s.machines r).state = some $tag)
     let body ← conjs.pop.foldrM (init := conjs.back!) fun c acc => `($c ∧ $acc)
     elabCommand (← `(@[reducible] def $(mkIdent `Waiting) (s : $idGW) : Prop := ∀ r, $body))
+  -- `AllInv`: every proved target and the automatic invariants, which the
+  -- obligations of `#pverify` assume.
+  let env ← getEnv
+  let auto := #[`NoHalt, `Transient, `Waiting].filter fun n => env.contains (modName ++ n)
+  emitConj (mkIdent `AllInv) ((proofTargets ctx ++ auto).map fun n => (⟨mkIdent n⟩, true))
   -- `pinstance` class fields become named facts, used as solver hints.
   let mut axioms := ctx.axioms
   for n in ctx.instanceOrder do

@@ -128,6 +128,14 @@ faster; add what a counterexample shows is missing.
 
 ## Iterating on one obligation
 
+Verification is slow: an example takes from seconds to over ten minutes,
+and a goal the solver cannot prove costs its full timeout. Plan each run
+so that it answers a question. Decide beforehand what you want to learn
+(which obligation fails, which invariant, whether a new invariant
+helps), run only the obligations that bear on it, and read the report
+and the `.smt2` files it leaves before running again. Re-run a whole
+example only to confirm a fix.
+
 ```lean
 set_option pverify.only "Waiting.eGlobalResponse_correct_causal" in
 set_option pverify.profile true in
@@ -143,3 +151,38 @@ lake env lean -Dweak.pverify.only=Waiting.eGlobalResponse -Dweak.pverify.profile
 
 `pverify.profile` records, for each goal handed to the solver, its
 time, which solver closed it, and the goal itself when it was slow.
+
+## Proving an obligation by hand
+
+When you believe the inductive invariants an obligation needs are in
+place (the counterexamples are gone, or the goals in the report look
+provable) but the solver still cannot prove it, prove the obligation by
+hand instead of weakening the invariants. A theorem tagged
+`@[pverifyProof]`, with the obligation's name and statement, written
+after `#gen_module M` and before `#pverify M` inside `namespace M`,
+replaces the automatic proof:
+
+```lean
+#gen_module ManualT
+
+namespace ManualT
+open PLean Std.WP
+
+@[pverifyProof] theorem base_safety (g : GW) :
+    InitConditions g → PostInv "nonneg" (nonneg g) := by
+  intro h
+  obtain ⟨-, -, -, -, -, -, -, -, hinit⟩ := h
+  exact fun n hn => by simp [hinit n hn]
+
+end ManualT
+
+#pverify ManualT
+```
+
+`#pverify` checks that the theorem's statement is the obligation's (up to
+unfolding definitions) and reports it as `✓ (manual)`; a different
+statement is a failure. For each obligation it fails on, the report file
+gives the statement as a skeleton to start from. Within the proof,
+`pverify_close` with other options (or after a few steps by hand) is
+often enough.
+

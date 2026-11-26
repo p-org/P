@@ -115,6 +115,10 @@ structure ObResult where
   /-- Time in `vcgen` and normalisation, and in crush (ms). -/
   normMs : Nat := 0
   crushMs : Nat := 0
+  /-- Proved by a `@[pverifyProof]` theorem. -/
+  manual : Bool := false
+  /-- The statement of a failed obligation, as a `@[pverifyProof]` skeleton. -/
+  skeleton : String := ""
 
 /-- How an obligation's goals were closed: `[norm]` when none was left after
 `vcgen` and normalisation, otherwise the number closed by an SMT solver, by
@@ -132,9 +136,12 @@ def ObResult.route (r : ObResult) : String :=
 /-- The report line of an obligation. -/
 def ObResult.line (r : ObResult) (showTimes : Bool) : String :=
   let kind := if !r.cex.isEmpty then "counterexample" else failureKind r.msg
-  let status := if !r.ok then s!"✗ [{kind}]" else if r.trusted then "✓ (trusted)" else "✓"
+  let status := if !r.ok then s!"✗ [{kind}]"
+    else if r.manual then (if r.trusted then "✓ (manual, trusted)" else "✓ (manual)")
+    else if r.trusted then "✓ (trusted)" else "✓"
   let tm := if showTimes then s!" ({r.ms} ms)" else ""
-  let detail := if !r.ok then (if r.cex.isEmpty then ": " ++ r.msg else "") else s!" {r.route}"
+  let detail := if !r.ok then (if r.cex.isEmpty then ": " ++ r.msg else "")
+    else if r.manual then "" else s!" {r.route}"
   s!"{status} {r.name}{tm}{detail}"
 
 /-- Elaborate `cmd`, returning its error messages and the goals `crush`
@@ -161,7 +168,7 @@ private def elabCaptureGoals (cmd : Syntax) : CommandElabM Captured := do
   let mut c : Captured := {}
   for m in msgs.toList do
     let s ← m.data.toString
-    if m.severity == .error then c := { c with errs := c.errs.push (← m.toString) }
+    if m.severity == .error then c := { c with errs := c.errs.push s }
     else if s.startsWith "pverify-goal:" then c := { c with goals := c.goals.push s }
     else if s.startsWith "pverify-inv: " then
       c := { c with inv := some ((s.drop "pverify-inv: ".length).toString.toName) }
@@ -209,6 +216,30 @@ private def deliverHyps (g i src dst : Ident) (pre : TSyntax `term) (evVal : TSy
 private def arrows (hyps : Array (TSyntax `term)) (concl : TSyntax `term) :
     CommandElabM (TSyntax `term) :=
   hyps.foldrM (init := concl) fun h acc => `($h → $acc)
+
+/-- Why the `@[pverifyProof]` theorem `full` does not prove obligation `cmd`
+(`theorem <name> <binders> : <statement> := …`), if it does not: its
+statement must be the obligation's (up to definitional unfolding). -/
+private def manualMismatch? (full : Name) (cmd : Syntax) : CommandElabM (Option String) := do
+  let `(command| theorem $_:ident $bs:bracketedBinder* : $ty := $_) := cmd
+    | return some "internal: unexpected obligation shape"
+  let some ci := (← getEnv).find? full | return some s!"`{full}` is missing"
+  liftTermElabM do
+    let expected ← Term.elabBinders bs fun xs => do
+      let t ← Term.elabType ty
+      Term.synthesizeSyntheticMVarsNoPostponing
+      Meta.mkForallFVars xs t
+    let expected ← instantiateMVars expected
+    if ← Meta.isDefEq ci.type expected then return none
+    return some s!"the statement of `@[pverifyProof]` theorem `{full}` is not the obligation's, \
+      which is: {← Meta.ppExpr expected}"
+
+/-- A `@[pverifyProof]` skeleton for the obligation `full`, from its statement. -/
+private def skeletonOf (obName full : Name) : CommandElabM String := do
+  let some ci := (← getEnv).find? full | return ""
+  let ty ← liftTermElabM (Meta.ppExpr ci.type)
+  let ty := "\n".intercalate ((toString ty).splitOn "\n" |>.map ("    " ++ ·))
+  return s!"@[pverifyProof] theorem {obName} :\n{ty} := by\n  sorry"
 
 syntax (name := pVerify) "#pverify " ident : command
 
@@ -284,10 +315,9 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       $cmd:command)
   elabCommand (← `(namespace $name))
   elabCommand (← `(open PLean Std.WP))
-  -- AllInv
-  let gI := mkIdent `g
-  elabCommand (← `(@[reducible] def $(mkIdent `AllInv) ($gI:ident : $(mkIdent `GW)) : Prop :=
-      $(← conjAt allTargets gI)))
+  -- `AllInv` (emitted by `#gen_module`) has the conjuncts `allTargets`, in order.
+  unless (← getEnv).contains (modName ++ `AllInv) do
+    throwError "run `#gen_module {modName}` again: `{modName}.AllInv` is missing"
   let mut results : Array ObResult := #[]
   let only := ((pverify.only.get opts).splitOn ",").map (fun s => s.trimAscii.toString) |>.filter (!·.isEmpty)
   -- what the counterexample decoder needs to know about the program
@@ -313,6 +343,13 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let runOb (obName : Name) (cmd : TSyntax `command) (kind : Option String → Cex.Kind) :
       CommandElabM ObResult := do
     let t0 ← IO.monoMsNow
+    let full := modName ++ obName
+    -- a manual proof
+    if pverifyProofAttr.hasTag (← getEnv) full then
+      let err? ← manualMismatch? full cmd
+      let trusted := err?.isNone && (← collectAxioms full).contains ``Crush.crushSorry
+      return { name := obName, ok := err?.isNone, ms := (← IO.monoMsNow) - t0, manual := true,
+               trusted, msg := (err?.map excerpt).getD "", fullMsg := err?.getD "" }
     let c ← elabCaptureGoals (← wrap cmd)
     let t1 ← IO.monoMsNow
     let errs := c.errs
@@ -324,7 +361,8 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       (Cex.render cexNames (kind (c.inv.map (·.toString))) c.script c.model).getD #[]
     let smt := if c.model.isEmpty then "" else
       c.script ++ "\n\n; z3's model:\n" ++ "\n".intercalate ((c.model.splitOn "\n").map ("; " ++ ·))
-    return { name := obName, ok := errs.isEmpty, ms := t1 - t0, goals := c.goals,
+    let skeleton ← if errs.isEmpty then pure "" else skeletonOf obName full
+    return { name := obName, ok := errs.isEmpty, ms := t1 - t0, goals := c.goals, skeleton,
              trusted, notes := c.notes, inv := c.inv, cex, smt, stats := c.stats,
              normMs := c.normMs, crushMs := c.crushMs,
              fullMsg := if errs.isEmpty then "" else errs[0]!,
@@ -710,7 +748,8 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let total := results.foldl (· + ·.ms) 0
   let tm (ms : Nat) : String := if showT then s!" ({ms} ms)" else ""
   let nTrusted := (results.filter fun r => r.ok && r.trusted).size
-  let proved := results.filter (·.ok)
+  let proved := results.filter fun r => r.ok && !r.manual
+  let nManual := (results.filter fun r => r.ok && r.manual).size
   let (nNorm, nPre, nSmt) := proved.foldl (init := (0, 0, 0)) fun (a, b, c) r =>
     match r.stats with
     | some (_, _, s) => if s > 0 then (a, b, c + 1) else
@@ -726,11 +765,18 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
         {secs (total - min total (normT + crushT))} elaborating and checking)"
     else ""
   let mut lines : Array String := #[s!"#pverify {modName}: {results.size} obligations, {results.size - failed.size} proved ({nTrusted} trusting the solver), {failed.size} failed{tm total}",
-    s!"  proved by normalisation or a hypothesis: {nNorm}, by crush before SMT: {nPre}, with an SMT solver: {nSmt}{timeSplit}"]
+    s!"  proved by normalisation or a hypothesis: {nNorm}, by crush before SMT: {nPre}, with an SMT solver: {nSmt}{if nManual > 0 then s!", by hand: {nManual}" else ""}{timeSplit}"]
   for r in results do
     lines := lines.push s!"  {r.line showT}"
     for l in r.cex do lines := lines.push s!"      {l}"
   for e in asmErrs do lines := lines.push s!"  assembly error: {excerpt e}"
+  -- `@[pverifyProof]` theorems of this module that prove no obligation
+  if only.isEmpty then
+    let names := queued.map (modName ++ ·.1)
+    let env ← getEnv
+    for n in (pverifyProofAttr.ext.getState env).toList do
+      if modName.isPrefixOf n && !names.contains n then
+        lines := lines.push s!"  `@[pverifyProof]` theorem `{n}` is not an obligation"
   unless assumes.isEmpty do
     lines := lines.push s!"  {modName}.safe assumes: {", ".intercalate assumes.toList}"
   if vacuous then
@@ -751,6 +797,9 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     for r in failed do
       h.putStrLn s!"--- {r.name}\n{r.fullMsg}"
       for gl in r.goals do h.putStrLn gl
+      unless r.skeleton.isEmpty do
+        h.putStrLn s!"A manual proof, after `#gen_module {modName}` and before `#pverify {modName}`, \
+          inside `namespace {modName}` with `open PLean Std.WP`:\n{r.skeleton}"
     -- the SMT script and model of each counterexample
     for r in failed do
       unless r.smt.isEmpty do

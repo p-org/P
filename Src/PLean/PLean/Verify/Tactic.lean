@@ -44,6 +44,11 @@ register_option pverify.cex : Bool := {
   descr := "Search for a counterexample (a small model of the goal's encoding) when a goal is \
             not proved." }
 
+register_option pverify.leaveGoals : Bool := {
+  defValue := false
+  descr := "Leave the goals the solvers cannot prove open, instead of failing (and log \
+            nothing for `#pverify`'s report); `pverify_auto` sets it." }
+
 register_option pverify.quick : Bool := {
   defValue := false
   descr := "One short solver attempt per goal (z3, 3 s), e.g. for `#pverify`'s check that \
@@ -173,6 +178,8 @@ def evalPverifyClose : Tactic := fun stx => do
   let normMs := (← IO.monoMsNow) - tStart
   let mut crushMs : Nat := 0
   let goals ← getGoals
+  let leave := pverify.leaveGoals.get (← getOptions)
+  let mut left : List MVarId := []
   for g in goals, k in [0:goals.length] do
     let t0 ← IO.monoMsNow
     let mut closedBy : Option String := none
@@ -216,6 +223,9 @@ def evalPverifyClose : Tactic := fun stx => do
       let slow ← if ms > 5000 && closedBy.isSome then
           pure m!"\n{← Meta.ppGoal g}" else pure m!""
       logInfo m!"pverify-time: {(← g.getTag).eraseMacroScopes}: {ms} ms, {closedBy.getD "failed"}{slow}"
+    if closedBy.isNone && leave then
+      left := left ++ [g]
+      continue
     if closedBy.isNone then
       -- Record the goal handed to `crush` and its invariant (for `#pverify`'s report).
       logInfo m!"pverify-goal: {← Meta.ppGoal g}"
@@ -242,7 +252,7 @@ def evalPverifyClose : Tactic := fun stx => do
             bestRank := rank
       logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {normMs} {crushMs}"
       if let some e := best then throw e
-  logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {normMs} {crushMs}"
-  setGoals []
+  unless leave do logInfo m!"pverify-stats: {nHyp} {nPre} {nSmt} {normMs} {crushMs}"
+  setGoals left
 
 end PLean

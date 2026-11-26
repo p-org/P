@@ -230,9 +230,30 @@ private def manualMismatch? (full : Name) (cmd : Syntax) : CommandElabM (Option 
       Term.synthesizeSyntheticMVarsNoPostponing
       Meta.mkForallFVars xs t
     let expected ← instantiateMVars expected
-    if ← Meta.isDefEq ci.type expected then return none
+    -- the same binders, explicit as the obligation's (the assembly applies it)
+    let rec sameBinders : Expr → Expr → Bool
+      | .forallE _ _ a bi, .forallE _ _ b bi' => bi == bi' && sameBinders a b
+      | _, _ => true
+    if (← Meta.isDefEq ci.type expected) && sameBinders ci.type expected then return none
     return some s!"the statement of `@[pverifyProof]` theorem `{full}` is not the obligation's, \
       which is: {← Meta.ppExpr expected}"
+
+/-- Why the axioms the `@[pverifyProof]` theorem `full` uses make it no proof,
+if they do: `sorry`, or an axiom the module does not declare (Lean's own and
+the solver's trust are allowed; the latter makes it trusted). -/
+private def manualAxiomsProblem? (ctx : LocalPModuleCtx) (modName full : Name) :
+    CommandElabM (Option String) := do
+  let axs ← collectAxioms full
+  if axs.contains ``sorryAx then return some s!"`{full}` uses `sorry`"
+  let declared (ax : Name) : Bool :=
+    let short := ax.replacePrefix modName .anonymous
+    modName.isPrefixOf ax && (ctx.axioms.contains short || ctx.instances.contains short)
+  let other := axs.filter fun ax =>
+    !(ax == ``propext || ax == ``Classical.choice || ax == ``Quot.sound ||
+      ax == ``Crush.crushSorry || declared ax)
+  if other.isEmpty then return none
+  return some s!"`{full}` uses {", ".intercalate (other.toList.map (s!"`{·}`"))}, \
+    which the module does not declare"
 
 /-- A `@[pverifyProof]` skeleton for the obligation `full`, from its statement. -/
 private def skeletonOf (obName full : Name) : CommandElabM String := do
@@ -240,6 +261,63 @@ private def skeletonOf (obName full : Name) : CommandElabM String := do
   let ty ← liftTermElabM (Meta.ppExpr ci.type)
   let ty := "\n".intercalate ((toString ty).splitOn "\n" |>.map ("    " ++ ·))
   return s!"@[pverifyProof] theorem {obName} :\n{ty} := by\n  sorry"
+
+/-- `pverify_auto [M]`, for a manual proof of one of `M`'s obligations:
+`pverify_close` with the module's definitions, hints and facts (`M` is the
+innermost enclosing namespace that is a `pmodule` when not given). It
+unfolds the module's handlers that occur in the goal, and leaves open the
+goals the solvers cannot prove, each tagged with its invariant
+(`case pv_inv.<invariant> => …`), for the proof to finish. -/
+syntax (name := pverifyAuto) "pverify_auto" (ppSpace colGt ident)? : tactic
+
+open Lean Elab Tactic in
+@[tactic pverifyAuto] def evalPverifyAuto : Tactic := fun stx => do
+  let env ← getEnv
+  let modules := pmoduleExt.getState env
+  let given? : Option Name := (stx.getArgs.extract 1 stx.getNumArgs).findSome? fun a =>
+    if a.isIdent then some a.getId
+    else a.getArgs.findSome? fun b => if b.isIdent then some b.getId else none
+  let modName ← match given? with
+    | some m => pure m
+    | none => do
+      let mut ns ← getCurrNamespace
+      let mut found : Option Name := none
+      while !ns.isAnonymous do
+        if modules.contains ns then
+          found := some ns
+          break
+        ns := ns.getPrefix
+      let some m := found
+        | throwError "pverify_auto: not inside the namespace of a pmodule; name it, `pverify_auto M`"
+      pure m
+  let some ctx := modules.find? modName | throwError "pverify_auto: no `pmodule {modName}`"
+  let (defs, hints, facts) := closeLists ctx env modName
+  let full (n : Name) : Ident := mkIdent (modName ++ n)
+  -- the module's handlers in the goal (definitions of type `… → HM Unit`)
+  let hm := modName ++ `HM
+  let rec codomain : Expr → Expr
+    | .forallE _ _ b _ => codomain b
+    | e => e
+  let goal ← instantiateMVars (← getMainTarget)
+  let handlers := goal.getUsedConstants.filter fun c =>
+    modName.isPrefixOf c && (env.find? c).any fun ci => (codomain ci.type).getAppFn.constName? == some hm
+  let hs : Array Ident := handlers.map mkIdent
+  let ds : Array Ident := defs.map full
+  let ls : Array (TSyntax `term) := hints.map fun n => ⟨full n⟩
+  let fs : Array (TSyntax `term) := facts.map fun n => ⟨full n⟩
+  -- `#pverify`'s settings for an obligation
+  let opts ← getOptions
+  let timeout := Syntax.mkNumLit (toString (pverify.timeout.get opts))
+  let trust := Syntax.mkStrLit (pverify.trust.get opts)
+  evalTactic (← `(tactic|
+    set_option maxHeartbeats 0 in
+    set_option experimental.vcgen true in
+    set_option crush.backend "cvc5" in
+    set_option crush.timeout $timeout:num in
+    set_option crush.trust $trust:str in
+    set_option pverify.leaveGoals true in
+    set_option pverify.cex false in
+    pverify_close [$[$hs],*] [$[$ds],*] [$[$ls],*] [$[$fs],*]))
 
 syntax (name := pVerify) "#pverify " ident : command
 
@@ -254,14 +332,13 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let timeout := pverify.timeout.get opts
   let trust := pverify.trust.get opts
   -- targets
-  let mut tgts : Array Name := #[]
+  let tgts := proofTargets ctx
   let mut usingOf : NameMap (Array Name) := {}
   for pd in ctx.proofs do
     for d in pd.directives do
       if d.isDefault then
         logWarningAt d.ref "`prove default` is no longer needed: the framework invariants are proved once, generically"
         continue
-      unless tgts.contains d.target do tgts := tgts.push d.target
       usingOf := usingOf.insert d.target ((((usingOf.find? d.target).getD #[])) ++ d.usingLemmas)
   for t in tgts do
     for u in ((usingOf.find? t).getD #[]) do
@@ -269,29 +346,13 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
         throwError "`prove {t} using {u}`: `{u}` is never proved (add `prove {u} ;`)"
   let hasNoHalt := env.contains (modName ++ `NoHalt)
   let hasTransient := env.contains (modName ++ `Transient)
-  let hasWaiting := env.contains (modName ++ `Waiting)
-  let allTargets := if hasNoHalt then tgts.push `NoHalt else tgts
-  let allTargets := if hasTransient then allTargets.push `Transient else allTargets
-  let allTargets := if hasWaiting then allTargets.push `Waiting else allTargets
-  -- names to unfold / hints
-  let mut defs : Array Ident := #[mkIdent `InitConditions]
-  for n in ctx.invariantOrder do defs := defs.push (mkIdent n)
-  for n in ctx.lemmaOrder do defs := defs.push (mkIdent n)
-  for m in ctx.machineOrder do defs := defs.push (mkIdent (Name.mkSimple ("is_" ++ m.toString)))
-  for e in ctx.eventOrder do defs := defs.push (mkIdent (Name.mkSimple ("is_" ++ e.toString)))
-  if hasNoHalt then defs := defs.push (mkIdent `NoHalt)
-  if hasTransient then defs := defs.push (mkIdent `Transient)
-  if hasWaiting then defs := defs.push (mkIdent `Waiting)
-  defs := defs.push (mkIdent `AllInv)
-  let mut hints : Array (TSyntax `term) := #[]
-  for e in ctx.eventOrder do
-    if (ctx.events.find? e).any (·.hasPayload) then
-      hints := hints.push (← `($(mkIdent (Name.mkSimple (e.toString ++ "_payload_of_spec")))))
-  -- `paxiom`s are normalised with the hypotheses; `pinstance` facts are hints.
-  let mut facts : Array (TSyntax `term) := #[]
-  for (n, d) in ctx.axioms.toList do
-    if d.defStx.isSome then facts := facts.push (← `($(mkIdent n)))
-    else hints := hints.push (← `($(mkIdent n)))
+  -- `AllInv`'s conjuncts, as `#gen_module` emitted them
+  let allTargets := PLean.allTargets ctx env modName
+  -- names to unfold / hints / facts
+  let (defNames, hintNames, factNames) := closeLists ctx env modName
+  let defs : Array Ident := defNames.map mkIdent
+  let hints : Array (TSyntax `term) := hintNames.map fun n => ⟨mkIdent n⟩
+  let facts : Array (TSyntax `term) := factNames.map fun n => ⟨mkIdent n⟩
   let closeTac (handlers : Array Ident) : CommandElabM (TSyntax ``Lean.Parser.Tactic.tacticSeq) :=
     `(Lean.Parser.Tactic.tacticSeq|
         pverify_close [$[$handlers],*] [$[$defs],*] [$[$hints],*] [$[$facts],*])
@@ -346,7 +407,9 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     let full := modName ++ obName
     -- a manual proof
     if pverifyProofAttr.hasTag (← getEnv) full then
-      let err? ← manualMismatch? full cmd
+      let err? ← match ← manualMismatch? full cmd with
+        | some e => pure (some e)
+        | none => manualAxiomsProblem? ctx modName full
       let trusted := err?.isNone && (← collectAxioms full).contains ``Crush.crushSorry
       return { name := obName, ok := err?.isNone, ms := (← IO.monoMsNow) - t0, manual := true,
                trusted, msg := (err?.map excerpt).getD "", fullMsg := err?.getD "" }
@@ -774,8 +837,14 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   if only.isEmpty then
     let names := queued.map (modName ++ ·.1)
     let env ← getEnv
-    for n in (pverifyProofAttr.ext.getState env).toList do
-      if modName.isPrefixOf n && !names.contains n then
+    let mut tagged : Array Name := (pverifyProofAttr.ext.getState env).toArray
+    for i in [0:env.allImportedModuleNames.size] do
+      tagged := tagged ++ pverifyProofAttr.ext.getModuleEntries env i
+    -- a theorem belongs to the module with the longest name prefixing it
+    let others := (← allPModules).map (·.1) |>.filter fun m =>
+      m != modName && modName.isPrefixOf m
+    for n in tagged do
+      if modName.isPrefixOf n && !names.contains n && !others.any (·.isPrefixOf n) then
         lines := lines.push s!"  `@[pverifyProof]` theorem `{n}` is not an obligation"
   unless assumes.isEmpty do
     lines := lines.push s!"  {modName}.safe assumes: {", ".intercalate assumes.toList}"

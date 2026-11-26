@@ -2,23 +2,37 @@
 
 `#pverify` proves each target by induction over steps of the transition
 system: every invariant holds initially (`base_<T>`), and every handler
-preserves it (`<M>.<S>.<ev>_correct_<T>`, `entry_correct_<T>`). When an
-obligation does not close, the fix is almost always a stronger
-invariant, not a proof.
+preserves it (`<M>.<S>.<ev>_correct_<T>`, `entry_correct_<T>`). Assuming
+every invariant, it also proves that no handler fails (`_safe`) and that
+no state receives an event it does not handle (`_never`).
+
+When an obligation does not close, the fix is almost always a stronger
+invariant. The usual loop:
+
+1. Read the failing obligation's counterexample (below).
+2. Find the fact that rules the pre-state out, add it as an invariant, and
+   `prove` it.
+3. Re-run only the obligations concerned.
+4. Once the invariants are in place and the solver still gives up, prove
+   the obligation by hand (last section).
 
 ## Reading the report
 
-`#pverify M` prints one line per obligation and writes the full report,
-with the goals the solver failed on, to `.lake/pverify/M.txt`. While it
-runs, the editor shows one progress message, updated in place: the
-obligations done, the one being proved, and the goal and solver it is on.
+`#pverify M` prints one line per obligation and writes the full report to
+`.lake/pverify/M.txt`. For each failed obligation, the report file has the
+goals the solver failed on and the obligation's statement as a
+`@[pverifyProof]` skeleton. While `#pverify` runs, the editor shows one
+progress message, updated in place: the obligations done, the one being
+proved, and the goal and solver it is on.
 
 | Outcome | Meaning | What to do |
 |---|---|---|
 | `✓` | proved, with a checked proof | — |
 | `✓ (trusted)` | the solver proved it, but its proof could not be replayed | usually fine; simplify the invariant if a checked proof matters |
+| `✓ (manual)` | proved by a `@[pverifyProof]` theorem | — |
 | `✗ [counterexample]` | z3 found a state where the step breaks the invariant | the invariant is false or not inductive: strengthen it |
-| `✗ [unknown]` | the solver timed out, and no counterexample was found | the step needs too much reasoning in one query: add intermediate invariants |
+| `✗ [unknown]` | the solver timed out, and no counterexample was found | the step needs too much reasoning in one query: add intermediate invariants, or prove it by hand |
+| `✗ [error]` | something else failed, e.g. a manual proof whose statement is not the obligation's | read the message |
 
 A proved obligation's line says how its goals (one per invariant and
 path through the handler, after normalisation) were closed:
@@ -31,13 +45,16 @@ path through the handler, after normalisation) were closed:
 | `hyp n` | `n` goals were hypotheses |
 
 The summary line counts the obligations proved by normalisation or a
-hypothesis, by crush before SMT only, and with an SMT solver, and splits
-the time between `vcgen` and normalisation, crush, and the rest
-(elaborating the statement and checking the proof). The last lines say
-what `M.safe` assumes beyond Lean's axioms (`paxiom`s, `pinstance`s, the
-solver's word for trusted obligations, `sorry`), and warn when no world
-satisfies `InitConditions`: contradictory `init-holds` make every theorem
-vacuous.
+hypothesis, by crush before SMT only, with an SMT solver, and by hand, and
+splits the time between `vcgen` and normalisation, crush, and the rest
+(elaborating the statement and checking the proof). The last lines say:
+
+- what `M.safe` assumes beyond Lean's axioms: `paxiom`s, `pinstance`s, the
+  solver's word for trusted obligations, and `sorry` (left by a failed
+  obligation, or written in the program);
+- which `@[pverifyProof]` theorems are not obligations;
+- whether no world satisfies `InitConditions`. Contradictory `init-holds`
+  make every theorem vacuous, so this is an error.
 
 A counterexample names the invariant and the step, and shows a smallest
 pre-state z3 finds:
@@ -48,24 +65,28 @@ pre-state z3 finds:
     Pre-state (it satisfies the premises; it need not be reachable):
     Machines:
       Coordinator
-        #1 (coordinator)  WaitForResponses  yesVotes = {0}  ◀
+        #1 (coordinator)  WaitForResponses  yesVotes = {2}  ◀
       Participant
-        #0  Rejected
-      (references from #2 on are unallocated)
+        #2  Rejected
+      (references from #3 on are unallocated)
     In flight:
       #0  Coordinator #1 → Coordinator #1  eYes {source := 2}  ◀
     Functions:
-      preference: #0 ↦ false, #1 ↦ false
+      preference: #1 ↦ false, #2 ↦ false
       coordinator = 1
-      participants = {0}
+      participants = {2}
 ```
 
-`◀` marks the machine taking the step and the packet it takes. The
-pre-state satisfies the premises but need not be reachable (here, the
-Coordinator holds a yes vote from a participant that prefers no). The
-usual cause is a fact that holds in every reachable state but is not
-among the premises: add it as an invariant (and `prove` it), here
-`votes_all_prefer`.
+`◀` marks the machine taking the step and the packet it takes. Reference
+`0` is `null`, never a machine. The pre-state satisfies the premises but
+need not be reachable (here, the Coordinator holds a yes vote from a
+participant that prefers no). The usual cause is a fact that holds in
+every reachable state but is not among the premises: add it as an
+invariant (and `prove` it), here `votes_all_prefer`.
+
+A `_safe` counterexample shows a handler that can fail: an `assert`, a
+send to `null`, a missing or duplicate map key, an index out of range, or a
+`choose` from nothing.
 
 Counterexamples are found with the well-formedness of recursive
 datatypes dropped, so a value where the program has a `Nat` (inside a
@@ -122,6 +143,9 @@ event binder is the payload field `f` when the event has one. To reach
 the message's own `target` / `src` when the payload also has such a
 field, quantify over `PLean.Msg E` and guard with `is_<ev> e`.
 
+**Containers.** In invariants, `=` between sets or maps compares their
+contents (P's `==`), not how they were built.
+
 **`using`.** `prove T using U ;` gives `T`'s obligations `U` as an extra
 premise (`U` must be proved too). Smaller premise sets make queries
 faster; add what a counterexample shows is missing.
@@ -129,12 +153,12 @@ faster; add what a counterexample shows is missing.
 ## Iterating on one obligation
 
 Verification is slow: an example takes from seconds to over ten minutes,
-and a goal the solver cannot prove costs its full timeout. Plan each run
-so that it answers a question. Decide beforehand what you want to learn
-(which obligation fails, which invariant, whether a new invariant
-helps), run only the obligations that bear on it, and read the report
-and the `.smt2` files it leaves before running again. Re-run a whole
-example only to confirm a fix.
+and a goal the solver cannot prove costs its full timeout, plus the
+search for a counterexample. Plan each run so that it answers a question.
+Decide beforehand what you want to learn (which obligation fails, which
+invariant, whether a new invariant helps), run only the obligations that
+bear on it, and read the report and the `.smt2` files it leaves before
+running again. Re-run a whole example only to confirm a fix.
 
 ```lean
 set_option pverify.only "Waiting.eGlobalResponse_correct_causal" in
@@ -149,8 +173,13 @@ lake env lean -Dweak.pverify.only=Waiting.eGlobalResponse -Dweak.pverify.profile
   Examples/ClockBound.lean
 ```
 
-`pverify.profile` records, for each goal handed to the solver, its
-time, which solver closed it, and the goal itself when it was slow.
+- `pverify.only` runs the obligations whose names contain one of the
+  comma-separated fragments, and skips the assembly of the theorems.
+- `pverify.profile` records, for each goal handed to the solver, its
+  time, which solver closed it, and the goal itself when it was slow.
+- `pverify.cex false` skips the counterexample search, when you only need
+  to know whether a goal closes; `pverify.timeout` (seconds) bounds the
+  full-length solver attempts (the first, quick ones take 5 s each).
 
 ## Proving an obligation by hand
 
@@ -179,10 +208,25 @@ end ManualT
 #pverify ManualT
 ```
 
-`#pverify` checks that the theorem's statement is the obligation's (up to
-unfolding definitions) and reports it as `✓ (manual)`; a different
-statement is a failure. For each obligation it fails on, the report file
-gives the statement as a skeleton to start from. Within the proof,
-`pverify_close` with other options (or after a few steps by hand) is
-often enough.
+Start from the skeleton the report file gives for the failed obligation:
+it has the exact statement. `#pverify` checks that the theorem's
+statement is the obligation's (up to unfolding definitions, with the same
+explicit binders) and reports it as `✓ (manual)`. A manual proof fails
+when its statement differs, when it uses `sorry`, or when it uses an axiom
+the module does not declare (a `paxiom` or `pinstance` is fine; the
+solver's trust makes it `✓ (manual, trusted)`). Only a theorem can be
+tagged.
 
+The obligation covers every invariant of its target, so a manual proof
+usually lets the solver do most of it. `pverify_auto` runs the solver
+with the module's definitions and facts, as `#pverify` does, and leaves
+the goals it cannot prove open, one per invariant and path, tagged with
+the invariant:
+
+```lean
+@[pverifyProof] theorem Node.Run.ePing_correct_lemmas : … := by
+  pverify_auto
+  case pv_inv.NoBypass => …
+```
+
+`Tests/Verify/ManualProof.lean` has these examples in full.

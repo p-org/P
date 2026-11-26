@@ -791,6 +791,34 @@ def proofTargets (ctx : LocalPModuleCtx) : Array Name := Id.run do
       unless d.isDefault || tgts.contains d.target do tgts := tgts.push d.target
   return tgts
 
+/-- The automatic invariants `#gen_module` emitted for module `modName`. -/
+def autoTargets (env : Environment) (modName : Name) : Array Name :=
+  #[`NoHalt, `Transient, `Waiting].filter fun n => env.contains (modName ++ n)
+
+/-- The conjuncts of `AllInv`, in order: the proved targets, then the
+automatic invariants. `#gen_module` and `#pverify` both read it here. -/
+def allTargets (ctx : LocalPModuleCtx) (env : Environment) (modName : Name) : Array Name :=
+  proofTargets ctx ++ autoTargets env modName
+
+/-- What `pverify_close` gets for module `modName`, as names inside its
+namespace: the definitions to unfold (invariants, kind predicates, …), the
+hints (payload extractors' specs, `pinstance` laws) and the facts
+(`paxiom`s, normalised with the hypotheses). -/
+def closeLists (ctx : LocalPModuleCtx) (env : Environment) (modName : Name) :
+    Array Name × Array Name × Array Name := Id.run do
+  let mut defs : Array Name := #[`InitConditions] ++ ctx.invariantOrder ++ ctx.lemmaOrder
+  defs := defs ++ ctx.machineOrder.map (fun m => Name.mkSimple ("is_" ++ m.toString))
+  defs := defs ++ ctx.eventOrder.map (fun e => Name.mkSimple ("is_" ++ e.toString))
+  defs := defs ++ autoTargets env modName ++ #[`AllInv]
+  let mut hints : Array Name := #[]
+  for e in ctx.eventOrder do
+    if (ctx.events.find? e).any (·.hasPayload) then
+      hints := hints.push (Name.mkSimple (e.toString ++ "_payload_of_spec"))
+  let mut facts : Array Name := #[]
+  for (n, d) in ctx.axioms.toList do
+    if d.defStx.isSome then facts := facts.push n else hints := hints.push n
+  return (defs, hints, facts)
+
 /-- `#gen_module`'s emission, after the checks. -/
 private def genModuleBody (ctx : LocalPModuleCtx) (modName : Name) (name : Ident)
     (plans : Array ((Name × Name × Name) × BodyPlan)) (sites : Array RecvSite) :
@@ -884,9 +912,7 @@ private def genModuleBody (ctx : LocalPModuleCtx) (modName : Name) (name : Ident
     elabCommand (← `(@[reducible] def $(mkIdent `Waiting) (s : $idGW) : Prop := ∀ r, $body))
   -- `AllInv`: every proved target and the automatic invariants, which the
   -- obligations of `#pverify` assume.
-  let env ← getEnv
-  let auto := #[`NoHalt, `Transient, `Waiting].filter fun n => env.contains (modName ++ n)
-  emitConj (mkIdent `AllInv) ((proofTargets ctx ++ auto).map fun n => (⟨mkIdent n⟩, true))
+  emitConj (mkIdent `AllInv) ((allTargets ctx (← getEnv) modName).map fun n => (⟨mkIdent n⟩, true))
   -- `pinstance` class fields become named facts, used as solver hints.
   let mut axioms := ctx.axioms
   for n in ctx.instanceOrder do

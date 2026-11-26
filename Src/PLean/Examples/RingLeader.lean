@@ -135,9 +135,9 @@ end RingLeader
 
 #pverify    RingLeader
 
-/-! The laws have a model with a ring of three Servers, `1 → 2 → 3 → 1`:
-`<` on ℕ read cyclically, and the next member. So the theorems are not
-only about the empty system. -/
+/-! The laws have a model for a ring of any size `n ≥ 2`,
+`1 → 2 → … → n → 1`: `<` on ℕ read cyclically, and the next member. So the
+class laws allow rings of every size, not only the empty system. -/
 
 /-- `y` is strictly between `x` and `z` going round `<` cyclically. -/
 def cyclicBtw (x y z : Nat) : Bool :=
@@ -150,25 +150,17 @@ example : LeOrder Nat where
   le_trans := by intro x y z; simp; omega
   le_antisymm := by intro x y; simp; omega
 
-example : RingTopology Nat where
-  mem x := decide (1 ≤ x ∧ x ≤ 3)
+/-- The ring of `n` Servers `1, …, n`. -/
+@[instance_reducible] def ringOf (n : Nat) (hn : 2 ≤ n) : RingTopology Nat where
+  mem x := decide (1 ≤ x ∧ x ≤ n)
   btw := cyclicBtw
-  right x := if x = 3 then 1 else x + 1
+  right x := if x = n then 1 else x + 1
   btw_1 := by intro w x y z; simp [cyclicBtw]; omega
   btw_2 := by intro x y z; simp [cyclicBtw]; omega
   btw_3 := by intro x y z; simp [cyclicBtw]; omega
   btw_4 := by intro x y z; simp [cyclicBtw]; omega
   right_mem := by intro x; simp; split <;> omega
   right_neq_self := by intro x; simp; split <;> omega
-  btw_right := by
-    intro x y hx hy; simp at hx hy
-    rcases (by omega : x = 1 ∨ x = 2 ∨ x = 3) with rfl | rfl | rfl <;>
-      rcases (by omega : y = 1 ∨ y = 2 ∨ y = 3) with rfl | rfl | rfl <;> decide
-  btw_Aux1 := by
-    intro x y hx hy; simp at hx hy
-    rcases (by omega : x = 1 ∨ x = 2 ∨ x = 3) with rfl | rfl | rfl <;>
-      rcases (by omega : y = 1 ∨ y = 2 ∨ y = 3) with rfl | rfl | rfl <;> decide
-  right_btw := by
-    intro x n m hx hn hm; simp at hx hn; subst hm
-    rcases (by omega : x = 1 ∨ x = 2 ∨ x = 3) with rfl | rfl | rfl <;>
-      rcases (by omega : n = 1 ∨ n = 2 ∨ n = 3) with rfl | rfl | rfl <;> decide
+  btw_right := by intro x y; simp [cyclicBtw]; split <;> omega
+  btw_Aux1 := by intro x y; simp [cyclicBtw]; split <;> omega
+  right_btw := by intro x k m; simp [cyclicBtw]; split <;> omega

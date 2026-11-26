@@ -20,6 +20,8 @@ open Lean in
 obligation by hand: `#pverify` checks the statement and uses the theorem
 instead of the solver. -/
 initialize pverifyProofAttr : TagAttribute ←
-  registerTagAttribute `pverifyProof "a manual proof of a `#pverify` obligation"
+  registerTagAttribute `pverifyProof "a manual proof of a `#pverify` obligation" fun decl => do
+    unless ((← getEnv).find? decl).any (· matches .thmInfo _) do
+      throwError "`@[pverifyProof]`: `{decl}` is not a theorem; a manual proof must be one"
 
 end PLean

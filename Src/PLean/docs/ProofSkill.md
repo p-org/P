@@ -9,8 +9,9 @@ invariant, not a proof.
 ## Reading the report
 
 `#pverify M` prints one line per obligation and writes the full report,
-with the goals the solver failed on, to `.lake/pverify/M.txt`. In the
-editor, each obligation is also reported as it finishes.
+with the goals the solver failed on, to `.lake/pverify/M.txt`. While it
+runs, the editor shows one progress message, updated in place: the
+obligations done, the one being proved, and the goal and solver it is on.
 
 | Outcome | Meaning | What to do |
 |---|---|---|
@@ -26,7 +27,7 @@ path through the handler, after normalisation) were closed:
 |---|---|
 | `[norm]` | no goal was left after `vcgen` and normalisation |
 | `smt n` | `n` goals needed an SMT solver |
-| `pre n` | `n` goals were closed by crush before SMT translation (a checked Lean proof) |
+| `pre n` | `n` goals were closed by crush before SMT translation: a Lean proof built from the hypotheses (a contradictory hypothesis, a hypothesis applied directly, an existential witness), checked by the kernel, with no solver call |
 | `hyp n` | `n` goals were hypotheses |
 
 The summary line counts the obligations proved by normalisation or a

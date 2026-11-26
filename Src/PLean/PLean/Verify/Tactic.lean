@@ -28,6 +28,7 @@ for `#pverify`'s report.
 -/
 import PLean.Verify.Norm
 import PLean.Verify.Cex
+import PLean.Verify.Progress
 import PLean.Semantics.Msg
 import Crush
 
@@ -81,6 +82,7 @@ def evalPverifyClose : Tactic := fun stx => do
   let ls : Array (TSyntax `term) := stx[8].getSepArgs.map (⟨·⟩)
   let as : Array (TSyntax `term) := stx[11].getSepArgs.map (⟨·⟩)
   let tStart ← IO.monoMsNow
+  Progress.setDetail "vcgen and normalisation"
   evalTactic (← `(tactic| intros))
   evalTactic (← `(tactic|
     try ((first | unfold PLean.RunPost | unfold PLean.RunSafe | unfold PLean.RunOK); intro coins)))
@@ -162,12 +164,18 @@ def evalPverifyClose : Tactic := fun stx => do
   let mut nSmt : Nat := 0
   let normMs := (← IO.monoMsNow) - tStart
   let mut crushMs : Nat := 0
-  for g in ← getGoals do
+  let goals ← getGoals
+  for g in goals, k in [0:goals.length] do
     let t0 ← IO.monoMsNow
     let mut closedBy : Option String := none
     let mut errs : Array (String × Exception) := #[]
     let (crushTac, portfolio) ← portfolioFor g
+    let invS := match invOfTag (← g.getTag).eraseMacroScopes with
+      | some i => s!" (invariant `{i}`)"
+      | none => ""
+    let goalS := s!"goal {k + 1}/{goals.length}{invS}"
     for (solver, tac) in portfolio do
+      Progress.setDetail s!"{goalS}: {solver}"
       setGoals [g]
       let s ← saveState
       let traces0 ← getTraceState
@@ -210,6 +218,7 @@ def evalPverifyClose : Tactic := fun stx => do
         if has (← e.toMessageData.toString) "reported `unsat`" then refuted := true
       -- A goal a solver refuted (but no proof could be replayed) has no model.
       if pverify.cex.get (← getOptions) && !refuted then
+        Progress.setDetail s!"{goalS}: searching for a counterexample"
         if let some (script, model) ← findCex g crushTac then
           logInfo m!"pverify-smt-script:\n{script}"
           logInfo m!"pverify-smt-model:\n{model}"

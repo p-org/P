@@ -27,7 +27,9 @@ module:
 Each proved obligation is reported with how its goals were closed (`[norm]`
 when none was left after `vcgen` and normalisation; else how many needed
 an SMT solver, were closed by crush before SMT translation, or were
-hypotheses). In the editor, each obligation is reported as it finishes.
+hypotheses). In the editor, one message shows the progress, updated in
+place: the obligations done, the one being proved, and the goal and solver
+it is on.
 
 A failing obligation is reported (with its time, and a counterexample
 when z3 finds one: the invariant that fails, the step, and a minimised
@@ -37,6 +39,7 @@ obligations and the assembly still run.
 import Lean
 import PLean.Commands.GenModule
 import PLean.Verify.Tactic
+import PLean.Verify.Progress
 
 open Lean Elab Command
 
@@ -65,7 +68,7 @@ register_option pverify.only : String := {
 
 register_option pverify.progress : Bool := {
   defValue := true
-  descr := "Report each obligation as it finishes (in the editor, while `#pverify` runs)." }
+  descr := "Show `#pverify`'s progress in the editor (one message, updated in place)." }
 
 register_option pverify.trust : String := {
   defValue := "reconstructOrTrust"
@@ -205,26 +208,7 @@ private def arrows (hyps : Array (TSyntax `term)) (concl : TSyntax `term) :
 
 syntax (name := pVerify) "#pverify " ident : command
 
-open Language in
-/-- Report `msg` now, as the next link of the progress chain (a snapshot the
-language server reports as soon as it is resolved). -/
-private def progressAt (chain : IO.Ref (Option (IO.Promise SnapshotTree))) (ref : Syntax)
-    (msg : MessageData) : CommandElabM Unit := do
-  let some p ← chain.get | return
-  let next ← IO.Promise.new
-  let fileMap ← getFileMap
-  let log := MessageLog.empty.add {
-    fileName := ← getFileName
-    pos := fileMap.toPosition (ref.getPos?.getD 0)
-    endPos := ref.getTailPos?.map fileMap.toPosition
-    severity := .information
-    data := msg }
-  p.resolve (SnapshotTree.mk { diagnostics := ← Snapshot.Diagnostics.ofMessageLog log }
-    #[{ stx? := none, cancelTk? := none, task := next.resultD default }])
-  chain.set (some next)
-
-private def pverifyBody (stx : Syntax) (progress : MessageData → CommandElabM Unit) :
-    CommandElabM Unit := do
+private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let `(#pverify $name:ident) := stx | throwUnsupportedSyntax
   let modName := name.getId
   let some ctx ← getPModule? modName | throwError "no `pmodule {modName}` is registered"
@@ -502,12 +486,15 @@ private def pverifyBody (stx : Syntax) (progress : MessageData → CommandElabM 
   -- discharge, reporting progress
   let queued ← queue.get
   let showT := pverify.showTimes.get opts
-  progress m!"#pverify {modName}: {queued.size} obligations"
+  let status (k : Nat) (rs : Array ObResult) : String :=
+    let nFailed := (rs.filter (!·.ok)).size
+    let failedS := if nFailed == 0 then "" else s!", {nFailed} failed"
+    s!"#pverify {modName}: {k}/{queued.size} obligations done{failedS}"
   for (obName, cmd, kind) in queued, k in [0:queued.size] do
-    let r ← runOb obName cmd kind
-    results := results.push r
-    let verdict := if r.cex.isEmpty then "" else "\n" ++ r.cex[0]!
-    progress m!"[{k + 1}/{queued.size}] {r.line showT}{verdict}"
+    Progress.setHead (status k results) s!"[Proving] {obName}"
+    results := results.push (← runOb obName cmd kind)
+  if only.isEmpty then
+    Progress.setHead (status queued.size results) s!"[Assembling] {modName}.safe"
   -- assembly (not counted as obligations; skipped under `pverify.only`)
   let asm (cmd : TSyntax `command) : CommandElabM Unit := do
     if only.isEmpty then elabCommand cmd
@@ -723,27 +710,35 @@ private def pverifyBody (stx : Syntax) (progress : MessageData → CommandElabM 
         if let some dir := p.parent then IO.FS.createDirAll dir
         IO.FS.writeFile p r.smt
   catch _ => pure ()
+  Progress.finish (status queued.size results)
   if failed.isEmpty && asmErrs.isEmpty then logInfo report
   else if pverify.failOnIncomplete.get opts then logError report
   else logWarning report
 
 open Language in
-/-- `#pverify`. Incremental, so it can report progress: it resolves its
-snapshot at once with a chain of snapshots, one per finished obligation,
-which the language server shows while the command still runs. -/
+/-- `#pverify`. Incremental, so it can report progress in the editor: it
+resolves its snapshot at once with one message whose widget shows the
+progress, updated in place (`PLean.Progress`). -/
 @[command_elab pVerify, incremental]
 def elabPVerify : CommandElab := fun stx => do
-  let chain ← IO.mkRef (none : Option (IO.Promise SnapshotTree))
+  let `(#pverify $name:ident) := stx | throwUnsupportedSyntax
   if let some snap := (← read).snap? then
     if pverify.progress.get (← getOptions) then
-      let p ← IO.Promise.new
-      snap.new.resolve (.ofTyped (SnapshotTree.mk { diagnostics := .empty }
-        #[{ stx? := none, cancelTk? := none, task := p.resultD default }]))
-      chain.set (some p)
+      let text := s!"#pverify {name.getId}: starting"
+      let id ← Progress.start text
+      let fileMap ← getFileMap
+      let log := MessageLog.empty.add {
+        fileName := ← getFileName
+        pos := fileMap.toPosition (stx.getPos?.getD 0)
+        endPos := stx.getTailPos?.map fileMap.toPosition
+        severity := .information
+        data := ← liftCoreM (Progress.message id text) }
+      snap.new.resolve (.ofTyped (SnapshotTree.mk
+        { diagnostics := ← Snapshot.Diagnostics.ofMessageLog log } #[]))
   try
     -- The obligations are commands themselves; they must not take over the snapshot.
-    withReader ({ · with snap? := none }) (pverifyBody stx (progressAt chain stx))
+    withReader ({ · with snap? := none }) (pverifyBody stx)
   finally
-    if let some p ← chain.get then p.resolve default
+    Progress.finish s!"#pverify {name.getId}: stopped"
 
 end PLean

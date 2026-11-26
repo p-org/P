@@ -104,6 +104,7 @@ PLean/
     Tactic.lean      -- pverify_close (vcgen + normalisation + crush)
     Cex.lean         -- counterexamples: a minimised z3 model of a goal
                         that is not proved, decoded into a world
+    Progress.lean    -- #pverify's live progress (a widget polling an RPC method)
 
 Examples/            -- protocol ports
 Tests/               -- regressions; Tests.** is globbed
@@ -256,8 +257,10 @@ load-bearing invariants you need to respect when editing.
 - Each obligation line says how its goals were closed (`[norm]`: nothing
   left after `vcgen` and normalisation; `smt n` / `pre n` / `hyp n`: by an
   SMT solver, by crush before SMT translation, as a hypothesis). In the
-  editor, `#pverify` reports each obligation as it finishes
-  (`pverify.progress`); the command line prints only the final report.
+  editor, `#pverify` shows one progress message, updated in place: the
+  obligations done, the one being proved, and the goal, invariant and
+  solver it is on (`pverify.progress`, `PLean/Verify/Progress.lean`). The
+  command line prints only the final report.
 - A goal that is not proved gets a counterexample when z3 finds one
   (`pverify.cex`, on by default): the report names the failing invariant
   and the step, and shows a minimised pre-state (machines by kind with

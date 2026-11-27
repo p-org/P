@@ -1,0 +1,104 @@
+/-
+End-to-end: DistributedLock through `#gen_module` / `#pverify`.
+-/
+import PLean
+
+open PLean
+
+pmodule DLockT
+
+  -- Name the pmodule's global state once; every `invariant` / `init-holds`
+  -- body below may reference `s` as the live state.
+  system s
+
+  type tGrant  = (node : PLean.MachineRef, epoch : Int)
+  type tAccept = (epoch : Int, source : PLean.MachineRef)
+
+  event eGrant  : tGrant
+  event eAccept : tAccept
+
+  machine Node {
+    var epoch : Int
+    var held  : Bool
+
+    start state Act {
+      on eGrant (payload : tGrant) {
+        if (held && decide (payload.epoch > epoch)) then do
+          held = false
+          send payload.node, eAccept, (epoch = payload.epoch, source = this.ref)
+      }
+
+      on eAccept (payload : tAccept) {
+        if (decide (payload.epoch > epoch)) then do
+          held = true
+          epoch = payload.epoch
+      }
+    }
+  }
+
+  -- Ported from the P source's `init-condition`: at startup exactly
+  -- one Node holds the lock (with a positive epoch); every other Node
+  -- has `held = false` and `epoch = 0`. The `∀ n : Node` / `∃ n : Node`
+  -- quantifiers auto-inject `is_Node n.ref s` guards at materialisation
+  -- — bare `n : Node` value would otherwise admit refs whose state
+  -- slot is unallocated or has a different kind. The `n.held` / `n.epoch`
+  -- shorthand desugars to `(s.machines n.ref).fields.Node_held` /
+  -- `Node_epoch` via the field-projection sugar.
+  init-holds (
+    ∃ n : Node,
+      n.held = true ∧
+      n.epoch > 0 ∧
+      ∀ n1 : Node,
+        n1 ≠ n →
+        n1.held = false ∧
+        n1.epoch = 0)
+
+  Theorem safety {
+    invariant unique_holder :
+      ∀ n1 n2 : Node,
+        n1.held = true →
+        n2.held = true →
+        n1 = n2
+
+    invariant no_lock_while_transfer :
+      ∀ n : Node, ∀ e : eAccept,
+        inflight e s →
+        n.held = false
+
+    invariant unique_accept :
+      ∀ e1 e2 : eAccept,
+        inflight e1 s → inflight e2 s → e1 = e2
+
+    -- Ported from the P source: when an eAccept is in flight from
+    -- node n1, n1 has already released the lock. `e.source` desugars
+    -- to `(eAccept_payload_of e).source` via the field-projection sugar.
+    invariant not_held_after_release :
+      ∀ n1 : Node, ∀ e : eAccept,
+        inflight e s →
+        e.source = n1.ref →
+        n1.held = false
+
+    -- A grant names a Node (the reply goes to it; a send to `null` fails).
+    invariant grant_to_node :
+      ∀ e : eGrant, inflight e s → is_Node e.node s
+
+    -- Ported from the P source: an in-flight eAccept always
+    -- transfers to a strictly higher epoch.
+    invariant transfer_to_higher :
+      ∀ (n1 : Node) (e : eAccept),
+        inflight e s →
+        e.source = n1.ref →
+        e.epoch > n1.epoch
+  }
+
+  Proof Safety {
+    prove safety ;
+  }
+
+end DLockT
+
+#gen_module DLockT
+#pverify DLockT
+
+/-- info: 'DLockT.safety_holds' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms DLockT.safety_holds

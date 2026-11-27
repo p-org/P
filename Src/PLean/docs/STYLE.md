@@ -20,18 +20,17 @@ gap. Each bullet says *when* the rule applies, not just what it is.
   Document the *invariant the code maintains*, not the path you took
   to find it.
 - **Don't cite other codebases in source comments.** OK to mention a
-  specific PVerifier construct or a Loom API when the PLean piece
-  exists to mirror or interface with it (e.g., "matches PVerifier's
-  per-handler obligation shape"); not OK to gesture at "see paper X"
-  or "similar to project Y". Citations belong in plan docs.
-- **Don't trim `lake build` output on `#pverify` files.** A failing
-  verification produces a structured report — failing-obligation
-  names, copy-paste manual-proof skeletons, per-stage profile —
-  *after* the `✖` line. Re-running the build to recover output is
-  expensive (SMT solving dominates), so always read the full output
-  the first time. Pipe to a file (`lake build Examples.Foo 2>&1 |
-  tee build.log`) if it's long, and grep over the file rather than
-  re-running.
+  specific PVerifier construct or a Lean / crush API when the PLean
+  piece exists to mirror or interface with it (e.g., "matches
+  PVerifier's per-handler obligation shape"); not OK to gesture at
+  "see paper X" or "similar to project Y". Citations belong in plan
+  docs.
+- **Don't re-run an example to recover output.** `#pverify` writes
+  its full report — every obligation with its time, and the goals
+  crush failed on — to `.lake/pverify/<Mod>.txt`. Read it, and use
+  `pverify.only` / `pverify.profile` to iterate on single
+  obligations; re-running a whole example is expensive (SMT solving
+  dominates).
 - **Don't leave probe code lying around.** When a probe (a temporary
   `example`, `#check`, `#eval`, or a one-off file under `Tests/`)
   has served its purpose, either delete it or convert it into a
@@ -48,11 +47,13 @@ gap. Each bullet says *when* the rule applies, not just what it is.
 
 - **Correctness first.** A soundness regression is far worse than a
   performance regression or a verbose proof. Two soundness guards
-  are pinned (`GlobalState`-shadowed binders, sorried
-  `@[pverifyProof]` failure) by
+  are pinned (world-shadowing binders are rejected; a false
+  invariant's theorem depends on `sorryAx`) by
   `Tests/Syntax/SoundnessRegression.lean` — don't regress them.
   Before adding a tactic that closes more goals, satisfy yourself
-  it can't close *false* goals.
+  it can't close *false* goals. Never hide a tactic's errors behind
+  `try` when the error could be a bug (an unresolved name in a simp
+  set fails the whole call).
 - **Decompose deliberately.** When a module crosses ~500 lines or
   serves more than one cohesive purpose, split it — but only when
   the split *reduces* coupling. A new sub-module that re-exports
@@ -60,31 +61,9 @@ gap. Each bullet says *when* the rule applies, not just what it is.
   original. Match the decomposition to the existing
   `PLean/{Syntax,Commands,Verify,Semantics,Internal}/` axes where
   it fits.
-- **Read [`ProofSkill.md`](ProofSkill.md) before writing manual
-  proofs.** It covers the one-step-at-a-time workflow, the
-  higher-order-rejection workaround, bundle-sizing for SMT, and
-  the `using`-chain pattern — most novel proofs hit one of these.
-- **Lean on `Verify/Tactic.lean` and extend it.** When a manual
-  proof uses the same shape twice — `pverify_carry_after_recv`,
-  `pverify_not_inflight[_by]`, `pverify_inflight_by`,
-  `pverify_machine_has_type`, `pverify_split_smt` — that's the
-  catalogue of "common pattern → atomic tactic". Before
-  duplicating a proof shape, check whether a tactic already covers
-  it; if a *new* recurring shape shows up, add it. The docstrings
-  on each tactic spell out the calling pattern.
-- **Shorten proofs after they close.** Once an obligation is green,
-  cross-check it against neighbouring proofs. If the same
-  boilerplate appears in 2+ places, factor it into a tactic and
-  replace the inlined copies. Smaller proofs make future
-  obligations easier to diagnose when SMT regresses.
-- **Keep tactics atomic; compose for the macro shapes.** A tactic
-  should do *one* recognisable proof step. If a pattern is "prove
-  A, then use A to close B", implement two atomic tactics and a
-  `tactic|`-macro that sequences them. Don't bake A+B into a
-  single monolithic tactic that you can't reuse for "prove A but
-  close C differently" later. The existing `pverify_*` family
-  follows this rule — preserve it.
-- **Tag new `GlobalState` update helpers with `@[pverifySimp]`.**
-  SMT prep reduces them before lean-auto runs; an untagged helper
-  reaches the solver as an opaque symbol and the obligation
-  returns `unknown`.
+- **Prefer invariants to proofs.** An obligation that does not close
+  usually needs a stronger inductive invariant, not a manual proof;
+  see [`ProofSkill.md`](ProofSkill.md).
+- **Tag new state-update helpers with `@[pverifySimp]`.** The
+  normalisation before crush reduces them; an untagged helper
+  reaches the solver as an opaque symbol.

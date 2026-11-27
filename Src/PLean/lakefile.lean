@@ -1,13 +1,14 @@
 import Lake
 open Lake DSL System
 
-require Loom from git "https://github.com/AD1024/loom.git"
-  @ "ec16b95ff8bbd047248de031cabd3160847e4b1b"
-require crush from git "https://github.com/AD1024/lean-crush.git"
-  @ "c1a2e13b2cc84abc1152eed46ad39b9cab328903"
+-- Verification-condition generation comes from Lean core (`Std.WP` /
+-- `vcgen`); SMT discharge goes through lean-crush.
+require crush from git "https://github.com/AD1024/lean-crush" @ "bump/4.36.0"
 
 package PLean where
-  leanOptions := #[⟨`pp.unicode.fun, true⟩]
+  -- `experimental.intrinsic` acknowledges core's (experimental) loop
+  -- `invariant` clauses, which PLean's `foreach` / `while` desugar to.
+  leanOptions := #[⟨`pp.unicode.fun, true⟩, ⟨`experimental.intrinsic, true⟩]
 
 -- Solver versions — must match dependencies.toml.
 def z3.version := "4.15.4"
@@ -71,7 +72,7 @@ def copyFile' (src : FilePath) (dst : FilePath) : LogIO PUnit := do
 
 def downloadSolver (solver : Solver) (pkg : Package) (oFile : FilePath) : JobM PUnit := do
   let zipPath := (pkg.buildDir / s!"{solver}").addExtension "zip"
-  logInfo s!"Downloading {solver} from {solver.url}"
+  logVerbose s!"Downloading {solver} from {solver.url}"
   download solver.url zipPath
   let extractedPath := pkg.buildDir / solver.fullName
   if ← extractedPath.pathExists then
@@ -81,36 +82,39 @@ def downloadSolver (solver : Solver) (pkg : Package) (oFile : FilePath) : JobM P
   IO.FS.createDirAll oFile.parent.get!
   copyFile' binPath oFile
   if ← oFile.pathExists then
-    logInfo s!"{solver} is now at {oFile}"
+    logVerbose s!"{solver} is now at {oFile}"
   else
     logError s!"Failed to download {solver} to {oFile}"
   IO.FS.removeFile zipPath
   IO.FS.removeDirAll extractedPath
 
-def downloadDependency (pkg : Package) (oFile : FilePath) (build : Package → FilePath → JobM PUnit) := do
+def downloadDependency (pkg : Package) (solver : Solver) (oFile : FilePath) := do
   let lakefilePath := pkg.lakeDir / ".." / dependencyFile
   let srcJob ← inputTextFile lakefilePath
-  buildFileAfterDep oFile srcJob fun _srcFile => build pkg oFile
+  buildFileAfterDep oFile srcJob (fun _srcFile => downloadSolver solver pkg oFile)
+    (extraDepTrace := pure (.ofHash (Hash.ofString solver.url) s!"{solver} url: {solver.url}"))
 
--- lean-crush launches solvers by executable name. Lake places the root
--- package's build/bin directory on PATH, so install the pinned binaries there.
-def solverBinDir (pkg : Package) := pkg.buildDir / "bin"
-
+-- Solvers are installed into `<PLean>/.lake/build/bin`.
 target downloadDependencies pkg : Array FilePath := do
-  let solverDir := solverBinDir pkg
-  let z3 ← downloadDependency pkg (solverDir / "z3") (downloadSolver Solver.z3)
-  let cvc5 ← downloadDependency pkg (solverDir / "cvc5") (downloadSolver Solver.cvc5)
+  let solverDir := pkg.buildDir / "bin"
+  let z3 ← downloadDependency pkg Solver.z3 (solverDir / "z3")
+  let cvc5 ← downloadDependency pkg Solver.cvc5 (solverDir / "cvc5")
   return Job.collectArray #[z3, cvc5]
 
 @[default_target]
 lean_lib PLean where
-  globs := #[Glob.one `PLean, Glob.submodules `PLean]
+  globs := #[Glob.one `PLean]
   extraDepTargets := #[``downloadDependencies]
 
 lean_lib Examples where
   globs := #[Glob.submodules `Examples]
   extraDepTargets := #[``downloadDependencies]
 
+-- The regression tests prove each file's obligations one at a time (lake
+-- builds several files at once, and solver timeouts are wall-clock), and
+-- without the proof cache, so their pinned output depends neither on the
+-- machine's load nor on earlier runs.
 lean_lib Tests where
   globs := #[Glob.submodules `Tests]
   extraDepTargets := #[``downloadDependencies]
+  leanOptions := #[⟨`weak.pverify.jobs, .ofNat 1⟩, ⟨`weak.pverify.cache, .ofBool false⟩]

@@ -58,6 +58,8 @@ structure PEventDecl where
   /-- Name of the payload type (resolves to a `PTypeDecl` in the module).
       `none` means the event has no payload. -/
   payload   : Option Name
+  /-- True iff the event carries a payload (`event e : T`), whatever `T` is. -/
+  hasPayload : Bool := false
   /-- Saved declaration syntax for replay at `#gen_module` time.
       Deferred for the same reason as types: an event's payload may
       reference a type that is itself deferred. -/
@@ -95,6 +97,8 @@ structure PStateDecl where
       `#gen_module` avoid emitting a handler def and `#pverify` avoid
       emitting per-handler triples + the auto-default obligation. -/
   ignoredEvents : Array Name := #[]
+  /-- Events listed under `defer <e1>, …;`: not delivered in this state. -/
+  deferredEvents : Array Name := #[]
   ref         : Syntax
   deriving Inhabited
 
@@ -213,20 +217,6 @@ structure PProveDirective where
   /-- Names of lemmas to assume (`using <l1>, <l2>`). Each must itself be
       a previously-`prove`d lemma name. -/
   usingLemmas : Array Name := #[]
-  /-- For a `derive`-form directive (`prove X from A, B via <thm>;`),
-      the name of the user-supplied state-level implication theorem
-      `∀ s, A s → B s → … → X s`. `none` for the ordinary inductive
-      form.
-
-      A derived target emits NO per-handler consecution VCs and NO
-      base case: its invariance follows from the premises' own
-      invariance composed pointwise with the implication. What IS
-      emitted is a single `derive` obligation that type-checks the
-      cited theorem against the exact implication statement, so the
-      composition Lean checks is the one the soundness argument needs.
-      The premises are still required to be `prove`d (the standard
-      missing-premise check covers them). -/
-  deriveVia : Option Name := none
   ref   : Syntax
   deriving Inhabited
 

@@ -22,7 +22,8 @@ fail in any but the most trivial cases.
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Semantics.GlobalState
+import PLean.Semantics.Msg
+import PLean.Syntax.ExtEq
 
 open Lean Elab Command
 
@@ -31,17 +32,16 @@ namespace PLean
 /-! ## `system <σ>` — pmodule-wide state binder.
 
 A top-level `system <σ>` command picks the identifier the pmodule uses
-to refer to the global state inside `invariant` / `init-holds` /
-`paxiom` bodies. It must appear before any clause that references it.
-The name is recorded on `LocalPModuleCtx.sBinder` and threaded into
-every subsequent clause's `stateBinder` field.
+to refer to the global state inside `invariant` / `init-holds` bodies.
+It must appear before any clause that references it. The name is
+recorded on `LocalPModuleCtx.sBinder` and threaded into every
+subsequent clause's `stateBinder` field.
 
 ```
 pmodule M
   system s
-  paxiom config_const : ∀ n : Node, n.cfg s = default_cfg
-  init-holds ∀ n : Node, n.held s = false
-  invariant unique : ∀ n1 n2 : Node, n1.held s → n2.held s → n1 = n2
+  init-holds ∀ n : Node, n.held = false
+  invariant unique : ∀ n1 n2 : Node, n1.held → n2.held → n1 = n2
 end M
 ```
 -/
@@ -78,11 +78,12 @@ def elabPInvariant : CommandElab := fun stx => do
 
 /-! ## Axiom (single-prop)
 
-`paxiom <name> : <body>` registers an axiom whose body may name the
-pmodule's `system`-declared `<σ>` to refer to the global state — the
-materialiser binds it as `∀ <σ> : GlobalState Sig, <body>`. A pmodule
-that has not declared `system <σ>` admits the body verbatim
-(state-independent axiom). -/
+`paxiom <name> : <body>` registers an axiom about the program's
+uninterpreted functions (`function f : T` without a body), e.g. a quorum
+intersection property. Its body must not mention the state: an axiom
+`∀ s, P s` about every world is false whenever some world violates `P`,
+and worlds are arbitrary. A state assumption is an `init-holds` (initial
+worlds) or an invariant to prove. -/
 
 syntax (name := pAxiom) "paxiom " ident " : " term : command
 
@@ -191,28 +192,6 @@ keyword token because that would break uses of `default` as a term
 syntax (name := pProofProve)
   "prove " ident (" using " ident,+)? ";" : pProofItem
 
-/-- `prove <name> from <prem1>, <prem2>, … via <thm>;` — the
-*derived-invariant* form.
-
-Use it when `<name>` is not separately inductive but follows
-*pointwise* from already-proven lemmas: `∀ s, prem1 s → … → name s`.
-That is the situation whenever the real argument is a well-founded
-induction over a data value (Paxos ballots, Raft terms, version
-numbers) rather than a single Hoare step — per-handler consecution
-cannot express such an argument, and forcing it into that shape means
-re-proving every premise's preservation inside the derived lemma's own
-obligation.
-
-Soundness: if each `premᵢ` is invariant and `prem1 ∧ … → name`
-pointwise, then `name` is invariant. So the generator emits no
-consecution VC and no base case for a derived target; instead it emits
-one `derive_<name>` obligation whose statement is exactly the
-implication, discharged by `exact @<thm>`. A wrong-type or sorried
-`<thm>` fails that obligation. The premises must still be `prove`d —
-the existing missing-premise check enforces it. -/
-syntax (name := pProofDerive)
-  "prove " ident " from " ident,+ " via " ident ";" : pProofItem
-
 syntax (name := pProofDeclSyntax)
   "Proof " (ident)? "{" pProofItem* "}" : command
 
@@ -283,37 +262,6 @@ def elabPProof : CommandElab := fun stx => do
       directives := directives.push
         { target := tgtName, isDefault := isDefault
           usingLemmas := useIds, ref := it }
-    | `(pProofItem| prove $tgt:ident from $premIds,* via $thm:ident ;) =>
-      let premTokens : Array (TSyntax `ident) := premIds.getElems
-      let tgtName := tgt.getId
-      -- `default` can't be derived: its content is framework-fixed and
-      -- its obligations are what establish the buffer well-formedness
-      -- every other clause implicitly rests on.
-      if tgtName == `default then
-        throwErrorAt tgt
-          "`prove default from … via …`: the default invariants cannot \
-           be derived — drop the `from … via …` clause and use \
-           `prove default ;`"
-      unless ctx.lemmas.contains tgtName do
-        throwErrorAt tgt
-          s!"`prove … from`: no `Lemma` or `Theorem` named '{tgtName}' in pmodule '{ctx.name}'"
-      for tok in premTokens do
-        let uid := tok.getId
-        unless uid == `default || ctx.lemmas.contains uid do
-          throwErrorAt tok
-            s!"`prove … from`: no `Lemma` or `Theorem` named '{uid}' in pmodule '{ctx.name}' (must be `default` or a previously-declared lemma)"
-      -- A target that derives from itself would be circular: the
-      -- implication `X s → X s` holds trivially and would let `X`
-      -- verify with no inductive content at all.
-      if premTokens.any (·.getId == tgtName) then
-        throwErrorAt tgt
-          s!"`prove {tgtName} from …`: '{tgtName}' cannot be among its own \
-             premises (the implication would be vacuous, so nothing would \
-             be verified)"
-      directives := directives.push
-        { target := tgtName, isDefault := false
-          usingLemmas := premTokens.map (·.getId)
-          deriveVia := some thm.getId, ref := it }
     | _ => throwErrorAt it "unrecognised Proof item"
   addProof { name := nm, directives := directives, ref := stx }
 
@@ -323,25 +271,22 @@ Replay each verification declaration as a Lean def. Called by
 `#gen_module` after machines have been materialised so invariant /
 axiom bodies can reference machine fields and event payloads. -/
 
-/-- Reject any reference to the `GlobalState` / `PLean.GlobalState`
-type identifier inside a state-bound invariant body. A binder of type
-`GlobalState <Sig>` (in any form — `∀`/`∃`/`let`/`have`/`fun`/`λ`)
-would shadow the pmodule's `system`-declared `<σ>` and silently
-decouple the invariant from per-handler state, letting a *false*
-property verify as a clean pass.
+/-- Reject any reference to the world type (`GW` / `GWorld`) inside a
+state-bound invariant body. A binder of that type (in any form —
+`∀`/`∃`/`let`/`have`/`fun`/`λ`) would shadow the pmodule's
+`system`-declared `<σ>` and silently decouple the invariant from the
+world it is checked on, letting a *false* property verify.
 
 The check is intentionally name-based rather than binder-shape-based:
 a well-formed state-bound invariant has no reason to name the state
 type (it references the bound `<σ>` directly), so rejecting *any*
 mention is a sound over-approximation that no new binder syntax can
-evade. A bare `invariant … : ∀ s : GlobalState Sig, P` in a pmodule
-without `system <σ>` is still allowed because the materialiser uses a
-wildcard binder there and there's no outer `<σ>` to shadow. -/
+evade. In a pmodule without `system <σ>` there is no outer `<σ>` to
+shadow, so the check does not apply. -/
 private partial def containsExplicitStateBinder (stx : Syntax) : Option Syntax := Id.run do
   if stx.isIdent then
     let n := stx.getId
-    if n == ``PLean.GlobalState || n == `GlobalState
-        || n == `PLean.GlobalState then
+    if n == ``PLean.GWorld || n == `GWorld || n == `GW || n == `PLean.GWorld then
       return some stx
   for child in stx.getArgs do
     if let some hit := containsExplicitStateBinder child then
@@ -352,26 +297,22 @@ private def rejectExplicitStateBinder (id : Ident) (prop : TSyntax `term) :
     CommandElabM Unit := do
   match containsExplicitStateBinder prop with
   | some hit =>
-    throwErrorAt hit m!"invariant `{id.getId}` body names the `GlobalState` \
-      type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` \
-      shadows the pmodule's `system` state binder and silently decouples the \
-      invariant from per-handler state (a soundness hole). Reference the \
-      pmodule's `system`-declared state binder directly in the body instead \
-      of introducing a new `GlobalState`-typed variable."
+    throwErrorAt hit m!"invariant `{id.getId}` body names the world type. A \
+      binder of that type shadows the pmodule's `system` state binder and \
+      decouples the invariant from the world it is checked on. Refer to the \
+      `system`-declared binder instead."
   | none => pure ()
 
 /-- Public guard for `init-holds` / `paxiom` bodies: reject a body
-that names the `GlobalState` type, since such a binder shadows the
+that names the world type, since such a binder shadows the
 state binder the materialiser introduces. Same soundness rationale
 as `rejectExplicitStateBinder` for invariants. -/
 def rejectStateShadowIn (what : String) (prop : Syntax) : CommandElabM Unit := do
   match containsExplicitStateBinder prop with
   | some hit =>
-    throwErrorAt hit m!"{what} body names the `GlobalState` type. A \
-      `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows \
-      the materialiser's state binder and decouples the clause from the \
-      actual state (a soundness hole). Reference the state directly rather \
-      than introducing a new `GlobalState`-typed variable."
+    throwErrorAt hit m!"{what} body names the world type. A binder of that \
+      type shadows the `system` state binder and decouples the clause from \
+      the world. Refer to the `system`-declared binder instead."
   | none => pure ()
 
 /-! ## Auto-injection of kind guards over machines and events
@@ -467,54 +408,56 @@ private def mkQuantifier (isForall parens : Bool)
   | false, false => `(∃ $x:ident : $t, $body)
   | false, true  => `(∃ ($x:ident : $t), $body)
 
-/-- Leftmost segment of a hierarchical name (`a.b.c → a`); returns
-the name unchanged if it isn't a `.str` path. -/
-private partial def nameHead : Name → Name
-  | .str .anonymous s => .mkSimple s
-  | .str pre _        => nameHead pre
-  | nm                => nm
+private partial def stripParens0 (s : Syntax) : Syntax :=
+  if s.getKind == ``Lean.Parser.Term.paren && s.getNumArgs ≥ 2 then stripParens0 s[1] else s
 
-/-- Whether `stx` mentions the identifier `n` anywhere — either as a
-bare `Ident` (e.g. `b`) or as the head of a hierarchical name
-(`b.ref` parses to `Name.str (Name.str .anonymous "b") "ref"`, so we
-check the head segment). -/
-private partial def syntaxMentions (n : Name) (stx : Syntax) : Bool :=
+/-- Whether `stx` is `x.ref` (or `(x).ref`). -/
+private def isRefOf (x : Name) (stx : Syntax) : Bool :=
+  let stx := stripParens0 stx
   if stx.isIdent then
-    let id := stx.getId
-    id == n || nameHead id == n
-  else stx.getArgs.any (syntaxMentions n)
+    match stx.getId with
+    | .str (.str .anonymous head) "ref" => Name.mkSimple head == x
+    | _ => false
+  else if stx.getKind == ``Lean.Parser.Term.proj && stx.getNumArgs ≥ 3 then
+    let lhs := stripParens0 stx[0]
+    lhs.isIdent && lhs.getId == x && stx[2].isIdent && stx[2].getId == `ref
+  else false
 
-private partial def findGuardCall (predNames : Array Name) (xName : Name)
-    (stx : Syntax) : Bool :=
-  let hereMatches : Bool :=
-    if stx.getKind == ``Lean.Parser.Term.app then
-      let fn := stx[0]
-      let argsBlock := stx[1]
-      fn.isIdent && predNames.contains fn.getId &&
-        syntaxMentions xName argsBlock
-    else false
-  if hereMatches then true
-  else stx.getArgs.any (findGuardCall predNames xName)
+/-- Whether `stx` is the kind guard of binder `x`: `is_<M> x.ref σ` (or
+`<M>_allocated x.ref σ`) for a machine binder, `is_<ev> x` for an event
+binder. -/
+private def isGuardOf (machineGuard : Bool) (x sBinder typeName : Name) (stx : Syntax) : Bool :=
+  let stx := stripParens0 stx
+  if stx.getKind != ``Lean.Parser.Term.app then false else
+  let fn := stx[0]
+  let args := stx[1].getArgs
+  let isPred := Name.mkSimple ("is_" ++ typeName.toString)
+  if !fn.isIdent then false
+  else if machineGuard then
+    (fn.getId == isPred || fn.getId == typeName.appendAfter "_allocated") &&
+      args.size == 2 && isRefOf x args[0]! &&
+      (stripParens0 args[1]!).isIdent && (stripParens0 args[1]!).getId == sBinder
+  else
+    fn.getId == isPred && args.size == 1 &&
+      (stripParens0 args[0]!).isIdent && (stripParens0 args[0]!).getId == x
 
-/-- Whether `body` already carries an explicit kind guard for the
-binder `x` of kind `<typeName>` — i.e. mentions `is_<M> x.ref s` or
-`<M>_allocated x.ref s` (or the event-variant `is_<ev> x`) anywhere.
-If so, `injectKindGuards` skips the injection. Without this check the
-obligation generator's later unfold of `is_<M> → <M>_allocated` leaves
-a duplicate kind guard in the hypothesis chain, ballooning the SMT
-query and degrading cvc5's quantifier instantiation on disprove goals.
-False negatives (rare nested-quantifier shapes) just cost one extra
-injection — sound; false positives never happen because we require both
-the predicate name AND the binder ident to match. -/
-private def bodyAlreadyGuarded (machineGuard : Bool) (xName _sBinder typeName : Name)
+/-- Whether `body` already starts with the kind guard of binder `x` of kind
+`typeName`: as the antecedent `guard → …` under `∀`, as the first conjunct
+`guard ∧ …` under `∃`. Only that shape counts: a guard elsewhere in the
+body (or about another term that mentions `x`) does not restrict `x`, so
+`injectKindGuards` then adds the guard. Skipping a present guard only
+avoids a duplicate hypothesis. -/
+private def bodyAlreadyGuarded (machineGuard isForall : Bool) (xName sBinder typeName : Name)
     (body : Syntax) : Bool :=
-  let isPredName := Name.mkSimple ("is_" ++ typeName.toString)
-  let predNames :=
-    if machineGuard then
-      #[isPredName, typeName.appendAfter "_allocated"]
-    else
-      #[isPredName]
-  findGuardCall predNames xName body
+  let body := stripParens0 body
+  let k := body.getKind
+  let lhs? : Option Syntax :=
+    if isForall && k == ``Lean.Parser.Term.arrow then some body[0]
+    else if !isForall && k == `«term_∧_» then some body[0]
+    else none
+  match lhs? with
+  | some lhs => isGuardOf machineGuard xName sBinder typeName lhs
+  | none => false
 
 /-! ## Wrapper→MachineRef binder rewrite
 
@@ -582,7 +525,7 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
     (sBinder : Name) (stx : Syntax)
     (rewriteWrapperToRef : Bool := false) : MacroM Syntax := do
   let sIdent : Ident := mkIdent sBinder
-  let sigLabelTy : TSyntax `term ← `(($(mkIdent `Sig)).Label)
+  let sigLabelTy : TSyntax `term ← `(PLean.Msg $(mkIdent `E))
   let asTerm (s : Syntax) : TSyntax `term := ⟨s⟩
   -- First, normalise multi-binder forms (`∀ x y : T, …`,
   -- `∀ (x : T) (y : U), …`) to nested single-binder shape.
@@ -597,7 +540,7 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
       (body' : TSyntax `term) (isForall parens : Bool) :
       MacroM (Option (TSyntax `term)) := do
     if isMachineKindIdent machineKinds t.raw then
-      if bodyAlreadyGuarded true x.getId sBinder t.raw.getId body'.raw then
+      if bodyAlreadyGuarded true isForall x.getId sBinder t.raw.getId body'.raw then
         return none
       let isPred : Ident :=
         mkIdent (Name.mkSimple ("is_" ++ t.raw.getId.toString))
@@ -618,7 +561,7 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
         if isForall then `($guard → $body') else `($guard ∧ $body')
       return some (← mkQuantifier isForall parens x t combined)
     if isEventKindIdent eventKinds t.raw then
-      if bodyAlreadyGuarded false x.getId sBinder t.raw.getId body'.raw then
+      if bodyAlreadyGuarded false isForall x.getId sBinder t.raw.getId body'.raw then
         return none
       let isPred : Ident :=
         mkIdent (Name.mkSimple ("is_" ++ t.raw.getId.toString))
@@ -738,11 +681,34 @@ private def collectQuantifierBinderPairs (stx : Syntax) :
   else
     #[]
 
+/-- The identifiers in `stx` (all of them, for a pattern). -/
+private partial def identsIn (stx : Syntax) : Array Name :=
+  if stx.isIdent then #[stx.getId] else stx.getArgs.foldl (init := #[]) fun a c => a ++ identsIn c
+
+/-- The names a binder construct introduces: a quantifier's or `fun`'s
+binders, a `let` / `have`'s name, a `match` alternative's pattern variables
+(over-approximated by every identifier in the patterns). Empty for other
+syntax. -/
+private def boundNames (stx : Syntax) : Array Name :=
+  let k := stx.getKind
+  let binderIdents (bs : Array Syntax) : Array Name := bs.foldl (init := #[]) fun a b =>
+    if b.isIdent then a.push b.getId
+    else if b.getNumArgs > 1 then a ++ (b[1].getArgs.filter (·.isIdent)).map (·.getId)
+    else a
+  if k == ``Lean.Parser.Term.forall then binderIdents stx[1].getArgs
+  else if quantNotationKinds.contains k then identsIn stx[1] |>.filter (fun n => !n.isAnonymous)
+  else if k == ``Lean.Parser.Term.basicFun then binderIdents stx[0].getArgs
+  else if k == ``Lean.Parser.Term.let || k == ``Lean.Parser.Term.have then
+    match (identsIn stx[1])[0]? with
+    | some n => #[n]
+    | none => #[]
+  else if k == ``Lean.Parser.Term.matchAlt then identsIn stx[1]
+  else #[]
+
 private def buildFieldProjection
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (binder : Ident) (field : Name) (kind : KindRef) :
     MacroM (Option (TSyntax `term)) := do
@@ -756,30 +722,19 @@ private def buildFieldProjection
     -- under any quantifier (matches PVerifier's UCLID5 2D-array
     -- encoding).
     --
-    -- `set[T]` vars (`PSet T`) store the *whole set* per machine
-    -- (`MachineRef → PSet T`): `PSet` is a sealed first-order sort, so
-    -- `n.<v>` projects to `s.containers.<M>_<v> n.ref` — a `PSet T`
-    -- value. Membership `a ∈ n.<v>` and whole-set predicates
-    -- (`isQuorum n.<v>`) both stay first-order. No uncurry, unlike the
-    -- map case.
-    --
-    -- The legacy `set[T] = T → Prop` Bool-array encoding
-    -- (`machineSetPropFields`) is unreachable via the current surface
-    -- but kept for a raw `Set`-typed `var`: it stores `Bool` and the
-    -- projection wraps the lookup as `… = true`.
+    -- `set[T]` vars store `Bool` (Prop-codomain trips lean-auto);
+    -- the projection wraps the Bool lookup as `... = true` so the
+    -- surface invariant body still sees `n.<v> : T → Prop` (= `Set
+    -- T`). The lambda itself never appears applied-to-nothing in
+    -- well-formed invariants: every container access feeds a
+    -- membership check, lookup, or update at the same syntactic
+    -- depth.
     if let some cflds := machineContainerFields.find? mName then
       if cflds.contains field then
         let sIdent : Ident := mkIdent sBinder
         let qualField : Ident :=
           mkIdent (Name.mkSimple (mName.toString ++ "_" ++ field.toString))
         let xId : Ident := mkIdent `x
-        let isPSet :=
-          match machinePSetFields.find? mName with
-          | some s => s.contains field
-          | none   => false
-        if isPSet then
-          -- Whole-value projection: `n.<v> : PSet T`.
-          return some (← `(($sIdent).containers.$qualField:ident ($binder).ref))
         let isSet :=
           match machineSetPropFields.find? mName with
           | some s => s.contains field
@@ -815,7 +770,6 @@ private partial def rewriteFieldProjectionsAux
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (kindEnv : NameMap KindRef)
     (stx : Syntax) : MacroM Syntax := do
@@ -835,7 +789,7 @@ private partial def rewriteFieldProjectionsAux
         let bIdent : Ident := ⟨lhs⟩
         let rebuilt? ← buildFieldProjection
           machineFields machineContainerFields machineSetPropFields
-          machinePSetFields eventPayloadFields sBinder bIdent fName kind
+          eventPayloadFields sBinder bIdent fName kind
         if let some out := rebuilt? then
           return out.raw
   if stx.isIdent then
@@ -847,7 +801,7 @@ private partial def rewriteFieldProjectionsAux
         let bIdent : Ident := mkIdent headN
         let rebuilt? ← buildFieldProjection
           machineFields machineContainerFields machineSetPropFields
-          machinePSetFields eventPayloadFields sBinder bIdent fieldN kind
+          eventPayloadFields sBinder bIdent fieldN kind
         if let some out := rebuilt? then
           return out.raw
     | _ => pure ()
@@ -855,7 +809,9 @@ private partial def rewriteFieldProjectionsAux
   -- registered machine / event kind. `collectQuantifierBinderPairs`
   -- handles both quantifier surface shapes (Lean's `Term.forall` and
   -- mathlib's `«term∃_,_»`/`«term∀_,_»` macros) — see its docstring.
-  let mut env := kindEnv
+  -- Any other binder (a quantifier over another type, `fun`, `let`, a
+  -- `match` pattern) hides an outer binder of the same name.
+  let mut env := (boundNames stx).foldl (init := kindEnv) fun e n => e.erase n
   for (xRaw, tRaw) in collectQuantifierBinderPairs stx do
     if xRaw.isIdent && tRaw.isIdent then
       let tName := tRaw.getId
@@ -865,8 +821,8 @@ private partial def rewriteFieldProjectionsAux
         env := env.insert xRaw.getId (.event tName)
   let args' ← stx.getArgs.mapM
     (rewriteFieldProjectionsAux machineKinds eventKinds machineFields
-      machineContainerFields machineSetPropFields machinePSetFields
-      eventPayloadFields sBinder env)
+      machineContainerFields machineSetPropFields eventPayloadFields
+      sBinder env)
   return stx.setArgs args'
 
 def rewriteFieldProjections
@@ -874,18 +830,16 @@ def rewriteFieldProjections
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (stx : Syntax) : MacroM Syntax :=
   rewriteFieldProjectionsAux machineKinds eventKinds machineFields
-    machineContainerFields machineSetPropFields machinePSetFields
-    eventPayloadFields sBinder {} stx
+    machineContainerFields machineSetPropFields eventPayloadFields
+    sBinder {} stx
 
 def materialiseInvariant (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (d : PInvariantDecl) : CommandElabM Unit := do
   match d.defStx with
@@ -893,8 +847,6 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
   | some stx =>
     let `(invariant $id:ident : $prop:term) := stx
       | throwErrorAt stx "internal error: invariant defStx malformed"
-    let sigId : Ident := mkIdent `Sig
-    let gsTy : Ident := mkIdent ``PLean.GlobalState
     let binderIdent : Ident :=
       match d.stateBinder with
       | some sName => mkIdent sName
@@ -907,36 +859,19 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
         let rewritten ← liftMacroM <|
           rewriteFieldProjections machineKinds eventKinds
             machineFields machineContainerFields machineSetPropFields
-            machinePSetFields eventPayloadFields sName prop.raw
+            eventPayloadFields sName prop.raw
         let stxOut ← liftMacroM <|
           injectKindGuards machineKinds eventKinds sName rewritten
         pure ⟨stxOut⟩
       | none => pure prop
     let cmd ← `(command|
-      @[reducible] def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop')
+      @[reducible] def $id : $(mkIdent `GW) → Prop := fun $binderIdent => pv_ext% $prop')
     elabCommand cmd
-
-/-- Leftmost atomic component of a (possibly dotted) name: `s.machines`
-→ `s`, `s` → `s`. -/
-private def leftmostComponent : Name → Name
-  | .str .anonymous s => Name.mkSimple s
-  | .str p _          => leftmostComponent p
-  | n                 => n
-
-/-- Whether `stx` mentions the identifier `name` anywhere, including as
-the head of a dotted projection (`n.held` where `n = name`). Used to
-decide whether a `paxiom` body actually depends on the state binder. -/
-private partial def syntaxMentionsName (name : Name) (stx : Syntax) : Bool :=
-  if stx.isIdent then
-    leftmostComponent stx.getId == name
-  else
-    stx.getArgs.any (syntaxMentionsName name)
 
 def materialiseAxiom (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (d : PAxiomDecl) : CommandElabM Unit := do
   match d.defStx with
@@ -944,41 +879,28 @@ def materialiseAxiom (machineKinds eventKinds : NameSet)
   | some stx =>
     let `(paxiom $id:ident : $prop:term) := stx
       | throwErrorAt stx "internal error: paxiom defStx malformed"
-    -- A `system <σ>` pmodule whose axiom body never names `<σ>` is
-    -- state-independent: emit it verbatim, WITHOUT the `∀ <σ> :
-    -- GlobalState Sig` wrapper. The wrapper is not merely redundant —
-    -- after `sdestruct_state` destructures the bound state into its
-    -- fields, the resulting `containers : Containers` binder is a struct
-    -- carrying function-typed (`PSet` / array) fields that lean-auto
-    -- rejects ("Higher order input?"), poisoning every obligation this
-    -- axiom is lifted into. A closed body (e.g. a `set[T]`-quantified
-    -- topology axiom like Consensus's `quorum_intersect`) needs none of
-    -- the state plumbing.
-    let stateBinder? :=
-      d.stateBinder.filter (syntaxMentionsName · prop.raw)
-    match stateBinder? with
+    rejectStateShadowIn "`paxiom`" prop.raw
+    match d.stateBinder with
     | none =>
-      elabCommand (← `(axiom $id : $prop))
+      elabCommand (← `(axiom $id : pv_ext% $prop))
     | some sName =>
-      -- The body may name `<σ>` as the global state; bind it via
-      -- `∀ <σ> : GlobalState Sig, …`. Field-projection sugar and
-      -- kind-guard injection both run against the original body so
-      -- `n.held σ` / `∀ n : Node, …` work the same way as inside an
-      -- `invariant`. The shadow guard also fires — a binder of type
-      -- `GlobalState <Sig>` inside the body would otherwise shadow the
-      -- outer `<σ>` and decouple the axiom from per-handler state.
-      rejectStateShadowIn "`paxiom`" prop.raw
+      -- An axiom is assumed of every world, so a body that depends on the
+      -- state (by naming `<σ>`, a machine field, or a quantifier over a
+      -- machine kind, whose kind guard names it) would be false.
       let rewritten ← liftMacroM <|
         rewriteFieldProjections machineKinds eventKinds
           machineFields machineContainerFields machineSetPropFields
-          machinePSetFields eventPayloadFields sName prop.raw
+          eventPayloadFields sName prop.raw
       let guarded ← liftMacroM <|
         injectKindGuards machineKinds eventKinds sName rewritten
+      if (guarded.find? fun s => s.isIdent && s.getId == sName).isSome then
+        throwErrorAt prop m!"`paxiom {id.getId}` depends on the state (it names `{sName}`, a \
+          machine field, or quantifies over a machine kind). An axiom is assumed of every \
+          world, and worlds are arbitrary, so it would be false. State an assumption on \
+          initial worlds as `init-holds`, and a property of reachable worlds as an invariant \
+          to prove; quantify over `PLean.MachineRef` for a fact about every reference."
       let prop' : TSyntax `term := ⟨guarded⟩
-      let sBinder : Ident := mkIdent sName
-      let gsTy : Ident := mkIdent ``PLean.GlobalState
-      let sigId : Ident := mkIdent `Sig
-      elabCommand (← `(axiom $id : ∀ $sBinder : $gsTy $sigId, $prop'))
+      elabCommand (← `(axiom $id : pv_ext% $prop'))
 
 def materialiseInit (_d : PInitDecl) : CommandElabM Unit := do
   -- Per-clause materialisation is a no-op: aggregation lives in
@@ -986,13 +908,22 @@ def materialiseInit (_d : PInitDecl) : CommandElabM Unit := do
   -- saved `init-holds <prop>` into `<Mod>.InitConditions : PProp Sig`.
   pure ()
 
+/-- Reject a decided `=` / `≠` between sets or maps in the definition
+`decl` (P's `==` on containers is `==`, which is extensional). -/
+def rejectContainerDecideEq (decl : Name) (ref : Syntax) : CommandElabM Unit := do
+  let some ci := (← getEnv).find? decl | return
+  let some v := ci.value? | return
+  if (← liftTermElabM (containerDecideEq? v)).isSome then
+    throwErrorAt ref m!"`=` between sets or maps compares their update histories; compare them \
+      with `==` (P's `==`, which compares their contents)"
+
 def materialisePure (d : PPureDecl) : CommandElabM Unit := do
   match d.defStx with
   | none => pure ()
   | some stx =>
     match stx with
     | `(function $id:ident $binders:bracketedBinder* : $ret:term = $body:term) =>
-      elabCommand (← `(def $id $binders* : $ret := $body))
+      elabCommand (← `(def $id $binders* : $ret := pv_ext% $body))
     | `(function $id:ident $binders:bracketedBinder* : $ret:term) =>
       elabCommand (← `(opaque $id $binders* : $ret))
     | _ => throwErrorAt stx "internal error: function defStx malformed"
@@ -1006,7 +937,7 @@ SMT-visibility gaps:
    Class.field>` gets type `[ord : <Class> <T>] → GS → Prop`, not
    `GS → Prop`. The bundle predicate `def L : GS → Prop := fun s =>
    P s` then can't typecheck (`P s` is missing the instance argument).
-2. Lctx invisibility. `loom_smt [*]` collects only the local context,
+2. Lctx invisibility. `plean_smt [*]` collects only the local context,
    so even if the invariant body elaborated, the class's stated axioms
    would be invisible to SMT.
 
@@ -1042,9 +973,9 @@ def materialiseInstance (d : PInstanceDecl) : CommandElabM Unit := do
 
 /-- Per-field axiom synthesis for `pinstance <id> : <Class> <T>`.
 
-For every Prop-typed field of `<Class>`, emit a top-level
-`noncomputable def <Mod>.<id>_<field> := @<Class>.<field> _ <id>`,
-returning the array of registered theorem names so the caller can add
+For every Prop-typed field of `<Class>`, add a theorem
+`<Mod>.<id>_<field> := @<Class>.<field> _ <id>`, returning the array of
+registered theorem names so the caller can add
 them to `ctx.axioms`. The obligation generator's existing
 `paxiom → have hax_<name>` SMT bridge then carries them into every
 VC's local context.
@@ -1087,25 +1018,21 @@ def synthInstanceFieldAxioms (modName : Name) (d : PInstanceDecl) :
       let some _ := env.find? projName | continue
       let thmName : Name :=
         Name.mkSimple (d.name.toString ++ "_" ++ fname.toString)
-      let thmId : Ident := mkIdent thmName
       let projId : Ident := mkIdent projName
       let projInstantiated : Term ← `(@$projId _ $instWitness)
-      let cmd ← `(
-        set_option linter.unusedVariables false in
-        noncomputable def $thmId := $projInstantiated)
-      let okElaborated : Bool ← (do
-        try
-          elabCommand cmd
-        catch _ => return false
-        let env' ← getEnv
-        match env'.find? (modName ++ thmName) with
-        | some info =>
-          try
-            let isProp ← Lean.Elab.Command.liftTermElabM do
-              Lean.Meta.isProp info.type
-            return isProp
-          catch _ => return false
-        | none => return false)
+      -- A law (a Prop-typed field) becomes a theorem; the class's data
+      -- fields need no name of their own.
+      let okElaborated : Bool ← try
+          liftTermElabM do
+            let v ← Term.elabTerm projInstantiated none
+            Term.synthesizeSyntheticMVarsNoPostponing
+            let v ← instantiateMVars v
+            let ty ← instantiateMVars (← Meta.inferType v)
+            if v.hasMVar || ty.hasMVar || v.hasLevelMVar || ty.hasLevelMVar then return false
+            unless ← Meta.isProp ty do return false
+            addDecl (.thmDecl { name := modName ++ thmName, levelParams := [], type := ty, value := v })
+            return true
+        catch _ => pure false
       if okElaborated then
         out := out.push
           { name := thmName, leanName := modName ++ thmName

@@ -56,6 +56,7 @@ def elabPEventTyped : CommandElab := fun stx => do
     { name      := id.getId
       leanName  := ns ++ id.getId
       payload   := payloadName
+      hasPayload := true
       defStx    := some stx
       ref       := stx }
 

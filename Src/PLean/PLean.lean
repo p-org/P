@@ -1,18 +1,16 @@
--- PLean: a port of the P language and PVerifier into Lean 4, using Loom
--- as the verification backend.
+-- PLean: P state machines in Lean 4, verified over a Verdi-style
+-- transition semantics with Lean core's `vcgen` and SMT via lean-crush.
 --
--- Top-level facade. Re-exports the public surface so users only need
--- `import PLean`.
+-- Top-level facade: `import PLean` brings in the whole public surface.
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Semantics.Label
-import PLean.Semantics.GlobalState
-import PLean.Semantics.Monad
-import PLean.Semantics.Primitives
-import PLean.Semantics.Predicates
-import PLean.Semantics.Default
+import PLean.Semantics.Log
 import PLean.Semantics.Containers
-import PLean.Semantics.Loop
+import PLean.Semantics.Core
+import PLean.Semantics.Handler
+import PLean.Semantics.World
+import PLean.Semantics.Theorems
+import PLean.Semantics.Msg
 import PLean.Syntax.Containers
 import PLean.Syntax.Loop
 import PLean.Syntax.Module
@@ -21,11 +19,8 @@ import PLean.Syntax.Events
 import PLean.Syntax.Machine
 import PLean.Syntax.Stmt
 import PLean.Syntax.Verify
-import PLean.Syntax.Notation
-import PLean.Verify.Profile
+import PLean.Verify.Norm
 import PLean.Verify.Tactic
-import PLean.Verify.ProofRegistry
-import PLean.Verify.Obligation
 import PLean.Commands.GenModule
 import PLean.Commands.PWf
 import PLean.Commands.PVerify

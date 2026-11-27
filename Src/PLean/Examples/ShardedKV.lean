@@ -10,10 +10,8 @@ Surface notes:
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
-set_option crush.backend "cvc5"
-set_option crush.timeout 5
 
 pmodule ShardedKV
 
@@ -39,7 +37,7 @@ pmodule ShardedKV
           -- reasoning recovers the actual value via the routing
           -- invariants. The simpler form lets `wpgen` step through
           -- without falling into `WPGen.default`.
-          let v := (kv e.reshard_key).getD 0
+          let v := (kv.get e.reshard_key).getD 0
           kv -= (e.reshard_key)
           send e.reshard_to, eTransfer,
             (source = this.ref, key = e.reshard_key, value = v)
@@ -83,9 +81,16 @@ pmodule ShardedKV
         k ∈ n1.kv → k ∈ n2.kv → n1 = n2
   }
 
+  -- A reshard names a Node: the transfer goes to it, and a send to `null`
+  -- fails.
+  Lemma routing {
+    invariant reshard_to_node :
+      ∀ e : eReshard, inflight e s → is_Node e.reshard_to s
+  }
+
   Proof of_Safety {
     prove Safety ;
-    prove default ;
+    prove routing ;
   }
 
 end ShardedKV

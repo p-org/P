@@ -3,7 +3,7 @@ Parse-only smoke test for `Lemma` / `Theorem` / `Proof`.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule Phase3Parse
 

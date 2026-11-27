@@ -56,12 +56,18 @@ structure LocalPModuleCtx where
   invariants : NameMap PInvariantDecl := {}
   invariantOrder : Array Name         := #[]
   axioms     : NameMap PAxiomDecl    := {}
+  axiomOrder : Array Name            := #[]
   instances  : NameMap PInstanceDecl := {}
+  instanceOrder : Array Name         := #[]
   inits      : Array PInitDecl       := #[]
   pures      : NameMap PPureDecl     := {}
+  pureOrder  : Array Name            := #[]
   lemmas     : NameMap PLemmaDecl    := {}
   lemmaOrder : Array Name            := #[]
   proofs     : Array PProofDecl      := #[]
+  /-- Names that two merged fragments declare differently (`#gen_module`
+      rejects the module). -/
+  conflicts  : Array String          := #[]
   deriving Inhabited
 
 /-- Cross-file registry: merged fragments keyed on module name. -/
@@ -71,16 +77,25 @@ abbrev PModuleMap := NameMap LocalPModuleCtx
 initialize localPModuleCtx : EnvExtension (Option LocalPModuleCtx) ←
   registerEnvExtension (pure none)
 
+/-- The source text of a declaration, to tell a re-imported declaration
+(the same text) from a different one under the same name. -/
+private def srcOf (ref : Syntax) : String := ref.reprint.getD (toString ref)
+
+/-- The names `a` and `b` both declare, with different sources. -/
+private def clashes {α : Type} (kind : String) (ref : α → Syntax) (a b : NameMap α) : Array String :=
+  b.foldl (init := #[]) fun acc n d =>
+    match a.find? n with
+    | some d' => if srcOf (ref d') != srcOf (ref d) then acc.push s!"{kind} `{n}` is declared differently in two files" else acc
+    | none => acc
+
 /-- Merge two fragments of the same module name (field-wise union). Used
     when two imports each contribute partial declarations for `M`. The
     `errIfDuplicate` checks at decl-registration time rule out *intra-file*
     name collisions, but two unrelated files could legitimately declare
-    different events/machines under the same `pmodule`; we union them. If
-    a name shows up in both fragments (e.g., a re-import cycle inserted
-    the same decl twice), the second wins.
-
-    NameMap.foldl iterates the second map and inserts each entry into the
-    first; insert overwrites on collision. -/
+    different events/machines under the same `pmodule`; we union them. A
+    name in both fragments with the same source (a fragment imported along
+    two paths) is kept once; with different sources it is recorded in
+    `conflicts`, which `#gen_module` reports. -/
 private def mergeCtx (a b : LocalPModuleCtx) : LocalPModuleCtx :=
   -- For order arrays, prefer the imported (b) order over the prior (a) one
   -- only for entries that don't already appear in a. This preserves the
@@ -104,12 +119,29 @@ private def mergeCtx (a b : LocalPModuleCtx) : LocalPModuleCtx :=
     invariants   := b.invariants.foldl (fun m k v => m.insert k v) a.invariants
     invariantOrder := mergeOrder a.invariantOrder b.invariantOrder
     axioms       := b.axioms.foldl     (fun m k v => m.insert k v) a.axioms
+    axiomOrder   := mergeOrder a.axiomOrder b.axiomOrder
     instances    := b.instances.foldl  (fun m k v => m.insert k v) a.instances
-    inits        := a.inits ++ b.inits
+    instanceOrder := mergeOrder a.instanceOrder b.instanceOrder
+    inits        := b.inits.foldl (init := a.inits) fun acc d =>
+      if acc.any (srcOf ·.ref == srcOf d.ref) then acc else acc.push d
     pures        := b.pures.foldl      (fun m k v => m.insert k v) a.pures
+    pureOrder    := mergeOrder a.pureOrder b.pureOrder
     lemmas       := b.lemmas.foldl     (fun m k v => m.insert k v) a.lemmas
     lemmaOrder   := mergeOrder a.lemmaOrder b.lemmaOrder
-    proofs       := a.proofs ++ b.proofs
+    proofs       := b.proofs.foldl (init := a.proofs) fun acc d =>
+      if acc.any (srcOf ·.ref == srcOf d.ref) then acc else acc.push d
+    conflicts    := a.conflicts ++ b.conflicts ++
+      (match a.sBinder, b.sBinder with
+       | some x, some y => if x == y then #[] else #[s!"the `system` binder is `{x}` in one file, `{y}` in another"]
+       | _, _ => #[]) ++
+      clashes "type" (·.ref) a.types b.types ++ clashes "event" (·.ref) a.events b.events ++
+      clashes "eventset" (·.ref) a.eventSets b.eventSets ++
+      clashes "machine" (·.ref) a.machines b.machines ++
+      clashes "invariant" (·.ref) a.invariants b.invariants ++
+      clashes "paxiom" (·.ref) a.axioms b.axioms ++
+      clashes "pinstance" (·.ref) a.instances b.instances ++
+      clashes "function" (·.ref) a.pures b.pures ++
+      clashes "Lemma" (·.ref) a.lemmas b.lemmas
   }
 
 /-- Persistent registry of completed module fragments. Imports from
@@ -225,12 +257,14 @@ def addInvariant (d : PInvariantDecl) : CommandElabM Unit := do
 def addAxiom (d : PAxiomDecl) : CommandElabM Unit := do
   let ctx ← requireLocalPModuleCtx "axiom"
   errIfDuplicate "axiom" ctx.axioms d.name d.ref
-  commit { ctx with axioms := ctx.axioms.insert d.name d }
+  commit { ctx with axioms := ctx.axioms.insert d.name d, axiomOrder := ctx.axiomOrder.push d.name }
 
 def addInstance (d : PInstanceDecl) : CommandElabM Unit := do
   let ctx ← requireLocalPModuleCtx "instance"
   errIfDuplicate "instance" ctx.instances d.name d.ref
-  commit { ctx with instances := ctx.instances.insert d.name d }
+  commit { ctx with
+    instances := ctx.instances.insert d.name d
+    instanceOrder := ctx.instanceOrder.push d.name }
 
 def addInit (d : PInitDecl) : CommandElabM Unit := do
   let ctx ← requireLocalPModuleCtx "init"
@@ -239,7 +273,7 @@ def addInit (d : PInitDecl) : CommandElabM Unit := do
 def addPure (d : PPureDecl) : CommandElabM Unit := do
   let ctx ← requireLocalPModuleCtx "pure"
   errIfDuplicate "pure" ctx.pures d.name d.ref
-  commit { ctx with pures := ctx.pures.insert d.name d }
+  commit { ctx with pures := ctx.pures.insert d.name d, pureOrder := ctx.pureOrder.push d.name }
 
 def addLemma (d : PLemmaDecl) : CommandElabM Unit := do
   let kind := if d.isTheorem then "Theorem" else "Lemma"

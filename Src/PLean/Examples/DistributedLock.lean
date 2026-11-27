@@ -1,27 +1,22 @@
 /-
 PLean port of [`Tutorial/Advanced/6_DistributedLock`](../../../Tutorial/Advanced/6_DistributedLock/PSrc/System.p).
 
-`Theorem safety` ports all five P-source invariants (including
-`not_held_after_release` and `transfer_to_higher`); the P source's
+`Theorem safety` ports the P-source invariants; the P source's
 `init-condition` ("exactly one Node holds the lock at startup") is
-ported as the `init-holds` clause below. All ten base-case obligations
-and both `prove default` inductive obligations discharge via SMT; the
-two `prove safety` inductive-step obligations remain disproved — a
-genuine inductiveness gap across the `eGrant`/`eAccept` handlers.
+ported as the `init-holds` clause below.
 
-Quantifiers over a machine kind (`∀ n : Node, …`) auto-inject
-runtime kind guards (`is_Node n.ref s →`) at materialisation, so the
-user doesn't have to spell out `Node_allocated n.ref s →` manually
-after every `Node`-quantified binder.
+Quantifiers over a machine kind (`∀ n : Node, …`) auto-inject kind
+guards (`is_Node n.ref s →`), so the user doesn't have to spell them
+out after every `Node`-quantified binder.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule DistributedLock
 
   -- Name the pmodule's global state once; every `invariant` / `init-holds`
-  -- / `paxiom` body below may reference `s` as the live state.
+  -- body below may reference `s` as the live state.
   system s
 
   type tGrant  = (node : PLean.MachineRef, epoch : Int)
@@ -91,6 +86,10 @@ pmodule DistributedLock
         e.source = n1.ref →
         n1.held = false
 
+    -- A grant names a Node (the reply goes to it; a send to `null` fails).
+    invariant grant_to_node :
+      ∀ e : eGrant, inflight e s → is_Node e.node s
+
     -- Ported from the P source: an in-flight eAccept always
     -- transfers to a strictly higher epoch.
     invariant transfer_to_higher :
@@ -102,7 +101,6 @@ pmodule DistributedLock
 
   Proof Safety {
     prove safety ;
-    prove default ;
   }
 
 end DistributedLock
@@ -111,7 +109,7 @@ end DistributedLock
 #pwf        DistributedLock
 
 namespace DistributedLock
-open PartialCorrectness DemonicChoice
+open Std.WP
 
 end DistributedLock
 

@@ -1,209 +1,324 @@
 /-
-PLean.Semantics.Containers — SMT-prep tags + map helpers for P's
-container types.
+PLean.Semantics.Containers — P's `set[T]` and `map[K, V]`.
 
-Surface macros (`Syntax/Containers.lean`) desugar to bare Lean /
-Mathlib types:
-
-  set[T]     ↝ Set T                -- Mathlib (α → Prop)
-  seq[T]     ↝ List T               -- core; no SMT support
-  map[K, V]  ↝ PMap K V := K → Option V
-  option[T]  ↝ Option T             -- core inductive
-
-`PMap` matches PVerifier's UCLID5 `[K]Option V` array layout. `Set α`
-is `α → Prop`; lean-auto handles function-typed atoms when *applied*,
-so the SMT prep recipe unfolds `Membership.mem` / `Set.insert` /
-`Set.diff` via the `pverifySimp` set before the solver runs, leaving
-the goal as boolean combinations of `s x : Prop` atoms.
-
-`List α` mutates fine but isn't SMT-decidable in general; verification
-of seq-mutating handlers is out of scope.
-
-Custom ADTs (user `type N = (...)` named tuples, `enum N`) round-trip
-too: lean-auto's inductive translator accepts any non-typeclass
-inductive whose constructors are simple (parameter args, no dependent
-args). The `type` / `enum` materialisers already emit `deriving
-Inhabited, DecidableEq`, satisfying the prerequisites.
+A container value is its update history. Lookups (`PSet.mem`,
+`PMap.get`) are structural recursion over the history, so a post-state
+lookup unfolds to an `if` over the pre-state lookup. Values are finite by
+construction, which makes `support` / `card` (P's `sizeof`, `foreach`,
+`choose`) executable and their lemmas unconditional.
 -/
-import Mathlib.Data.Set.Basic
-import Mathlib.Data.Set.Insert
 import PLean.Verify.SimpAttrs
-import PLean.Semantics.PSet
 
 namespace PLean
 
-variable {K V : Type}
+/-! ## `PSet` -/
 
-/-- `PMap K V` — the encoding of P's `map[K, V]`. A total function
-into `Option V`, mirroring PVerifier's UCLID5 `[K]Option V` array.
-`@[reducible] def` (not `abbrev`) so the symbol survives as the head
-in saved projection types — `abbrev` here would fully unfold at
-elaboration time and lean-auto's monomorphizer rejects the resulting
-`K → Option V` projection signature with "`PMap K V is not a ∀`". -/
-@[reducible] def PMap (K V : Type) : Type := K → Option V
+/-- P's `set[T]`. -/
+inductive PSet (T : Type) where
+  | empty
+  | add (s : PSet T) (x : T)
+  | del (s : PSet T) (x : T)
+  deriving Repr, DecidableEq
 
-/-- The empty map. Equivalent to `default` under the `Pi`-`Option`
-`Inhabited` instance. Named for readability in error messages /
-counter-examples. -/
-@[reducible] def mapEmpty : PMap K V := fun _ => Option.none
+instance {T : Type} : Inhabited (PSet T) := ⟨.empty⟩
 
-/-- `mapInsert m k v` — set `m[k] := v`. -/
-@[reducible] def mapInsert [DecidableEq K]
-    (m : PMap K V) (k : K) (v : V) : PMap K V :=
-  fun x => if x = k then Option.some v else m x
+namespace PSet
 
-/-- `mapErase m k` — drop key `k`. -/
-@[reducible] def mapErase [DecidableEq K]
-    (m : PMap K V) (k : K) : PMap K V :=
-  fun x => if x = k then Option.none else m x
+variable {T : Type} [DecidableEq T]
 
-/-- `mapModify m k f` — apply `f` to the value at `k` if present.
-Used by `m[k] += (e)` / `m[k] -= (e)` to update a nested container. -/
-@[reducible] def mapModify [DecidableEq K]
-    (m : PMap K V) (k : K) (f : V → V) : PMap K V :=
-  fun x => if x = k then (m x).map f else m x
+/-- Membership. -/
+def mem : PSet T → T → Bool
+  | .empty,   _ => false
+  | .add s x, y => decide (y = x) || s.mem y
+  | .del s x, y => !decide (y = x) && s.mem y
 
-/-- `k ∈ m` for `m : PMap K V` reads as "`k` has an entry" — i.e. the
-underlying `m k` is `some _`. Mirrors P's `k in m` semantics. -/
-instance : Membership K (PMap K V) where
-  mem m k := ∃ v, m k = Option.some v
+/-- The members, without duplicates. -/
+def support : PSet T → List T
+  | .empty   => []
+  | .add s x => if s.mem x then s.support else x :: s.support
+  | .del s x => s.support.erase x
 
-/-- `k ∈ m` reduces to `m k = some _`. Tagged into `pverifySimp` so
-SMT prep rewrites the membership atom to a constructor equality
-SMT decides directly. -/
-@[pverifySimp, simp] theorem mem_pmap_iff (m : PMap K V) (k : K) :
-    k ∈ m ↔ ∃ v, m k = Option.some v := Iff.rfl
+/-- P's `sizeof`. -/
+def card (s : PSet T) : Nat := s.support.length
 
-/-- `k ∈ m` is decidable: inspect the `Option`. Lets the user write
-`if h : k ∈ m then …` in handler bodies. -/
-instance [DecidableEq K] (m : PMap K V) (k : K) :
-    Decidable (k ∈ m) :=
-  match h : m k with
-  | .some v => isTrue ⟨v, h⟩
-  | .none   => isFalse (fun ⟨_, hv⟩ => by simp [h] at hv)
+@[simp] theorem mem_empty (y : T) : (PSet.empty : PSet T).mem y = false := rfl
+@[simp] theorem mem_add (s : PSet T) (x y : T) :
+    (s.add x).mem y = (decide (y = x) || s.mem y) := rfl
+@[simp] theorem mem_del (s : PSet T) (x y : T) :
+    (s.del x).mem y = (!decide (y = x) && s.mem y) := rfl
 
-/-! ## Removal — one operator over `Set` and `PMap`
+theorem support_nodup_mem : ∀ s : PSet T,
+    s.support.Nodup ∧ ∀ y, y ∈ s.support ↔ s.mem y = true
+  | .empty => by simp [support, mem]
+  | .add s x => by
+    obtain ⟨hnd, hmem⟩ := support_nodup_mem s
+    by_cases hx : s.mem x = true
+    · refine ⟨by simp [support, hx, hnd], fun y => ?_⟩
+      simp only [support, hx, ite_true, hmem, mem_add, Bool.or_eq_true, decide_eq_true_eq]
+      constructor
+      · intro h; exact Or.inr h
+      · rintro (rfl | h) <;> assumption
+    · refine ⟨?_, fun y => ?_⟩
+      · simp only [support, hx]
+        exact List.nodup_cons.mpr ⟨fun h => hx ((hmem x).mp h), hnd⟩
+      · simp [support, hx, hmem]
+  | .del s x => by
+    obtain ⟨hnd, hmem⟩ := support_nodup_mem s
+    refine ⟨hnd.erase x, fun y => ?_⟩
+    simp only [support, hnd.mem_erase_iff, hmem, mem_del, Bool.and_eq_true, Bool.not_eq_eq_eq_not,
+      Bool.not_true, decide_eq_false_iff_not]
 
-`s -= (e)` in a handler body expands to `PLean.containerErase s e`.
-The typeclass dispatches to `Set` set-difference for `Set T`, to
-`mapErase` for `PMap K V`. PVerifier's surface uses the same `-=`
-form for both kinds, so we keep parity. -/
+theorem nodup_support (s : PSet T) : s.support.Nodup := (support_nodup_mem s).1
 
+theorem mem_support (s : PSet T) (y : T) : y ∈ s.support ↔ s.mem y = true :=
+  (support_nodup_mem s).2 y
+
+@[simp] theorem card_empty : (PSet.empty : PSet T).card = 0 := rfl
+
+theorem card_add (s : PSet T) (x : T) :
+    (s.add x).card = s.card + (if s.mem x = true then 0 else 1) := by
+  by_cases hx : s.mem x = true <;> simp [card, support, hx]
+
+theorem card_del (s : PSet T) (x : T) :
+    (s.del x).card = s.card - (if s.mem x = true then 1 else 0) := by
+  by_cases hx : s.mem x = true
+  · simp [card, support, hx, List.length_erase_of_mem ((mem_support s x).mpr hx)]
+  · have : x ∉ s.support := fun h => hx ((mem_support s x).mp h)
+    simp [card, support, hx, List.erase_of_not_mem this]
+
+/-- A duplicate-free list contained in another is no longer. -/
+theorem length_le_of_nodup_subset :
+    ∀ {l m : List T}, l.Nodup → (∀ y, y ∈ l → y ∈ m) → l.length ≤ m.length
+  | [], _, _, _ => Nat.zero_le _
+  | a :: l, m, hnd, hsub => by
+    have ha : a ∈ m := hsub a (List.mem_cons_self ..)
+    have ⟨hnotin, hnd'⟩ := List.nodup_cons.mp hnd
+    have hsub' : ∀ y, y ∈ l → y ∈ m.erase a := fun y hy => by
+      have hne : y ≠ a := fun h => hnotin (h ▸ hy)
+      exact (List.mem_erase_of_ne hne).mpr (hsub y (List.mem_cons_of_mem _ hy))
+    have := length_le_of_nodup_subset hnd' hsub'
+    rw [List.length_erase_of_mem ha] at this
+    have : 0 < m.length := List.length_pos_of_mem ha
+    simp only [List.length_cons]; omega
+
+theorem card_le_of_sub {s t : PSet T} (h : ∀ y, s.mem y = true → t.mem y = true) :
+    s.card ≤ t.card :=
+  length_le_of_nodup_subset (nodup_support s) fun y hy =>
+    (mem_support t y).mpr (h y ((mem_support s y).mp hy))
+
+/-- Quorum intersection: two subsets of `u` whose sizes sum past `u`'s
+share a member. -/
+theorem quorum_intersect {s t u : PSet T}
+    (hs : ∀ y, s.mem y = true → u.mem y = true) (ht : ∀ y, t.mem y = true → u.mem y = true)
+    (hq : s.card + t.card > u.card) : ∃ y, s.mem y = true ∧ t.mem y = true := by
+  apply Classical.byContradiction
+  intro hdis
+  have hdis' : ∀ y, s.mem y = true → t.mem y = false := fun y h1 => by
+    cases h2 : t.mem y
+    · rfl
+    · exact absurd ⟨y, h1, h2⟩ hdis
+  have hnd : (s.support ++ t.support).Nodup := by
+    refine List.nodup_append.mpr ⟨nodup_support s, nodup_support t, ?_⟩
+    intro a ha b hb hab
+    subst hab
+    have := hdis' a ((mem_support s a).mp ha)
+    rw [(mem_support t a).mp hb] at this
+    exact Bool.noConfusion this
+  have := length_le_of_nodup_subset hnd fun y hy => by
+    rcases List.mem_append.mp hy with h | h
+    · exact (mem_support u y).mpr (hs y ((mem_support s y).mp h))
+    · exact (mem_support u y).mpr (ht y ((mem_support t y).mp h))
+  simp only [List.length_append] at this
+  unfold card at hq; omega
+
+/-- P's `==` on sets: the same members. (Lean's `=` on `PSet` compares
+update histories: `{1, 2}` built in two orders gives two values.) -/
+def Equiv (s t : PSet T) : Prop := ∀ x, s.mem x = t.mem x
+
+/-- P's `==` on sets, decided via the supports. -/
+def beq (s t : PSet T) : Bool :=
+  s.support.all (fun y => t.mem y) && t.support.all (fun y => s.mem y)
+
+theorem beq_iff (s t : PSet T) : s.beq t = true ↔ s.Equiv t := by
+  simp only [beq, Bool.and_eq_true, List.all_eq_true, Equiv]
+  constructor
+  · rintro ⟨h1, h2⟩ x
+    cases hs : s.mem x <;> cases ht : t.mem x
+    · rfl
+    · have := h2 x ((mem_support t x).mpr ht); rw [hs] at this; exact absurd this Bool.false_ne_true
+    · have := h1 x ((mem_support s x).mpr hs); rw [ht] at this; exact absurd this Bool.false_ne_true
+    · rfl
+  · intro h
+    exact ⟨fun y hy => (h y) ▸ (mem_support s y).mp hy,
+           fun y hy => (h y).symm ▸ (mem_support t y).mp hy⟩
+
+end PSet
+
+/-! ## `PMap` -/
+
+/-- P's `map[K, V]`. -/
+inductive PMap (K V : Type) where
+  | empty
+  | put (m : PMap K V) (k : K) (v : V)
+  | del (m : PMap K V) (k : K)
+  deriving Repr, DecidableEq
+
+instance {K V : Type} : Inhabited (PMap K V) := ⟨.empty⟩
+
+namespace PMap
+
+variable {K V : Type} [DecidableEq K]
+
+/-- Lookup. -/
+def get : PMap K V → K → Option V
+  | .empty,     _  => none
+  | .put m k v, k' => if k' = k then some v else m.get k'
+  | .del m k,   k' => if k' = k then none else m.get k'
+
+/-- The key set, as a `PSet` (P's `keys`, and `k in m`). -/
+def keySet : PMap K V → PSet K
+  | .empty     => .empty
+  | .put m k _ => (keySet m).add k
+  | .del m k   => (keySet m).del k
+
+/-- P's `k in m`. -/
+@[inline] def has (m : PMap K V) (k : K) : Bool := (m.get k).isSome
+
+/-- P's `sizeof` on maps. -/
+def card (m : PMap K V) : Nat := m.keySet.card
+
+/-- P's `values(m)`, in key order. -/
+def values (m : PMap K V) : List V := m.keySet.support.filterMap m.get
+
+@[simp] theorem get_empty (k : K) : (PMap.empty : PMap K V).get k = none := rfl
+@[simp] theorem get_put (m : PMap K V) (k k' : K) (v : V) :
+    (m.put k v).get k' = if k' = k then some v else m.get k' := rfl
+@[simp] theorem get_del (m : PMap K V) (k k' : K) :
+    (m.del k).get k' = if k' = k then none else m.get k' := rfl
+
+theorem mem_keySet : ∀ (m : PMap K V) (k : K), m.keySet.mem k = (m.get k).isSome
+  | .empty, _ => rfl
+  | .put m k v, k' => by
+    simp only [keySet, PSet.mem_add, get_put, mem_keySet m k']
+    by_cases h : k' = k <;> simp [h]
+  | .del m k, k' => by
+    simp only [keySet, PSet.mem_del, get_del, mem_keySet m k']
+    by_cases h : k' = k <;> simp [h]
+
+/-- P's `==` on maps: the same keys, with the same values. (Lean's `=` on
+`PMap` compares update histories.) -/
+def Equiv (m n : PMap K V) : Prop := ∀ k, m.get k = n.get k
+
+/-- P's `==` on maps, decided via the key supports. -/
+def beq [BEq V] (m n : PMap K V) : Bool :=
+  m.keySet.beq n.keySet && m.keySet.support.all fun k => m.get k == n.get k
+
+theorem beq_iff [BEq V] [LawfulBEq V] (m n : PMap K V) : m.beq n = true ↔ m.Equiv n := by
+  simp only [beq, Bool.and_eq_true, PSet.beq_iff, List.all_eq_true, beq_iff_eq, Equiv,
+    PSet.Equiv, mem_keySet]
+  constructor
+  · rintro ⟨hk, hv⟩ k
+    by_cases h : (m.get k).isSome
+    · exact hv k ((PSet.mem_support _ k).mpr (by rw [mem_keySet]; exact h))
+    · have hn := hk k
+      cases hm : m.get k <;> cases hn' : n.get k <;> simp_all
+  · intro h
+    exact ⟨fun k => by rw [h k], fun k _ => h k⟩
+
+end PMap
+
+/-! ## Surface instances: `∈`, `m[k]?`, `==`, `-=`, iteration -/
+
+section Instances
+variable {T K V : Type} [DecidableEq T] [DecidableEq K]
+
+instance : Membership T (PSet T) := ⟨fun s x => s.mem x = true⟩
+instance (s : PSet T) (x : T) : Decidable (x ∈ s) := inferInstanceAs (Decidable (s.mem x = true))
+/-- A bounded `∀ x, x ∈ s → P x` ranges over the support. -/
+instance PSet.decidableBAll (s : PSet T) (P : T → Prop) [DecidablePred P] :
+    Decidable (∀ x, x ∈ s → P x) :=
+  decidable_of_iff (∀ x, x ∈ s.support → P x)
+    ⟨fun h x hx => h x ((PSet.mem_support s x).mpr hx),
+     fun h x hx => h x ((PSet.mem_support s x).mp hx)⟩
+instance : Insert T (PSet T) := ⟨fun x s => s.add x⟩
+instance : EmptyCollection (PSet T) := ⟨.empty⟩
+
+instance : Membership K (PMap K V) := ⟨fun m k => m.has k = true⟩
+instance (m : PMap K V) (k : K) : Decidable (k ∈ m) := inferInstanceAs (Decidable (m.has k = true))
+instance : GetElem? (PMap K V) K V (fun m k => k ∈ m) where
+  getElem m k h := (m.get k).get (by simpa [Membership.mem, PMap.has, Option.isSome_iff_ne_none] using h)
+  getElem? m k := m.get k
+instance : EmptyCollection (PMap K V) := ⟨.empty⟩
+
+@[pverifySimp] theorem PSet.mem_iff (s : PSet T) (x : T) : x ∈ s ↔ s.mem x = true := Iff.rfl
+@[pverifySimp] theorem PSet.insert_eq (s : PSet T) (x : T) : insert x s = s.add x := rfl
+@[pverifySimp] theorem PSet.emptyc_eq : (∅ : PSet T) = .empty := rfl
+@[pverifySimp] theorem PMap.mem_iff (m : PMap K V) (k : K) : k ∈ m ↔ (m.get k).isSome = true := Iff.rfl
+@[pverifySimp] theorem PMap.getElem?_eq (m : PMap K V) (k : K) : m[k]? = m.get k := rfl
+@[pverifySimp] theorem PMap.emptyc_eq : (∅ : PMap K V) = .empty := rfl
+
+attribute [pverifySimp] PSet.mem PMap.get PMap.has
+
+/-! Container lookups through `if` (what a post-state lookup looks like after
+`commit`), so they meet the update constructors and unfold. -/
+section ite
+variable {c : Prop} [Decidable c]
+@[pverifySimp] theorem PSet.mem_ite (a b : PSet T) (x : T) :
+    (if c then a else b).mem x = if c then a.mem x else b.mem x := by split <;> rfl
+@[pverifySimp] theorem PSet.card_ite (a b : PSet T) :
+    (if c then a else b).card = if c then a.card else b.card := by split <;> rfl
+@[pverifySimp] theorem PMap.get_ite (a b : PMap K V) (k : K) :
+    (if c then a else b).get k = if c then a.get k else b.get k := by split <;> rfl
+@[pverifySimp] theorem PMap.card_ite (a b : PMap K V) :
+    (if c then a else b).card = if c then a.card else b.card := by split <;> rfl
+@[pverifySimp] theorem Option.isSome_ite' {α : Type} (a b : Option α) :
+    (if c then a else b).isSome = if c then a.isSome else b.isSome := by split <;> rfl
+@[pverifySimp] theorem Option.getD_ite' {α : Type} (a b : Option α) (d : α) :
+    (if c then a else b).getD d = if c then a.getD d else b.getD d := by split <;> rfl
+end ite
+
+attribute [pverifySimp] Option.isSome_some Option.isSome_none Option.getD_some
+
+/-- `c -= (e)`: remove an element (sets) or a key (maps). -/
 class PContainerErase (C : Type) (E : outParam Type) where
   erase : C → E → C
 
-instance {T : Type} [DecidableEq T] : PContainerErase (Set T) T where
-  erase s e := s \ Set.singleton e
+instance : PContainerErase (PSet T) T := ⟨PSet.del⟩
+instance : PContainerErase (PMap K V) K := ⟨PMap.del⟩
 
-noncomputable instance {T : Type} : PContainerErase (PSet T) T where
-  erase s e := PSet.erase e s
+/-! P's `==` on containers is extensional: `PSet.beq` / `PMap.beq`, which the
+normaliser turns into `PSet.Equiv` / `PMap.Equiv`. -/
+instance (priority := high) : BEq (PSet T) := ⟨PSet.beq⟩
+instance (priority := high) [BEq V] : BEq (PMap K V) := ⟨PMap.beq⟩
 
-instance {K V : Type} [DecidableEq K] : PContainerErase (PMap K V) K where
-  erase m k := mapErase m k
+@[pverifySimp] theorem PSet.beq_eq_true (s t : PSet T) : ((s == t) = true) = s.Equiv t :=
+  propext (PSet.beq_iff s t)
+@[pverifySimp] theorem PSet.beq_eq_false (s t : PSet T) : ((s == t) = false) = ¬ s.Equiv t := by
+  rw [← PSet.beq_eq_true]; cases (s == t) <;> simp
+@[pverifySimp] theorem PSet.bne_eq_true (s t : PSet T) : ((s != t) = true) = ¬ s.Equiv t := by
+  rw [← PSet.beq_eq_true]; cases h : (s == t) <;> simp [bne, h]
+@[pverifySimp] theorem PMap.beq_eq_true [BEq V] [LawfulBEq V] (m n : PMap K V) :
+    ((m == n) = true) = m.Equiv n :=
+  propext (PMap.beq_iff m n)
+@[pverifySimp] theorem PMap.beq_eq_false [BEq V] [LawfulBEq V] (m n : PMap K V) :
+    ((m == n) = false) = ¬ m.Equiv n := by
+  rw [← PMap.beq_eq_true]; cases (m == n) <;> simp
+@[pverifySimp] theorem PMap.bne_eq_true [BEq V] [LawfulBEq V] (m n : PMap K V) :
+    ((m != n) = true) = ¬ m.Equiv n := by
+  rw [← PMap.beq_eq_true]; cases h : (m == n) <;> simp [bne, h]
 
-@[reducible] def containerErase {C E : Type} [PContainerErase C E]
-    (c : C) (e : E) : C := PContainerErase.erase c e
+attribute [pverifySimp] PSet.Equiv PMap.Equiv
 
-attribute [pverifySimp]
-  PLean.containerErase
-  PLean.PContainerErase.erase
+/-- What `foreach (x in c)` iterates over. -/
+class PIterable (C : Type) (T : outParam Type) where
+  toList : C → List T
 
-/-! ## Lookup-after-mutation lemmas
+instance : PIterable (List T) T := ⟨id⟩
+instance : PIterable (PSet T) T := ⟨PSet.support⟩
+instance : PIterable (PMap K V) K := ⟨fun m => m.keySet.support⟩
 
-These spell out how `mapInsert` / `mapErase` / `mapModify` interact
-with map lookup. They tag into `pverifySimp` so SMT prep rewrites a
-post-state lookup directly to the underlying value without case-
-splitting on `decide (k' = k)`.
+attribute [pverifySimp] PContainerErase.erase
 
-Sound: each unfolds the helper's body and simplifies the conditional;
-there is no information loss.
--/
-
-/-- `mapInsert m k v` at the inserted key yields `some v`. -/
-@[pverifySimp, simp] theorem mapInsert_eq [DecidableEq K]
-    (m : PMap K V) (k : K) (v : V) :
-    mapInsert m k v k = some v := by
-  unfold mapInsert; simp
-
-/-- `mapInsert m k v` at any other key is unchanged. -/
-@[pverifySimp, simp] theorem mapInsert_ne [DecidableEq K]
-    (m : PMap K V) (k k' : K) (v : V) (h : k' ≠ k) :
-    mapInsert m k v k' = m k' := by
-  unfold mapInsert; simp [h]
-
-/-- `mapErase m k` at the erased key yields `none`. -/
-@[pverifySimp, simp] theorem mapErase_eq [DecidableEq K]
-    (m : PMap K V) (k : K) :
-    mapErase m k k = none := by
-  unfold mapErase; simp
-
-/-- `mapErase m k` at any other key is unchanged. -/
-@[pverifySimp, simp] theorem mapErase_ne [DecidableEq K]
-    (m : PMap K V) (k k' : K) (h : k' ≠ k) :
-    mapErase m k k' = m k' := by
-  unfold mapErase; simp [h]
-
-/-- `mapModify m k f` at the modified key threads `f` through the
-`Option`: present values become `some (f v)`, absent values stay
-absent. -/
-@[pverifySimp, simp] theorem mapModify_eq [DecidableEq K]
-    (m : PMap K V) (k : K) (f : V → V) :
-    mapModify m k f k = (m k).map f := by
-  unfold mapModify; simp
-
-/-- `mapModify m k f` at any other key is unchanged. -/
-@[pverifySimp, simp] theorem mapModify_ne [DecidableEq K]
-    (m : PMap K V) (k k' : K) (f : V → V) (h : k' ≠ k) :
-    mapModify m k f k' = m k' := by
-  unfold mapModify; simp [h]
-
-/-- `mapEmpty` is `none` everywhere. -/
-@[pverifySimp, simp] theorem mapEmpty_apply (k : K) :
-    (mapEmpty : PMap K V) k = none := rfl
-
-/-- `mapInsert` is idempotent in the value: re-inserting at the same
-key replaces the prior value. -/
-@[pverifySimp, simp] theorem mapInsert_mapInsert [DecidableEq K]
-    (m : PMap K V) (k : K) (v v' : V) :
-    mapInsert (mapInsert m k v) k v' = mapInsert m k v' := by
-  funext x
-  unfold mapInsert
-  by_cases hx : x = k <;> simp [hx]
-
-/-- `mapErase` after `mapInsert` at the same key reverts to no entry. -/
-@[pverifySimp, simp] theorem mapErase_mapInsert [DecidableEq K]
-    (m : PMap K V) (k : K) (v : V) :
-    mapErase (mapInsert m k v) k = mapErase m k := by
-  funext x
-  unfold mapErase mapInsert
-  by_cases hx : x = k <;> simp [hx]
-
-/-! ## `pverifySimp` tags for SMT prep
-
-After `simp only [pverifySimp]`, every container atom appears as a
-pure FOL combination of applied uninterpreted symbols and concrete
-constructors — the shape lean-auto's monomorphizer accepts.
-
-- `Set` ops unfold via Mathlib's `mem_insert_iff` / `mem_diff` /
-  `mem_singleton_iff` / `mem_empty_iff_false` / `mem_union` /
-  `mem_inter_iff` / `mem_univ`.
-- `Option`'s pattern-match reduces by the standard simp set already.
-- `mapInsert` / `mapErase` / `mapModify` reduce to their `if`-lambda
-  bodies, then `simp` lifts the `if` through application.
--/
-
-attribute [pverifySimp]
-  Set.mem_insert_iff
-  Set.mem_singleton_iff
-  Set.mem_diff
-  Set.mem_union
-  Set.mem_inter_iff
-  Set.mem_empty_iff_false
-  Set.mem_univ
-  PLean.PMap
-  PLean.mapEmpty
-  PLean.mapInsert
-  PLean.mapErase
-  PLean.mapModify
+end Instances
 
 end PLean

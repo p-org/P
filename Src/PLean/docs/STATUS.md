@@ -1,52 +1,60 @@
 # PLean — Status
 
-Current snapshot. Refresh when a phase checkbox flips or a major work
-item lands. Historical sessions, decision rationale, and workstream
-planning live in [`ROADMAP.md`](ROADMAP.md).
+Current snapshot. Refresh when a phase flips or a major work item lands.
+The phases are those of [`TransitionModel.md`](TransitionModel.md); see
+[`ROADMAP.md`](ROADMAP.md) for what is next.
 
-## At a Glance
+## At a glance
 
 | Phase | Status | Notes |
 |---|---|---|
-| 0 — Bootstrap                    | ☑ | Lake skeleton; multi-file `pmodule M`; `#pwf` / `#pverify` shell |
-| 1 — Semantic core                | ☑ | `PM := NonDetT (StateT (GlobalState Sig) DivM)`; primitives; default invariants |
-| 2 — Registry + surface           | ☑ | `#gen_module M`; surface macros over the real PM |
-| 3 — Verification declarations    | ☑ | `Lemma`/`Theorem`/`Proof`/`system <σ>`; SMT-discharge `#pverify`; `@[pverifyProof]`; `paxiom` / `pinstance` axiom bridge |
-| 4 — Spec machines                | ☐ | next; see [`ROADMAP.md` § W3](ROADMAP.md) |
-| 5 — Remaining surface            | ◐ | container types (`set` / `map` / `seq` / `option`) and `foreach` / `while` with invariants shipped; `assume` and loop-aware `default_inv` pending |
-| 6 — Tutorial port                | ☐ | `1_ClientServer`, `2_TwoPhaseCommit` |
-| 7 — Stretch                      | ⊘ | post-v1 |
+| P0 Toolchain | ☑ | Lean v4.36.0; lean-crush is the only dependency |
+| P1 Prototype | ☑ | |
+| P2 Semantics library | ☑ | metatheory proved, no `sorry` |
+| P3 Code generation | ☑ | `receive` as a top-level statement of a handler / entry body |
+| P4 Obligations | ☑ | counterexamples for obligations that are not proved; parallel, incremental runs; manual proofs |
+| P5 Ports | ☑ | every example verifies |
+| P6 Explicit-state BMC | ☐ | backlog |
 
-Build green at HEAD.
+## Closure
 
-## Closure rates
+Every obligation of every example is proved. Those not counted under
+"With an SMT solver" were closed by `vcgen` and normalisation (or their
+goals are hypotheses). "Trusted" obligations were proved by the solver
+but its proof could not be replayed in Lean; both have checked proofs too
+(RingLeader's with `pverify.trust "reconstruct"`, PingPongAuto's by hand).
+Times are the wall-clock time of checking the example's file, ten
+obligations at a time on one machine: from an empty proof cache, and
+again with nothing changed (every proof replayed through the kernel).
 
-| Benchmark | Obligations | Notes |
-|---|---|---|
-| [`Examples/DistributedLock`](../Examples/DistributedLock.lean) | **12 / 12**  (all SMT) | |
-| [`Examples/LockServer`](../Examples/LockServer.lean)           | **37 / 37**  (34 SMT + 3 manual) | manual proofs are send-handler bundles where lean-auto rejects single-shot |
-| [`Examples/RingLeader`](../Examples/RingLeader.lean)           | **17 / 17**  (14 SMT + 3 manual) | manual proofs are `goto Won` inductive steps + entry handler |
-| [`Examples/ClockBound`](../Examples/ClockBound.lean)           | **59 / 59**  (all SMT) | off-tree AWS clock-bound daemon port; exercises `PLean.choose` |
-| [`Examples/ShardedKV`](../Examples/ShardedKV.lean)             | **11 / 11**  (all SMT) | exercises `map[K, V]` + multi-ref `unique_owner` |
-| [`Examples/Consensus`](../Examples/Consensus.lean)             | **23 / 23**  (17 SMT + 5 manual + 1 axiom) | toy Paxos-style election-safety under `unique_quorum` |
+| Example | Obligations | With an SMT solver | Trusted | From scratch | Again |
+|---|---|---|---|---|---|
+| [`PingPongTrivial`](../Examples/PingPongTrivial.lean) | 8 | 3 | 0 | 2 s | 2 s |
+| [`PingPongAuto`](../Examples/PingPongAuto.lean) | 16 | 13 | 1 | 6 s | 2 s |
+| [`DistributedLock`](../Examples/DistributedLock.lean) | 11 | 9 | 0 | 8 s | 2 s |
+| [`ShardedKV`](../Examples/ShardedKV.lean) | 15 | 13 | 0 | 7 s | 2 s |
+| [`LockServer`](../Examples/LockServer.lean) | 36 | 32 | 0 | 24 s | 3 s |
+| [`RingLeader`](../Examples/RingLeader.lean) | 24 | 22 | 1 | 21 s | 5 s |
+| [`Consensus`](../Examples/Consensus.lean) | 34 | 30 | 0 | 70 s | 5 s |
+| [`TwoPhaseCommit`](../Examples/TwoPhaseCommit.lean) | 203 | 184 | 0 | 23 s | 6 s |
+| [`ClockBound`](../Examples/ClockBound.lean) | 118 | 115 | 0 | 110 s | 8 s |
 
-## In flight
+After an edit, only what it affects is proved again. Adding an invariant
+to ClockBound's `topology` lemma sends 8 goals to the solver and takes
+52 s; the rest is `vcgen` and normalisation of the obligations that
+assume `topology`, whose other goals are reused. Removing it again sends
+none (49 s).
 
-Phase 3 (M3) closed. Phase 4 (spec machines) is the next critical-path
-work — see [`ROADMAP.md` § W3](ROADMAP.md).
-
-Phase 5 surface gaps that block other benchmarks:
-- loop-aware `default_inv` so an auto-emitted `prove default;` under a
-  `foreach` / `while` body closes without a hand-written
-  `@[pverifyProof]` invoking `triple_pforeach_with`;
-- `assume <prop>;` statement surface.
+No example needs a manual proof. An obligation that is not proved is
+reported with a counterexample when z3 finds one (see
+[`ProofSkill.md`](ProofSkill.md)).
 
 ## Document index
 
 | Document | Purpose |
 |---|---|
-| [`CLAUDE.md`](../CLAUDE.md)              | Build cookbook, conventions, surface keywords |
-| [`ROADMAP.md`](ROADMAP.md)               | Contributor-facing progress, workstreams, sprint allocation |
-| [`ProofSkill.md`](ProofSkill.md)         | Manual-proof workflow + SMT pitfalls |
-| [`STYLE.md`](STYLE.md)                   | Source / proof / tactic style rules |
-| [`REVIEW.md`](REVIEW.md)                 | Code-review audit driving recent usability / soundness work |
+| [`CLAUDE.md`](../CLAUDE.md) | Build cookbook, conventions, surface keywords |
+| [`TransitionModel.md`](TransitionModel.md) | The design |
+| [`ROADMAP.md`](ROADMAP.md) | What is next |
+| [`ProofSkill.md`](ProofSkill.md) | Writing inductive invariants, diagnosing obligations |
+| [`STYLE.md`](STYLE.md) | Source / proof / tactic style rules |

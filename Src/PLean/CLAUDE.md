@@ -7,25 +7,39 @@ parent-repo `CLAUDE.md` (one level up) covers P / PChecker / PeasyAI.
 ## What PLean is
 
 A port of the P language and its PVerifier verification backend into
-Lean 4, using [Loom](https://github.com/verse-lab/loom) as the proof
-backend. The user surface mirrors P's grammar — machines, states,
-events, invariants, the temporal `≺` precedence operator — and adds
+Lean 4. The user surface mirrors P's grammar — machines, states, events,
+invariants, the temporal `≺` precedence operator — and adds
 verification-declaration blocks (`Lemma` / `Theorem` / `Proof`).
+
+Programs elaborate to an executable transition system in the style of
+Verdi (Wilcox et al., PLDI'15), designed in
+[`docs/TransitionModel.md`](docs/TransitionModel.md):
+
+- a **world** of machine states plus in-flight packets, and a **ghost
+  world** that also logs every packet ever sent;
+- **local handlers**: each handler is a do-notation program in
+  `HandlerM` that sees only its own machine state and appends sends,
+  spawned machines and announcements to logs; one generic `commit`
+  applies them to the world;
+- **verification** by core `Std.WP` / `vcgen` (one Hoare triple per
+  handler and invariant), discharged by SMT through
+  [lean-crush](https://github.com/AD1024/lean-crush) with checked proof
+  reconstruction where possible;
+- **execution**: `step` is computable, so model checking can be built
+  on the same model (explicit-state BMC is the next phase).
 
 The user-facing pipeline:
 1. Author a `pmodule M { … }` (one or more files contribute fragments).
-2. `#gen_module M` synthesises Lean defs from the registered metadata.
+2. `#gen_module M` synthesises the program (types, handlers, `prog`) and
+   the specification definitions from the registered metadata.
 3. `#pwf M` reports well-formedness (a fast subset check).
-4. `#pverify M` walks the registry, emits one Hoare-triple obligation
-   per `(machine, state, event, prove-directive)` (plus one base-case
-   VC per `(directive, invariant)`), consults the `@[pverifyProof]`
-   attribute for user-supplied manual proofs, and discharges the rest
-   via an SMT-backed tactic chain (`pverify_smt` → `loom_smt`).
+4. `#pverify M` emits and discharges the obligations, then assembles
+   `M.safe` (every reachable world satisfies `AllInv` and has no error)
+   and `M.<T>_holds` per proved target. The report lists what `M.safe`
+   assumes beyond Lean's axioms (`paxiom`s, `pinstance`s, trusted solver
+   answers, `sorry`) and warns when no initial world exists.
 
-PLean is **not** a wrapper around PChecker or PVerifier. It's a
-parallel-language port whose deliverable is "P programs verify in
-Lean", with the same surface and the same per-handler obligation
-shape PVerifier emits.
+PLean is **not** a wrapper around PChecker or PVerifier.
 
 ## Build
 
@@ -35,14 +49,21 @@ PLean is its own Lake project. Always work from inside `Src/PLean/`:
 cd Src/PLean
 lake build PLean                     # the library
 lake build Tests                     # all regressions under Tests/
-lake build Examples                  # protocol ports (PingPong, DistributedLock, …)
+lake build Examples                  # protocol ports
 lake build Examples.DistributedLock  # one specific protocol
 ```
 
 `lake build` from the repo root will fail. The first build downloads
-`z3` and `cvc5` solvers (~100 MB) into Loom's build directory; the
-lakefile arranges this so `loom_smt` resolves them. Toolchain pinned
-to **Lean v4.24.0** in `lean-toolchain`.
+`z3` 4.15.4 and `cvc5` 1.3.4 into `.lake/build/bin/`; crush finds the
+solvers on `PATH`, so put `<PLean>/.lake/build/bin` first on `PATH`
+(`export PATH=$PWD/.lake/build/bin:$PATH`): other versions give other
+counterexamples than the ones `Tests/` pins.
+Toolchain pinned to **Lean v4.36.0** in `lean-toolchain`; the only
+dependency is lean-crush (`bump/4.36.0`).
+
+Examples are expensive to verify (minutes each). Build them one at a
+time, and use `pverify.only` / `pverify.profile` (below) to iterate on
+single obligations instead of re-running a whole example.
 
 ## Architecture
 
@@ -52,90 +73,90 @@ PLean/
     Decls.lean       -- metadata records (PTypeDecl, PEventDecl, ...)
     Registry.lean    -- env extension; cross-file pmodule aggregation
   Semantics/
-    Label.lean       -- Label, EventOrGoto, MachineState
-    GlobalState.lean -- ProgramSig, GlobalState
-    Monad.lean       -- PM := NonDetT (StateT (GlobalState P) DivM)
-    Primitives.lean  -- send / raise / goto / announce / markReceived
-    Predicates.lean  -- inflight / sent / received / precedes / stateOf
-    Default.lean     -- UniqueActions / IncreasingCount / ReceivedSubsetSent
-    Loop.lean        -- pforeach primitive + @[loomSpec] WPGen.pforeach
+    Log.lean         -- append-only logs (outbox, spawned machines, ...)
+    Containers.lean  -- PSet / PMap history datatypes, card, support
+    Core.lean        -- MachineRef, PError, MachineState, Packet
+    Handler.lean     -- HState, HandlerM, the primitives (H.send, ...),
+                        their vcgen specs, the loop frame
+    World.lean       -- World / GWorld, Program, commit, step / gstep,
+                        Reachable, Framework
+    Theorems.lean    -- metatheory: adequacy, RunPost / RunSafe,
+                        framework preservation, step_ok,
+                        safety_of_step, fifo ⊆ bag, ghost erasure
+    Msg.lean         -- invariant vocabulary: Msg, sent / inflight /
+                        received / ≺ / targets / is, sentSince
   Syntax/
     Module.lean      -- pmodule M ... end M
     Types.lean       -- type N / enum N / type N = (...)
     Events.lean      -- event ev : T
     Machine.lean     -- machine M { var ...; state S { ... } }
-    Stmt.lean        -- send / raise / goto / announce / var-assign macros
-    Loop.lean        -- foreach / while macros + loop-invariant clauses
-    Verify.lean      -- invariant / Lemma / Theorem / Proof / system <s>
+    Stmt.lean        -- statements: send / announce / goto / raise /
+                        pnew / assert / assignments / var / choose / if ($)
+    Loop.lean        -- foreach / while with invariants
+    Containers.lean  -- set[T] / map[K, V] / seq[T] / option[T]
+    ExtEq.lean       -- P's `==` on containers: `=` in specs read as
+                        `PSet.Equiv` / `PMap.Equiv` (`pv_ext%`)
+    Verify.lean      -- invariant / Lemma / Theorem / Proof / system /
                         paxiom / init-holds / function / pinstance,
-                        plus the field-projection sugar and kind-guard
-                        injection passes
-    Notation.lean    -- ≺, is, targets notations
+                        field-projection sugar, kind-guard injection
   Commands/
-    GenModule.lean   -- #gen_module M (synthesises types, accessors,
-                        handler defs, MKind, InitConditions, lemma
-                        bundles, is_* / <ev>_payload_of predicates)
+    GenModule.lean   -- #gen_module M
     PWf.lean         -- #pwf M
-    PVerify.lean     -- #pverify M (consults @[pverifyProof], then SMT)
+    PVerify.lean     -- #pverify M
     PrintModule.lean -- #print_pmodule M
   Verify/
-    Obligation.lean  -- per-handler triple synthesis + base-case VCs
-    Tactic.lean      -- pverify / pverify_step_wp / pverify_smt /
-                        pverify_split_smt / default_inv / clause helpers
-    ProofRegistry.lean -- @[pverifyProof] attribute + env extension
-    SimpAttrs.lean   -- @[pverifySimp] simp attribute
-    SimpLemmas.lean  -- the lemmas tagged with @[pverifySimp]
-    CexParse.lean    -- parse + de-mangle a solver model from the SAT diag
-    CexModel.lean    -- decode model into machine table + sorted sent trace
+    SimpAttrs.lean   -- the pverifySimp attribute
+    Norm.lean        -- pverifySimp rules, pv_destruct, pv_cursor_mem
+    Tactic.lean      -- pverify_close (vcgen + normalisation + crush)
+    Cex.lean         -- counterexamples: a minimised z3 model of a goal
+                        that is not proved, decoded into a world
+    Progress.lean    -- #pverify's live progress (a widget polling an RPC method)
+    Cache.lean       -- proofs reused across runs: obligations and goals
 
-Examples/            -- protocol case studies (see Examples/ index)
+Examples/            -- protocol ports
 Tests/               -- regressions; Tests.** is globbed
 ```
 
 ## Contributor docs
 
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) — collaborator-facing entry
-  point; current phase, workstreams, sprint allocation.
-- [`docs/STATUS.md`](docs/STATUS.md) — phase status, decision log,
-  milestones.
-- [`docs/ProofSkill.md`](docs/ProofSkill.md) — practical workflow for
-  finding inductive invariants, writing manual proofs, and coping with
-  SMT complexity (higher-order rejection, bundle sizing, `using` chains).
-- [`docs/LEAN_AUTO_SUPPORT.md`](docs/LEAN_AUTO_SUPPORT.md) — every
-  technique that keeps obligations first-order for lean-auto (the
-  `pverifySimp` set, state destructure, `PSet` container theory, axiom
-  lifting, loop annotation) + a failure-diagnosis table and cache
-  discipline.
+- [`docs/TransitionModel.md`](docs/TransitionModel.md) — the design:
+  semantics, obligations, phases.
+- [`docs/STATUS.md`](docs/STATUS.md) — current snapshot and closure
+  numbers.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — what is next.
+- [`docs/ProofSkill.md`](docs/ProofSkill.md) — writing inductive
+  invariants and diagnosing obligations.
 
-## Verification benchmarks
+## Obligations
 
-Phase 3+ targets the verified benchmarks under
-[`Tutorial/Advanced/`](../../Tutorial/Advanced/) (parent repo).
+Per proved target `T` (`prove T using U₁ … ;`), with premises `T ∧ U₁ ∧ …`:
 
-- **M3 (Phase 3)**: `6_DistributedLock`, `8_LockServer`,
-  `3_RingLeaderVerification` — basic Theorem/Proof/Lemma blocks,
-  machine-kind `is`, multi-Lemma `using` chains.
-- **Phase 4 (specs)**: `1_ChainReplicationVerification`.
-- **Phase 5 (foreach/maps)**: `5_Consensus`,
-  `2_TwoPhaseCommitVerification`, `7_ShardedKV`. All three ports
-  verify: `ShardedKV` fully by SMT, `Consensus` and 2PC with manual
-  proofs for the container/loop steps SMT can't reach.
-- **Phase 6 stretch**: `4_Paxos` — the ballot argument is
-  machine-checked and the port is `sorry`-free; 6 support-lemma
-  obligations remain `unknown` on `∃`-over-`sent` carry (see
-  `docs/PAXOS_TODO.md`).
+- `<M>.<S>.<ev>_correct_<T>` per handled / ignored event of each state,
+  `<M>.<S>.entry_correct_<T>` per state, and
+  `<M>.<S>.recv<k>_<ev>_correct_<T>` per `receive` case: after a handler
+  that completes, `T` holds (`RunPost`);
+- `base_<T>`: `InitConditions g → T g`.
 
-Most Tutorial/Advanced benchmarks need surface features that aren't
-built yet — check `docs/ROADMAP.md`'s workstream breakdown before
-attempting one.
+Assuming every invariant (`AllInv`), once per module:
 
-## Phase status
+- `<M>.<S>.<ev>_safe` / `<M>.<S>.entry_safe` / `<M>.<S>.recv<k>_<ev>_safe`:
+  the handler never fails (`assert`, a send to `null`, a missing or
+  duplicate map key, `choose` on an empty range, …) (`RunSafe`);
+- `<M>.<S>.<ev>_never` for each event a state neither handles, ignores
+  nor defers: it is never delivered there.
 
-See [`docs/STATUS.md`](docs/STATUS.md) for the current closure
-snapshot and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the workstream
-breakdown. Headline: Phases 0–3 complete; Phase 4 (spec machines) is
-next critical path; Phase 5 (remaining surface) is partial (`assume`
-and loop-aware `default_inv` pending).
+`#gen_module` adds automatic targets: `NoHalt` (no machine ever halts),
+when no machine can halt, `Transient` (a machine is never idle in a
+state whose entry always ends in a `goto`) and `Waiting` (a machine
+suspended at a `receive` is in that `receive`'s state). The framework invariants
+(packet ids below the clock, in-flight ⊆ log, unallocated references,
+`null` never allocated) are proved once, generically.
+
+Reference `0` is P's `null` (the `default` of a machine reference);
+machines are allocated from `1`, and a send to `null` fails. Initial
+worlds: every machine in `[1, nextRef)` is in its start state with its
+start entry pending (as in PVerifier), and no machine is halted or
+suspended; `init-holds` clauses constrain the rest.
 
 ## Surface keywords
 
@@ -149,66 +170,68 @@ reserved word or builtin. Mechanical replacements when porting `.p`:
 | `instance`      | `pinstance`            |
 | `pure`          | `function`             |
 | `init`          | `init-holds`           |
+| `new M(x);` (as a statement) | `pnew M, x`  |
 | `do` (in `on`)  | (dropped)              |
-| `choose(n)`     | `← PLean.choose n`     |
-| `foreach (x in xs) inv N : I; { … }` | same surface, identifier-only invariant names |
-| `while (c) inv N : I; [done_with …;] [decreasing …;] { … }` | same surface, optional `done_with` / `decreasing` clauses |
+| `choose(e)`     | `let x ← choose e` (`e : Int` gives `[0, e]`; sets / maps give a member / key) |
+| `if ($)` / `if ($$)` | same               |
+| `var x : T;` in a body | same (a handler local, initialised to `default`) |
+| `receive { case e: (x: T) { … } … }` | `receive { case e (x : T) => { … } … }` |
 
-`Lemma`, `Theorem`, `Proof`, `prove`, `using`, `system` are
-new-in-PLean keywords for the verification-declaration surface
-(Phase 3); `default` is a reserved sentinel inside `Proof` blocks.
+`Lemma`, `Theorem`, `Proof`, `prove`, `using`, `system` are PLean's
+verification-declaration surface.
 
-`prove <X> from <p1>, <p2> via <thm> ;` is the **derived-invariant**
-form: `X` is not separately inductive but follows pointwise from the
-premises, and `<thm>` is a user theorem `∀ s, p1 s → p2 s → X s`. A
-derived target gets **no per-handler consecution VC and no base case** —
-only an implication VC discharged by `exact @<thm>`. Use it when the
-real argument is a well-founded induction over a data value (Paxos
-ballots), which no Hoare step can express. The cited theorem is
-type-checked against the emitted statement and its value is checked for
-`sorry`; premises must still be `prove`d. See `docs/ProofSkill.md` §1.8
-and [`Tests/Syntax/DerivedInvariant.lean`](Tests/Syntax/DerivedInvariant.lean).
+In invariants, an event binder `e : eV` ranges over sent messages
+(`PLean.Msg E`: id, src, target, ev); `sent e s`, `inflight e s`,
+`received e s`, `a ≺ b`, `e targets r`, `e is eV` and `stateOf r s`
+(an `Option` of the state tag, e.g. `some Node.Won_st`) are the P
+predicates. `n.<v>` is machine `n`'s field and `e.<f>` the payload
+field (when `f` is a payload field of the binder's event).
 
-`PLean.choose : Int → PM Int` returns a nondeterministically-chosen
-`Int` in `[0, bound]`. Implemented via `MonadNonDet.pickSuchThat`;
-the WP spec (registered as `@[loomSpec]`) gives the verifier `0 ≤ x
-∧ x ≤ bound` as a hypothesis at the call site. See
-[`Examples/ClockBound.lean`](Examples/ClockBound.lean) for usage.
+### `receive`
+
+A `receive` must be a top-level statement of a handler or entry body
+(not inside `if`, a loop or another `receive` case). `#gen_module` splits
+the body there: the code before it suspends the machine at the site,
+saving the handler's parameter and the `var` locals declared before it
+in the site's `W` constructor (`W.site<k>`), and each case resumes with
+its body followed by the rest of the handler. While suspended, a machine
+accepts only the cases' events (the others stay queued). Invariants can
+talk about a suspended machine through `(s.machines r).waiting = some
+(W.site<k> …)`.
 
 ### Container types
 
-Surface macros: `set[T]` → `PLean.PSet T`, `map[K, V]` → `K → Option V`,
-`seq[T]` → `List T` (no SMT), `option[T]` → `Option T`. Mutation
-macros: `s += (e)`, `s -= (e)`, `m[k] = v`, `m[k] += (e)`,
-`m[k] -= (e)`. Lookup-after-mutation lemmas are tagged
-`@[pverifySimp]` so SMT prep reduces post-state lookups directly.
-See [`Examples/ShardedKV.lean`](Examples/ShardedKV.lean).
+`set[T]` → `PSet T`, `map[K, V]` → `PMap K V`, `seq[T]` → `List T`,
+`option[T]` → `Option T`. `PSet` / `PMap` are histories of updates
+(`add` / `del`, `put` / `del`) with recursive lookups (`mem`, `get`),
+`support` and `card` (P's `sizeof`). Mutation: `s += (e)`, `s -= (e)`,
+`m += ((k, v))` (fails on a key already present, as in P), `m[k] = v`,
+`m[k] += (e)`, `m[k] -= (e)`. In a handler, `m[k]` reads a key and fails
+when it is missing (and `l[i]` an index of a sequence).
 
-`PSet` (`Semantics/PSet.lean`) is P's `set[T]` as a first-order sort: a
-`Set`-backed `def` whose membership/insert/empty/erase spec lemmas are
-proven as theorems, then sealed `@[irreducible]` so lean-auto treats
-`PSet.mem`/`PSet` as an uninterpreted relation/sort — the encoding
-UCLID5/PVerifier use for sets, with an empty trusted base. Membership
-`a ∈ n.<v>`, applicative `n.<v> a` (via `CoeFun`), and whole-set
-predicates (`isQuorum n.<v>`) all translate first-order. A `PSet` must
-NOT appear as a struct field reachable from `GlobalState`; `set[T]` vars
-therefore hoist into `Containers` as a whole-value row `MachineRef →
-PSet T` (see below).
+Lean's `=` on a set or map compares update histories. P's `==` compares
+contents: in handlers, write `==` (a decided `=` between containers is
+rejected); in invariants, `init-holds` and `paxiom`s, `=` / `≠` between
+sets or maps is read as P's `==` (`PSet.Equiv` / `PMap.Equiv`), and a
+decided `=` between them (`if s = t …`) is rejected. Inner containers:
+handler `==` compares a map's set values and an anonymous tuple's sets by
+content; `PMap.Equiv` compares a map's values with `=`, and named tuples
+compare structurally in both. `foreach` visits a set in an order its history fixes;
+P leaves the order unspecified, so a property that depends on it is
+proved for that one order.
 
 ### Loops (`foreach` / `while`)
 
 `foreach (x in xs) invariant N : I ; { body }` and `while (cond)
-invariant N : I ; [done_with …;] [decreasing …;] { body }`. Both
-desugar to a rigid gadget chain that `wpgen` matches — inserting
-extra `do`-statements between gadgets or omitting one collapses the
-match. `done_with` defaults to `¬cond` for `while`; `decreasing`
-defaults to `none` (informational only under partial correctness).
-
-**Limitation.** Auto-emitted `prove default;` under a loop-bearing
-handler can disprove when the loop invariant is too weak to entail
-`DefaultInvariants` for the post-state. Strengthen the loop
-invariant, or write a manual `@[pverifyProof]`. See
-[`Tests/Syntax/Loop.lean`](Tests/Syntax/Loop.lean).
+invariant N : I ; [done_with …;] [decreasing …;] { body }` desugar to
+core `for … invariant` / `while … invariant … decreasing`. Every loop
+invariant automatically includes a frame: what the body cannot change
+(the machine's state when the body assigns no field, the outbox when it
+sends nothing, …) and that earlier sends are kept. `new_sends e => P`
+states that every message the loop has sent so far satisfies `P`; a
+loop whose sends matter to an invariant needs one. In a `foreach`, the
+loop variable is known to be a member of what is iterated. `while`
+loops are proved terminating, so they need a `decreasing` measure.
 
 ## Conventions worth knowing
 
@@ -216,92 +239,98 @@ Source comments cover the *why* in detail. The points below are the
 load-bearing invariants you need to respect when editing.
 
 - **`system <σ>` declares the state binder for a pmodule.** Every
-  subsequent `invariant` / `init-holds` / `paxiom` body may reference
-  `σ` as the live state; the materialiser binds it as the lambda
-  argument. A pmodule without `system <σ>` emits state-independent
-  clauses. Soundness guard (`rejectStateShadowIn`, pinned by
-  `Tests/Syntax/SoundnessRegression.lean`) rejects bodies that name
-  `GlobalState` in any binder.
-- **Field-projection sugar.** Inside state-bound clauses, `n.<v>`
-  desugars to `(σ.machines n.ref).fields.<M>_<v>` and `e.<f>` to
-  `(<ev>_payload_of e).<f>`. Gated on registered field names; runs
-  before kind-guard injection so it sees the original quantifier
-  types.
-- **Kind guards auto-injected on quantifiers.** `∀ n : <M>, body`
-  becomes `∀ n : <M>, is_<M> n.ref s → body` (and similarly for `∃`
-  and event quantifiers). Skipped when the body already mentions the
-  guard. Pinned by `Tests/Syntax/SoundnessRegression.lean`.
-- **Container `var`s are hoisted into `Containers`.** `map[K, V]`
-  vars hoist out of `Fields` into a per-pmodule `Containers` struct
-  uncurried with `MachineRef` (`MachineRef × K → Option V`), so
-  `n.<v>` reduces to a flat applied symbol lean-auto can translate —
-  PVerifier's UCLID5 2D-array layout. `set[T]` (`PSet T`) vars also
-  hoist, but as a **whole-value row** `MachineRef → PSet T` (no
-  `(ref, elem)` uncurry): `PSet` is already a first-order sort, and it
-  must not be a `Fields`/`MachineState` struct field (the enclosing
-  datatype translation would choke). `seq[T]` and first-order vars
-  stay in `Fields`. Exercised by
-  [`Examples/ShardedKV`](Examples/ShardedKV.lean) (map) and
-  [`Examples/Consensus`](Examples/Consensus.lean) (set).
-- **`MachineRef := Nat`; per-machine type is a wrapper.** Dynamic
-  kind check (`<M>_allocated`, public alias `is_<M>`) goes through
-  a `Nat` kind tag plus `currentState ∈ <M>'s states` (load-bearing
-  — without it spurious models fabricate a kind/state mismatch).
-  Don't introduce a `MachineRef <M>` refinement.
-- **Bundle conjunctions don't carry trailing `True`.**
-  `buildConjAt` and `emitConjPredicate` emit `p1 ∧ … ∧ pn` with no
-  terminator. Empty bundles collapse to `fun _ => True`. Manual
-  `@[pverifyProof]` statements must match exactly. Pinned by
-  `Tests/Syntax/ObligationShape.lean`.
-- **Every executable handler gets an obligation.** Three shapes:
-  `on <ev> { body }`, `on <ev> goto <tgt>`, and `entry { body }`.
-  Coverage is sound by construction — the user-directive pass and
-  the auto-default pass iterate over `(machine, state) × (events
-  ∪ {entry})`. Pinned by `Tests/Syntax/HandlerCoverage.lean`.
-- **Per-handler triples are pure consecution; init is separate.**
-  A per-handler obligation is `(Inv ∧ DispatcherContract) ⇒
-  wp(handler, Inv)`; `InitConditions` discharges via separate
-  base-case VCs (one per individual invariant per `prove` target).
-  Premises (`using P`) don't get base VCs.
-- **`using` premises must be `prove`d.** `prove safety using
-  framework ;` requires another directive `prove framework ;`
-  whose obligations actually discharge. Mirrors PVerifier's
-  `MarkProvenInvariants` + `ShowRemainings`. Failures surface as
-  `[missing premise]` records. `default` is treated as a sibling
-  flag: `using default` needs a `prove default ;` whose default
-  obligations all close. Pinned by
-  `Tests/Syntax/MissingPremise.lean`.
-- **`#pverify` is an SMT-discharge command, not a tactic engine.**
-  For each obligation it consults `@[pverifyProof]`, emits a
-  theorem with a `pverify` tail, and inspects the value for
-  `sorry`. Don't bake substantive automation into `#pverify`
-  itself; that belongs in user-callable tactics or
-  `@[pverifyProof]` theorems.
-- **Macro hygiene through `mkIdent`.** Identifiers that resolve
-  against user-namespace constants (`Sig`, `E`, `G`, `this`,
-  `<S>_st`, …) must be built via `mkIdent` and spliced. Bare names
-  inside `` `(...) `` quotations get hygiene marks and fail to
-  resolve. Symptom: `PLean.DivM✝` or `Sig✝` in error output.
-- **`loom_solve` is CaseStudies-only.** PLean uses `wpgen` + simp
-  set + Veil-style preprocessing + `loom_smt`; see
-  `Verify/Tactic.lean`.
-- **Tag new state-update helpers `@[pverifySimp]`.** The pre-SMT
-  simp pass uses this set; an untagged helper reaches lean-auto
-  as an opaque symbol and the obligation returns `unknown`.
-- **Counter-examples are decoded, not dumped.** A disproved
-  obligation routes its model through `Verify/CexParse.lean` +
-  `CexModel.lean` into a per-machine state table, `sent` trace,
-  `containers:` section, and witnesses. Don't pin exact model
-  *values* in tests — pin de-mangling and structural markers (see
-  `Tests/Verify/CexEndToEnd.lean`).
+  subsequent `invariant` / `init-holds` body may reference `σ` as the
+  (ghost) world. Soundness guards (pinned by
+  `Tests/Syntax/SoundnessRegression.lean`): `rejectStateShadowIn` rejects
+  bodies that name the world type in any binder, and a `paxiom` must
+  not depend on the state (it is assumed of every world).
+- **Kind guards are auto-injected on quantifiers.** `∀ n : <M>, body`
+  becomes `∀ n : <M>, is_<M> n.ref s → body` (and similarly for `∃` and
+  event quantifiers). `is_<M> r s` says `r`'s state belongs to `<M>`.
+  Only a guard that is the body's own antecedent (`∃`: first conjunct)
+  on exactly `n.ref` replaces the injected one.
+- **Parameters shadow machine variables** (as in P): a handler's,
+  entry's or `receive` case's parameter, or a `var` local, hides the
+  machine variable of the same name in that body.
+- **Type parameters, not a signature value.** The model is generic in
+  `S E F G W` (state tags, events, fields, entry arguments, suspended
+  `receive`s); `#gen_module` emits these per pmodule. Crush rejects
+  value-dependent types, so keep it that way.
+- **Every executable handler gets an obligation**, and every unhandled
+  (state, event) pair a never-receives obligation; the assembly
+  (`step_AllInv`, `safe`) is a kernel-checked proof from them.
+- **`#pverify` reports, it does not retry.** A failing obligation is
+  left as `sorry` (so `<T>_holds` then depends on `sorryAx`); the
+  report goes to `.lake/pverify/<Mod>.txt` with the goals crush failed
+  on and a `@[pverifyProof]` skeleton of the obligation's statement. A
+  `@[pverifyProof]` theorem named like an obligation (inside `namespace
+  M`, before `#pverify M`) replaces its automatic proof once its
+  statement and the axioms it uses are checked; `pverify_auto` runs the
+  solver inside one and leaves open what it cannot prove
+  (`Tests/Verify/ManualProof.lean`).
+- **Tag new state-update helpers `@[pverifySimp]`.** The normalisation
+  before crush uses this set.
+- **Macro hygiene through `mkIdent`.** Identifiers that resolve against
+  user-namespace constants (`E`, `G`, `this`, `<S>_st`, …) or against
+  modules a quotation's file does not import must be built via
+  `mkIdent` and spliced.
+
+## Diagnosing obligations
+
+- `set_option pverify.only "frag1,frag2" in #pverify M` runs only the
+  obligations whose name contains a fragment (and skips the assembly).
+- `set_option pverify.profile true` records per solver goal its time,
+  the solver that closed it, crush's phase breakdown, and the goal
+  itself when it took over 5 s, in the report file.
+- Both work from the command line without editing the file:
+  `lake env lean -Dweak.pverify.only=… -Dweak.pverify.profile=true Examples/X.lean`.
+- **The proof cache** (`pverify.cache`, on by default; `PLean/Verify/Cache.lean`).
+  An obligation whose statement and module dependencies (handlers,
+  invariants, types, facts) did not change replays its stored proof; in
+  an obligation that changed, a goal that matches a stored lemma (its
+  conclusion, with its hypotheses among the goal's) reuses it, the
+  obligation's own lemmas first. Both are kernel-checked, and a reused
+  proof may use only the axioms a fresh one could (Lean's, the module's
+  `paxiom`s and `pinstance`s, and the solver's word unless `pverify.trust`
+  is `reconstruct`; a cache file never adds an axiom), so a stale or
+  foreign entry only misses (`Tests/Verify/Cache.lean`). The assembly
+  theorems (`step_AllInv`, `safe`, …) are cached like obligations. Adding
+  or editing an invariant re-solves only the goals it affects. The report
+  marks `[cached]` obligations and `cache n` goals; the cache lives in
+  memory and in `.lake/pverify/cache/<M>.olean` (a full run keeps what it
+  used, and the goal lemmas of the obligations it replayed);
+  `#pverify_cache M` counts it. `PVERIFY_DEBUG_CACHE=1` prints why a stored
+  proof or lemma was not reused, and `PVERIFY_DEBUG_TIME=1` how long each
+  phase of `#pverify` took.
+- `pverify.jobs`: how many obligations are proved at once (default 0:
+  the environment variable `PVERIFY_JOBS`, or else one per hardware
+  thread; 1 runs them one by one). Solver timeouts are wall-clock, so
+  lower it when several builds share the machine (`PVERIFY_JOBS=2 lake
+  build Examples`); the `Tests` library sets it to 1 in the lakefile. The
+  editor's progress message names the goal and solver only when
+  obligations run one by one.
+- `pverify.timeout` (seconds), `pverify.trust` (`reconstructOrTrust` by
+  default: obligations whose proof could not be replayed are reported
+  `✓ (trusted)`), `pverify.heartbeats`.
+- Each obligation line says how its goals were closed (`[norm]`: nothing
+  left after `vcgen` and normalisation; `smt n` / `pre n` / `hyp n`: by an
+  SMT solver, by crush before SMT translation, as a hypothesis). In the
+  editor, `#pverify` shows one progress message, updated in place: the
+  obligations done, the one being proved, and the goal, invariant and
+  solver it is on (`pverify.progress`, `PLean/Verify/Progress.lean`). The
+  command line prints only the final report.
+- A goal that is not proved gets a counterexample when z3 finds one
+  (`pverify.cex`, on by default): the report names the failing invariant
+  and the step, and shows a minimised pre-state (machines by kind with
+  their state and fields, packets in flight and delivered). The SMT
+  script and model go to `.lake/pverify/<Mod>/<obligation>.smt2`. See
+  `docs/ProofSkill.md`.
 
 ## Style guide
 
-See [`docs/STYLE.md`](docs/STYLE.md) for the source/proof/tactic
-style rules. Soundness rule of thumb: before adding a tactic that
-closes more goals, satisfy yourself it can't close *false* goals.
-Two pinned soundness guards live in
-`Tests/Syntax/SoundnessRegression.lean` — don't regress them.
+See [`docs/STYLE.md`](docs/STYLE.md). Soundness rule of thumb: before
+adding a tactic that closes more goals, satisfy yourself it can't close
+*false* goals.
 
 ## Common operations
 
@@ -309,29 +338,19 @@ Two pinned soundness guards live in
 
 - **Regression**: drop the file under `Tests/Bootstrap/`,
   `Tests/Semantics/`, `Tests/Syntax/`, or `Tests/Verify/` — the
-  `Tests` lean_lib globs `Tests.**`. A regression pins a behaviour
-  (`#guard_msgs`-style) or covers a feature in isolation.
-- **Protocol port / showcase**: drop it under `Examples/` — the
-  `Examples` lean_lib globs `Examples.**`. Use this for substantial
-  pmodules that demonstrate end-to-end verification of a real
-  protocol.
+  `Tests` lean_lib globs `Tests.**`.
+- **Protocol port**: drop it under `Examples/` — the `Examples`
+  lean_lib globs `Examples.**`.
 
 ### Iterate on a failing test
 
 ```bash
 cd Src/PLean
-lake build Tests.Syntax.MyTest 2>&1 | grep -E '^error:' -A 5
+lake build Tests.Verify.MyTest 2>&1 | grep -E '^error:' -A 5
 ```
-
-For a quick syntax-only check while iterating, the IDE diagnostics in
-the Lean extension catch most issues without re-running `lake`.
 
 ### Run cvc5 / z3 from Lean
 
-The solvers are downloaded into Loom's build dir on first build.
-To verify they're reachable:
-
 ```bash
-lake build Tests.Semantics.SmtRoundtrip
-# expect: "Goal proven by cvc5. Trusting SMT solver result."
+lake build Tests.Semantics.CrushRoundtrip
 ```

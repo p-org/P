@@ -1,17 +1,28 @@
 /-
-PLean.Commands.GenModule — `#gen_module M` finalisation command.
+PLean.Commands.GenModule — `#gen_module M`: turn the registered pmodule
+`M` into Lean definitions over the transition model.
 
-Walks the registry and emits, in dependency order: machine wrapper
-structs; types and enums; per-event payload abbrevs; the per-pmodule
-unions (`<Mod>.E` / `G` / `S` / `Fields`) and aliases (`Sig` / `PM'` /
-`GS`); `#derive_lifted_wp` for `get`/`set`; per-machine var accessors,
-state-tag aliases, and handler defs; finally invariants / axioms /
-init-conditions / function / pinstance materialisation.
+Emitted inside `namespace M`:
 
-Macro hygiene: identifiers that must resolve against user-namespace
-constants (`<Mod>.E`, `<Mod>.Sig`, `this`, …) are built via `mkIdent`
-so they remain unhygienic. Bare names inside `\`(...)` would acquire
-hygiene marks and fail to resolve.
+* user types / event payloads / pure functions / axioms / instances;
+* `structure <Mach> where ref : MachineRef` per machine (invariant binders);
+* the program types: `E` (events), `S` (state tags `<Mach>_<State>`),
+  `F` (every machine's vars, `<Mach>_<v>`), `G` (entry arguments), `W`
+  (suspended `receive`s), and `HM` / `GW` for the handler monad and the
+  ghost world;
+* `is_<Mach> r s`, `is_<ev> m`, `<ev>_payload_of m` for invariants;
+* per machine: state aliases `<S>_st` / `<S>_garg`, field accessors
+  `<v>_set`, handlers `<S>.<ev>_handler`, entries `<S>.entry`;
+* `prog : PLean.Program S E F G W`;
+* `InitConditions` (every machine in its start state, its start entry
+  pending), the invariants and `Lemma` / `Theorem` bundles, and the
+  automatic invariants `NoHalt` (when no machine ever halts),
+  `Transient` (a machine is never idle in a state whose entry always ends
+  in a `goto`) and `Waiting` (a machine suspended at a `receive` is in
+  that `receive`'s state);
+* `AllInv`, the conjunction of the proved targets and the automatic
+  invariants, which `#pverify`'s obligations assume (so a manual proof of
+  one can be stated before `#pverify` runs).
 -/
 import Lean
 import PLean.Internal.Decls
@@ -21,1237 +32,914 @@ import PLean.Syntax.Events
 import PLean.Syntax.Machine
 import PLean.Syntax.Verify
 import PLean.Syntax.Stmt
-import PLean.Semantics.Monad
-import PLean.Semantics.Primitives
-import PLean.Semantics.Predicates
-import PLean.Semantics.Default
-import Loom.Meta
-import PLean.Verify.SimpAttrs
+import PLean.Syntax.Loop
+import PLean.Syntax.Containers
+import PLean.Semantics.Msg
+import PLean.Verify.Norm
 
 open Lean Elab Command
 
 namespace PLean
 
-/-! ## Var extraction
-
-Walk a machine's saved body items and pull out each `var <name> : <ty>`
-declaration. The result feeds (a) the per-machine `Fields` struct,
-(b) the union `<Mod>.Fields`, and (c) the `<vname>_get` / `<vname>_set`
-accessors. -/
-
+/-- A machine variable. -/
 structure VarInfo where
   name : Name
   ty   : TSyntax `term
-  /-- True iff the declared type elaborates to an arrow type — i.e. a
-      container (`set[T]` / `map[K, V]` / `seq[T]`, all of which
-      desugar to a function). Container vars get hoisted into the
-      top-level `Containers` slot so SMT translation sees the
-      projection as a flat applied symbol, not a `Fields`-projection
-      that lean-auto rejects under a quantifier. -/
-  isContainer : Bool
-  /-- True iff the container's codomain is `Prop` (`set[T] = T →
-      Prop`). The storage type for the hoisted field is then `Bool`
-      instead of `Prop` (lean-auto rejects `Prop`-codomain functions
-      under quantifiers as higher-order), and the accessor / field
-      projection bridges between the storage Bool and the surface
-      `Set T`. Unreachable via the current `set[T]` surface (which
-      desugars to the opaque `PSet`, not `T → Prop`); kept for the raw
-      `Set`-typed `var` escape hatch. -/
-  isSetProp : Bool
-  /-- True iff the var is a `PLean.PSet T` (P's `set[T]`). `PSet` is a
-      sealed first-order sort, so it can't be a struct field reachable
-      from `GlobalState` (lean-auto chokes translating the enclosing
-      datatype). It hoists into `Containers` as a whole-value row
-      `MachineRef → PSet T`; the prep chain's state destructure then
-      exposes it as a free `MachineRef → PSet T` function, which
-      translates. The field projection reads the whole set (no `(ref,
-      elem)` uncurry), so `isQuorum n.votes` and `a ∈ n.votes` are both
-      first-order. -/
-  isPSet : Bool
 
-/-- Classify a container `var`'s declared type. Returns `(isContainer,
-isSetProp, isPSet)`. `map[K,V]` / `seq[T]` desugar to arrows; `set[T]`
-desugars to the sealed `PLean.PSet` (not an arrow) and is detected by
-its head constant. -/
-private def classifyTypeAsContainer (ty : TSyntax `term) :
-    CommandElabM (Bool × Bool × Bool) := do
-  try
-    Lean.Elab.Command.runTermElabM fun _ => do
-      let e ← Lean.Elab.Term.elabType ty
-      let n ← Lean.Meta.whnf e
-      if n.getAppFn.isConstOf ``PLean.PSet then
-        return (true, false, true)
-      else if n.isForall || n.isArrow then
-        let codom ← Lean.Meta.whnf n.bindingBody!
-        return (true, codom.isProp, false)
-      else
-        return (false, false, false)
-  catch _ => return (false, false, false)
-
-private def collectVars (body : Array Syntax) : CommandElabM (Array VarInfo) := do
+/-- The `var` declarations of a machine body. -/
+def collectVars (body : Array Syntax) : Array VarInfo := Id.run do
   let mut vars : Array VarInfo := #[]
   for it in body do
     match it with
     | `(pMachineBodyItem| var $vname:ident : $vty:term) =>
-      let (isC, isSP, isPS) ← classifyTypeAsContainer vty
-      vars := vars.push
-        { name := vname.getId, ty := vty,
-          isContainer := isC, isSetProp := isSP, isPSet := isPS }
+      vars := vars.push { name := vname.getId, ty := vty }
     | _ => pure ()
   return vars
 
-/-! ## Unhygienic identifier helpers (see file-level note on hygiene). -/
+/-- `<Mach>_<State>`, the state-tag constructor name. -/
+def stateTagName (m s : Name) : Name := Name.mkSimple (m.toString ++ "_" ++ s.toString)
 
-private def idE        : Ident := mkIdent `E
-private def idG        : Ident := mkIdent `G
-private def idS        : Ident := mkIdent `S
-private def idFields   : Ident := mkIdent `Fields
-private def idSig      : Ident := mkIdent `Sig
-private def idPM       : Ident := mkIdent `PM'
-private def idGS       : Ident := mkIdent `GS
-private def idThis     : Ident := mkIdent `this
-private def idGet      : Ident := mkIdent `get
-private def idSet      : Ident := mkIdent `set
-private def idDivM     : Ident := mkIdent `DivM
-private def idMachineRef : Ident := mkIdent `PLean.MachineRef
-private def idProgramSig : Ident := mkIdent `PLean.ProgramSig
-private def idPM_PLean   : Ident := mkIdent `PLean.PM
-private def idGlobalState : Ident := mkIdent `PLean.GlobalState
+/-- `<Mach>_<v>`, the field name in `F`. -/
+def fieldName (m v : Name) : Name := Name.mkSimple (m.toString ++ "_" ++ v.toString)
 
-/-! ## Per-machine wrapper structs -/
+/-- The state items of a machine body: `(name, isStart, items)`. -/
+def machineStates (body : Array Syntax) : Array (Name × Bool × Array Syntax) := Id.run do
+  let mut out := #[]
+  for it in body do
+    match it with
+    | `(pMachineBodyItem| start state $sid:ident { $items:pStateBodyItem* }) =>
+      out := out.push (sid.getId, true, items.map (·.raw))
+    | `(pMachineBodyItem| state $sid:ident { $items:pStateBodyItem* }) =>
+      out := out.push (sid.getId, false, items.map (·.raw))
+    | _ => pure ()
+  return out
+
+/-- The typed entry of a state, if any: `(param, type)`. -/
+def typedEntry (items : Array Syntax) : Option (Ident × TSyntax `term) := Id.run do
+  for it in items do
+    match it with
+    | `(pStateBodyItem| entry ( $p:ident : $ty:term ) { $_:doSeq }) => return some (p, ty)
+    | _ => pure ()
+  return none
+
+/-- Events raised (`raise ev`) anywhere in `stx`. -/
+partial def raisedEvents (stx : Syntax) : Array Name :=
+  let here : Array Name :=
+    if stx.getKind == ``pRaiseNoPayload || stx.getKind == ``pRaisePayload then
+      if stx[1].isIdent then #[stx[1].getId] else #[]
+    else #[]
+  stx.getArgs.foldl (fun acc a => acc ++ raisedEvents a) here
+
+/-- Whether any machine body contains `raise halt`. -/
+def programHalts (ctx : LocalPModuleCtx) : Bool :=
+  ctx.machineOrder.any fun m =>
+    match ctx.machines.find? m with
+    | some md => md.body.any fun b => (raisedEvents b).contains `halt
+    | none => false
+
+/-- Whether `stx` contains a `receive`. -/
+partial def hasReceive (stx : Syntax) : Bool :=
+  stx.getKind == ``pReceive || stx.getArgs.any hasReceive
+
+/-- The states of `md` whose entry always ends in a `goto` (a machine is
+never idle in them). -/
+def transientStates (md : PMachineDecl) : Array Name := Id.run do
+  let mut out := #[]
+  for (sname, _, items) in machineStates md.body do
+    for it in items do
+      let body? : Option Syntax := match it with
+        | `(pStateBodyItem| entry { $b:doSeq }) => some b
+        | `(pStateBodyItem| entry ( $_:ident : $_:term ) { $b:doSeq }) => some b
+        | _ => none
+      let some b := body? | continue
+      if hasReceive b then continue
+      let seq := if b.getKind == ``Lean.Parser.Term.doSeqBracketed then b[1] else b[0]
+      if let some item := seq.getArgs.back? then
+        if item[0].getKind == ``pGotoNoPayload || item[0].getKind == ``pGotoPayload then
+          out := out.push sname
+  return out
+
+/-! ## `receive` sites
+
+A handler or entry body is split at each top-level `receive`: the code
+before it ends by suspending at the site (`H.suspend (W.site<k> …)`,
+saving the locals), and each case resumes with its body followed by the
+code after the `receive`. -/
+
+/-- A `receive` case: its event, payload binder and body. -/
+structure RecvCase where
+  ev     : Name
+  binder : Option (Ident × TSyntax `term)
+  body   : TSyntax ``Lean.Parser.Term.doSeq
+
+/-- A local a suspended handler keeps: a `var` or a handler / entry parameter. -/
+structure Saved where
+  name  : Ident
+  ty    : TSyntax `term
+  isVar : Bool
+
+/-- A `receive` site. `W.site<idx>` holds `saved`; a case resumes with its
+body, then `cont`, which ends by suspending at `next`, if any. -/
+structure RecvSite where
+  idx   : Nat
+  mname : Name
+  sname : Name
+  saved : Array Saved
+  cases : Array RecvCase := #[]
+  cont  : Array Syntax := #[]
+  next  : Option Nat := none
+  /-- The names that shadow machine variables in the handler. -/
+  shadow : NameSet := {}
+
+/-- A handler or entry body (assignments to its locals localised), up to its
+first top-level `receive`. -/
+structure BodyPlan where
+  pre   : Array Syntax
+  first : Option Nat
+  /-- The names that shadow machine variables in the body: its parameter
+  and its `var` locals. -/
+  shadow : NameSet := {}
+
+/-- The `W` constructor of site `k`. -/
+def siteName (k : Nat) : Name := Name.mkSimple s!"site{k}"
+
+/-- The resumer of site `k` for event `ev`. -/
+def resumerName (sname : Name) (k : Nat) (ev : Name) : Name :=
+  sname ++ Name.mkSimple s!"recv{k}_{ev}"
+
+/-- The items of a `do` sequence. -/
+def doSeqItemsOf (b : Syntax) : Array Syntax :=
+  (if b.getKind == ``Lean.Parser.Term.doSeqBracketed then b[1] else b[0]).getArgs
+
+private def varsOf (items : Array Syntax) : Array Saved :=
+  items.filterMap fun it =>
+    if it[0].getKind == ``pLocalVar then some { name := ⟨it[0][1]⟩, ty := ⟨it[0][3]⟩, isVar := true }
+    else none
+
+private partial def planItems (mname sname : Name) (saved : Array Saved) (items : Array Syntax) :
+    StateM (Array RecvSite) (Array Syntax × Option Nat) := do
+  match items.findIdx? (·[0].getKind == ``pReceive) with
+  | none => return (items, none)
+  | some i =>
+    let saved := saved ++ varsOf (items.extract 0 i)
+    let idx := (← get).size
+    modify (·.push { idx, mname, sname, saved })
+    let (cont, next) ← planItems mname sname saved (items.extract (i + 1) items.size)
+    let recv := items[i]![0]
+    let cases := recv[2].getArgs.map fun c =>
+      { ev := c[1].getId
+        binder := if c[2].getNumArgs == 5 then some (⟨c[2][1]⟩, ⟨c[2][3]⟩) else none
+        body := ⟨c[5]⟩ : RecvCase }
+    modify fun a => a.set! idx { idx, mname, sname, saved, cases, cont, next }
+    return (items.extract 0 i, some idx)
+
+/-- Localise the assignments to a `receive` case's binder in its case. -/
+partial def localizeCaseBinders (stx : Syntax) : MacroM Syntax := do
+  let stx := stx.setArgs (← stx.getArgs.mapM localizeCaseBinders)
+  if stx.getKind == ``pRecvCase && stx[2].getNumArgs == 5 && stx[2][1].isIdent then
+    return stx.setArg 5 (← localizeAssigns (({} : NameSet).insert stx[2][1].getId) stx[5])
+  return stx
+
+/-- `stx` with the identifier `x` (and the head of `x.f`) renamed to `x'`. -/
+partial def renameIdent (x x' : Name) (stx : Syntax) : Syntax :=
+  if stx.isIdent then
+    match stx.getId.components with
+    | h :: rest => if h == x then mkIdentFrom stx (rest.foldl (· ++ ·) x') else stx
+    | [] => stx
+  else stx.setArgs (stx.getArgs.map (renameIdent x x'))
+
+/-- Whether `stx` mentions `n` (as `n`, or as the head of `n.f`). -/
+private partial def mentionsName (n : Name) (stx : Syntax) : Bool :=
+  if stx.isIdent then
+    let id := stx.getId
+    id == n || (match id with
+      | .str (.str .anonymous h) _ => Name.mkSimple h == n
+      | _ => false)
+  else stx.getArgs.any (mentionsName n)
+
+/-- The identifiers of a `let` / `have` before its `:=` / `←` (and before a
+type ascription): the names it binds, and the constructors of a pattern. -/
+private partial def letHeadIdents (stx : Syntax) : StateM Bool (Array Name) := do
+  if ← get then return #[]
+  if stx.isAtom then
+    if [":=", "←", ":", "|"].contains stx.getAtomVal then set true
+    return #[]
+  if stx.isIdent then return #[stx.getId]
+  let mut out := #[]
+  for c in stx.getArgs do
+    out := out ++ (← letHeadIdents c)
+  return out
+
+/-- A `let` before a top-level `receive` is not kept while the machine waits
+(only `var` locals and parameters are), so it cannot be used after it. -/
+def checkLetsAcrossReceive (items : Array Syntax) : CommandElabM Unit := do
+  for i in [0:items.size] do
+    unless items[i]![0].getKind == ``pReceive do continue
+    for j in [0:i] do
+      let e := items[j]![0]
+      let k := e.getKind
+      unless k == ``Lean.Parser.Term.doLet || k == ``Lean.Parser.Term.doLetArrow ||
+          k == ``Lean.Parser.Term.doLetElse || k == ``Lean.Parser.Term.doHave do continue
+      for n in Id.run ((letHeadIdents e).run' false) do
+        -- a constructor in a pattern binds nothing
+        let env ← getEnv
+        if (← resolveGlobalName n).any fun (c, _) => (env.find? c).any (·.isCtor) then continue
+        if (items.extract i items.size).any (mentionsName n) then
+          throwErrorAt e m!"`{n}` is bound by `let` before a `receive` and used after it, but \
+            only `var` locals and parameters are kept while the machine waits; declare it with \
+            `var {n} : T`"
+
+/-- Every handler / entry body's plan, keyed by (machine, state, event or
+`entry`), and every `receive` site. -/
+def planReceives (ctx : LocalPModuleCtx) :
+    CommandElabM (Array ((Name × Name × Name) × BodyPlan) × Array RecvSite) := do
+  let mut plans := #[]
+  let mut sites : Array RecvSite := #[]
+  for mname in ctx.machineOrder do
+    let some m := ctx.machines.find? mname | continue
+    for (sname, _, items) in machineStates m.body do
+      for it in items do
+        let (owner, params, body?) : Name × Array Saved × Option Syntax := match it with
+          | `(pStateBodyItem| on $ev:ident ( $p:ident : $ty:term ) { $b:doSeq }) =>
+            (ev.getId, #[{ name := p, ty, isVar := false }], some b.raw)
+          | `(pStateBodyItem| on $ev:ident { $b:doSeq }) => (ev.getId, #[], some b.raw)
+          | `(pStateBodyItem| entry { $b:doSeq }) => (`entry, #[], some b.raw)
+          | `(pStateBodyItem| entry ( $p:ident : $ty:term ) { $b:doSeq }) =>
+            (`entry, #[{ name := p, ty, isVar := false }], some b.raw)
+          | _ => (`none, #[], none)
+        let some b := body? | continue
+        -- Parameters, like `var` locals, shadow machine variables of the
+        -- same name (as in P); a `receive` case's binder does in its case.
+        let b ← liftMacroM (localizeCaseBinders b)
+        let locals := params.foldl (fun s p => s.insert p.name.getId) (collectLocals b)
+        let b ← liftMacroM (localizeAssigns locals b)
+        let b ← liftMacroM (rewriteIndexReads b)
+        checkLetsAcrossReceive (doSeqItemsOf b)
+        let shadow := locals
+        let n0 := sites.size
+        let ((pre, first), sites') := (planItems mname sname params (doSeqItemsOf b)).run sites
+        sites := sites'.mapIdx fun j st => if j < n0 then st else { st with shadow }
+        plans := plans.push ((mname, sname, owner), { pre, first, shadow })
+  return (plans, sites)
+
+/-- The event handled by a state item, with its body (`none` for `goto`-only
+and `ignore` items). -/
+def itemEvent? (it : Syntax) : Option Name :=
+  match it with
+  | `(pStateBodyItem| on $ev:ident ( $_:ident : $_:term ) { $_:doSeq }) => some ev.getId
+  | `(pStateBodyItem| on $ev:ident { $_:doSeq }) => some ev.getId
+  | `(pStateBodyItem| on $ev:ident goto $_:ident) => some ev.getId
+  | _ => none
+
+/-- Order a state's handler items so that a handler is emitted after every
+handler it raises into (`raise` is inlined as a call). -/
+def orderForRaise (items : Array Syntax) : Except String (Array Syntax) := Id.run do
+  let handlers := items.filter fun it => (itemEvent? it).isSome
+  let mut done : Array Name := #[]
+  let mut out : Array Syntax := #[]
+  let mut remaining := handlers
+  while !remaining.isEmpty do
+    let ready := remaining.filter fun it =>
+      (raisedEvents it).all fun e => e == `halt || done.contains e ||
+        !(handlers.any fun h => itemEvent? h == some e)
+    if ready.isEmpty then
+      return .error "cyclic `raise` between handlers of one state"
+    for r in ready do
+      out := out.push r
+      if let some e := itemEvent? r then done := done.push e
+    remaining := remaining.filter fun it => !(ready.contains it)
+  return .ok out
+
+section Emit
+
+private def idE : Ident := mkIdent `E
+private def idS : Ident := mkIdent `S
+private def idF : Ident := mkIdent `F
+private def idG : Ident := mkIdent `G
+private def idW : Ident := mkIdent `W
+private def idHM : Ident := mkIdent `HM
+private def idGW : Ident := mkIdent `GW
+private def idRef : Ident := mkIdent ``PLean.MachineRef
 
 private def emitMachineWrappers (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   for mname in ctx.machineOrder do
-    let some _ := ctx.machines.find? mname | continue
     let mid := mkIdent mname
-    elabCommand (← `(
-      structure $mid where
-        ref : $idMachineRef
-        deriving Inhabited, DecidableEq
-    ))
-    elabCommand (← `(
-      instance : Coe $mid $idMachineRef := ⟨fun s => s.ref⟩
-    ))
+    elabCommand (← `(structure $mid where
+        ref : $idRef
+        deriving Inhabited, DecidableEq, Repr))
+    elabCommand (← `(instance : Coe $mid $idRef := ⟨fun s => s.ref⟩))
+    let fa := mkIdent (mname ++ `forall_iff)
+    let ex := mkIdent (mname ++ `exists_iff)
+    elabCommand (← `(@[pverifySimp] theorem $fa (P : $mid → Prop) : (∀ n, P n) ↔ ∀ r, P ⟨r⟩ :=
+        ⟨fun h r => h ⟨r⟩, fun h n => h n.ref⟩))
+    elabCommand (← `(@[pverifySimp] theorem $ex (P : $mid → Prop) : (∃ n, P n) ↔ ∃ r, P ⟨r⟩ :=
+        ⟨fun ⟨n, h⟩ => ⟨n.ref, h⟩, fun ⟨r, h⟩ => ⟨⟨r⟩, h⟩⟩))
+    elabCommand (← `(attribute [pverifySimp] $(mkIdent (mname ++ `mk.injEq))))
 
-/-! ## Machine-kind machinery
-
-For each pmodule, emit:
-  inductive <Mod>.MKind | <M1> | <M2> | ... deriving DecidableEq, Inhabited
-  def <Mod>.<M>_kind : Nat := <i>     -- index ≥ 1 (0 reserved for "unset")
-
-Plus a per-machine `<M>.allocated (m : MachineRef) (s : GS) : Prop`
-predicate that asserts a machine ref's `kind` matches its expected
-ctor. The `is` macro extends to dispatch on machine names by
-expanding `m is <M>` to `<M>.allocated m`.
-
-Spec machines participate in the kind tagging too so their kind is
-recognisable in invariants. -/
-
-private def idMKind  : Ident := mkIdent `MKind
-
-private def emitMachineKinds (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  -- Filter to "real" (impl + spec) machines in the module.
-  let mut allKinds : Array Name := #[]
-  for mname in ctx.machineOrder do
-    let some _ := ctx.machines.find? mname | continue
-    allKinds := allKinds.push mname
-  -- Emit `<Mod>.MKind`. Always include a `_none` placeholder so the
-  -- inductive is non-empty even in the (degenerate) zero-machine case.
-  let mut kCtors : Array (TSyntax ``Lean.Parser.Command.ctor) := #[]
-  let noneCtor ← `(Lean.Parser.Command.ctor| | _none)
-  kCtors := kCtors.push noneCtor
-  for mn in allKinds do
-    let cId := mkIdent mn
-    let ctor ← `(Lean.Parser.Command.ctor| | $cId:ident)
-    kCtors := kCtors.push ctor
-  elabCommand (← `(
-    inductive $idMKind where
-      $kCtors*
-      deriving DecidableEq, Inhabited
-  ))
-  -- Emit `<Mod>.<M>_kind : Nat := i` (i ≥ 1; 0 reserved for unset).
-  let mut idx : Nat := 1
-  for mn in allKinds do
-    let kindNameId := mkIdent (mn.appendAfter "_kind")
-    let lit := Syntax.mkNatLit idx
-    elabCommand (← `(
-      def $kindNameId : Nat := $lit
-    ))
-    idx := idx + 1
-  -- Per-machine `<M>_allocated` and top-level `is_<M>` predicates.
-  -- WHY flat top-level rather than `namespace <M>`: the wrapper struct
-  -- `<Mod>.<M>` claims the namespace slot, making nested defs there
-  -- unreliable. WHY `kind ≠ 0`: `0` is the default-initialised value;
-  -- without the guard, an unassigned `MachineRef` would satisfy the
-  -- first declared machine's `_allocated` predicate.
-  --
-  -- WHY the `currentState ∈ <M>'s states` conjunct: `MachineState`
-  -- flattens `kind : Nat` and `currentState : S` (a union of *every*
-  -- machine's states) as independent fields. Without coupling them, a
-  -- model can set `kind = <M>_kind` while `currentState` is some *other*
-  -- machine's state — an impossible machine PVerifier's typed
-  -- per-machine state arrays exclude structurally. Tying state
-  -- membership into `<M>_allocated` rules those spurious models out.
-  -- This only ever weakens a guard antecedent (`is_<M> m s → …`), so it
-  -- cannot make a real obligation harder, and it is preserved because
-  -- `goto` only moves a machine within its own states.
-  for mn in allKinds do
-    let kindNameId := mkIdent (mn.appendAfter "_kind")
-    let allocName : Ident := mkIdent (mn.appendAfter "_allocated")
-    let stateCtors : Array Ident := Id.run do
-      let mut out : Array Ident := #[]
-      if let some m := ctx.machines.find? mn then
-        for sd in m.states do
-          out := out.push (mkIdent (`S ++ Name.mkSimple (mn.toString ++ "_" ++ sd.name.toString)))
-      out
-    if stateCtors.isEmpty then
-      elabCommand (← `(
-        @[inline] def $allocName (m : $idMachineRef) (s : $idGS) : Prop :=
-          (s.machines m).kind ≠ 0 ∧ (s.machines m).kind = $kindNameId
-      ))
-    else
-      let mut stateMem : TSyntax `term ← `((s.machines m).currentState = $(stateCtors[0]!))
-      for i in [1:stateCtors.size] do
-        stateMem ← `($stateMem ∨ (s.machines m).currentState = $(stateCtors[i]!))
-      elabCommand (← `(
-        @[inline] def $allocName (m : $idMachineRef) (s : $idGS) : Prop :=
-          (s.machines m).kind ≠ 0 ∧ (s.machines m).kind = $kindNameId ∧ ($stateMem)
-      ))
-  for mn in allKinds do
-    let predName : Ident := mkIdent (Name.mkSimple ("is_" ++ mn.toString))
-    let allocName : Ident := mkIdent (mn.appendAfter "_allocated")
-    elabCommand (← `(
-      @[inline] def $predName (m : $idMachineRef) : $idGS → Prop :=
-        $allocName m
-    ))
-
-/-! ## Per-pmodule union types `<Mod>.E`, `<Mod>.G`, `<Mod>.S`, `<Mod>.Fields` -/
-
-private def emitProgramUnions (ctx : LocalPModuleCtx)
-    (machineVars : NameMap (Array VarInfo)) : CommandElabM Unit := do
-  -- `<Mod>.E`: one ctor per event.
+/-- `E`, `S`, `F`, `G`, `W`, `HM`, `GW`. -/
+private def emitProgramTypes (ctx : LocalPModuleCtx) (vars : NameMap (Array VarInfo))
+    (sites : Array RecvSite) : CommandElabM Unit := do
+  -- E
   let evCtors ← ctx.eventOrder.mapM fun en => do
-    let some e := ctx.events.find? en
-      | throwError "internal: event {en} missing"
-    let cId := mkIdent e.name
-    match e.payload with
-    | none =>
-      `(Lean.Parser.Command.ctor| | $cId:ident)
-    | some _ =>
-      let pty := mkIdent (e.name.appendAfter "_payload")
-      `(Lean.Parser.Command.ctor| | $cId:ident (payload : $pty))
-  if evCtors.isEmpty then
-    elabCommand (← `(
-      inductive $idE where
-        | _none
-        deriving DecidableEq, Inhabited
-    ))
-  else
-    elabCommand (← `(
-      inductive $idE where
-        $evCtors*
-        deriving DecidableEq
-    ))
-    -- An Inhabited instance referencing the first event constructor.
-    let firstName := ctx.eventOrder[0]!
-    let some firstE := ctx.events.find? firstName
-      | throwError "internal: event {firstName} missing"
-    let firstId := mkIdent firstE.name
-    let firstFull := mkIdent (`E ++ firstE.name)
-    match firstE.payload with
-    | none =>
-      let _ := firstId
-      elabCommand (← `(
-        instance : Inhabited $idE := ⟨$firstFull⟩
-      ))
-    | some _ =>
-      elabCommand (← `(
-        instance : Inhabited $idE := ⟨$firstFull default⟩
-      ))
-  -- `<Mod>.G`: goto payload union. The surface doesn't expose goto
-  -- payloads; one trivial constructor suffices. The constructor MUST be
-  -- emitted unhygienically (via `mkIdent`): the `goto` doElem macro in
-  -- `Syntax/Stmt.lean` references it as the clean name `G.unit`, so a
-  -- hygienic `| unit` ctor (which Lean would name `G.unit._@…._hyg.N`)
-  -- would make `goto <state>` fail to resolve `G.unit` inside a handler.
-  let gUnitCtor ← `(Lean.Parser.Command.ctor| | $(mkIdent `unit):ident)
-  elabCommand (← `(
-    inductive $idG where
-      $gUnitCtor:ctor
-      deriving DecidableEq, Inhabited
-  ))
-  -- `<Mod>.S`: one ctor per (machine, state).
+    let some e := ctx.events.find? en | throwError "internal: event {en} missing"
+    match e.hasPayload with
+    | false => `(Lean.Parser.Command.ctor| | $(mkIdent e.name):ident)
+    | true =>
+      `(Lean.Parser.Command.ctor| | $(mkIdent e.name):ident (payload : $(mkIdent (e.name.appendAfter "_payload"))))
+  let evCtors ← if evCtors.isEmpty then pure #[← `(Lean.Parser.Command.ctor| | _none)] else pure evCtors
+  elabCommand (← `(inductive $idE where
+      $evCtors*
+      deriving DecidableEq))
+  let (firstName, hasArg) := match ctx.eventOrder[0]? with
+    | some en => (en, (ctx.events.find? en).any (fun (d : PEventDecl) => d.hasPayload))
+    | none => (`_none, false)
+  let firstFull := mkIdent (`E ++ firstName)
+  if hasArg then elabCommand (← `(instance : Inhabited $idE := ⟨$firstFull default⟩))
+  else elabCommand (← `(instance : Inhabited $idE := ⟨$firstFull⟩))
+  -- S
   let mut sCtors : Array (TSyntax ``Lean.Parser.Command.ctor) := #[]
   for mname in ctx.machineOrder do
     let some m := ctx.machines.find? mname | continue
-    for sd in m.states do
-      let cName := (mname.toString ++ "_" ++ sd.name.toString)
-      let cId : Ident := mkIdent (Name.mkSimple cName)
-      let ctor ← `(Lean.Parser.Command.ctor| | $cId:ident)
-      sCtors := sCtors.push ctor
-  if sCtors.isEmpty then
-    elabCommand (← `(
-      inductive $idS where
-        | _none
-        deriving DecidableEq, Inhabited
-    ))
-  else
-    elabCommand (← `(
-      inductive $idS where
-        $sCtors*
-        deriving DecidableEq, Inhabited
-    ))
-  -- `<Mod>.Fields`: one field per **first-order** var across all
-  -- machines. Container vars are hoisted into `<Mod>.Containers`
-  -- below so the SMT translation never sees a function-typed projection
-  -- under a quantifier.
-  let mut fieldStxs : Array (TSyntax ``Lean.Parser.Command.structSimpleBinder) := #[]
+    for (sname, _, _) in machineStates m.body do
+      sCtors := sCtors.push (← `(Lean.Parser.Command.ctor| | $(mkIdent (stateTagName mname sname)):ident))
+  if sCtors.isEmpty then sCtors := #[← `(Lean.Parser.Command.ctor| | _none)]
+  elabCommand (← `(inductive $idS where
+      $sCtors*
+      deriving DecidableEq, Inhabited, Repr))
+  -- F
+  let mut fields : Array (TSyntax ``Lean.Parser.Command.structSimpleBinder) := #[]
   for mname in ctx.machineOrder do
-    let some _ := ctx.machines.find? mname | continue
-    let some vars := machineVars.find? mname | continue
-    for v in vars do
-      if v.isContainer then continue
-      let fldName := (mname.toString ++ "_" ++ v.name.toString)
-      let fldId : Ident := mkIdent (Name.mkSimple fldName)
-      let s ← `(Lean.Parser.Command.structSimpleBinder| $fldId:ident : $(v.ty))
-      fieldStxs := fieldStxs.push s
-  if fieldStxs.isEmpty then
-    elabCommand (← `(
-      structure $idFields where
-        deriving Inhabited
-    ))
+    for v in (vars.find? mname).getD #[] do
+      fields := fields.push (← `(Lean.Parser.Command.structSimpleBinder|
+        $(mkIdent (fieldName mname v.name)):ident : $(v.ty)))
+  if fields.isEmpty then
+    elabCommand (← `(structure $idF where
+        deriving Inhabited))
   else
-    elabCommand (← `(
-      structure $idFields where
-        $[$fieldStxs]*
-        deriving Inhabited
-    ))
-  -- `<Mod>.Containers`: one field per **container** var. To make the
-  -- projection's *saved type* first-order, we uncurry the container
-  -- type's outer arrow with `MachineRef`:
-  --   `set[T]    = T → Prop`            → field `MachineRef × T → Prop`
-  --   `map[K,V]  = K → Option V`         → field `MachineRef × K → Option V`
-  --   `seq[T]    = List T`               → field `MachineRef → List T`
-  -- For non-arrow container types (e.g. `seq` = `List`) the field
-  -- stays `MachineRef → <ty>` because the codomain is already
-  -- first-order. lean-auto's monomorphizer reads `Containers.<M>_<v>
-  -- : Containers → Prod MachineRef Dom → Codom` as a single applied
-  -- uninterpreted function — no nested arrows in the type.
-  --
-  -- Surface side, `n.kv` projects to `s.containers.<M>_<v>
-  -- (n.ref, k)` (we curry it back via Prod), the lookup `m k`
-  -- becomes `s.containers.<M>_<v> (m.ref, k)`, etc.
-  --
-  -- This mirrors PVerifier's UCLID5 backend, which encodes each
-  -- container var as a 2D array indexed on `(MachineRef, Key)`.
-  let mut contStxs : Array (TSyntax ``Lean.Parser.Command.structSimpleBinder) := #[]
+    elabCommand (← `(structure $idF where
+        $[$fields]*
+        deriving Inhabited))
+  -- G
+  let mut gCtors : Array (TSyntax ``Lean.Parser.Command.ctor) := #[← `(Lean.Parser.Command.ctor| | $(mkIdent `none):ident)]
   for mname in ctx.machineOrder do
-    let some _ := ctx.machines.find? mname | continue
-    let some vars := machineVars.find? mname | continue
-    for v in vars do
-      if !v.isContainer then continue
-      let fldName := (mname.toString ++ "_" ++ v.name.toString)
-      let fldId : Ident := mkIdent (Name.mkSimple fldName)
-      -- Build the uncurried field type. We probe the elaborated type
-      -- via `Lean.Elab.Term.elabType` + `whnf`; if it's an arrow
-      -- `Dom → Codom`, the field becomes `(MachineRef × Dom) → Codom`,
-      -- else `MachineRef → <ty>`.
-      --
-      -- Special case: a `Prop`-valued codomain (`set[T]` desugars to
-      -- `T → Prop`) trips lean-auto's SMT translator
-      -- ("Higher order input?") when the container field type appears
-      -- in `GlobalState`. Substitute `Bool` for the storage type and
-      -- bridge back to `Set T` in the accessor (`<v>_get` /
-      -- `<v>_set`). Mirrors PVerifier's UCLID5 boolean-array encoding
-      -- of `set[T]`.
-      let (domStxOpt, codomStxOpt) ← Lean.Elab.Command.runTermElabM
-        fun _ => do
-          let e ← Lean.Elab.Term.elabType v.ty
-          let n ← Lean.Meta.whnf e
-          if n.isForall || n.isArrow then
-            let dom := n.bindingDomain!
-            let codom := n.bindingBody!
-            let domT ← Lean.PrettyPrinter.delab dom
-            if v.isSetProp then
-              return (some domT, none)
-            let codomT ← Lean.PrettyPrinter.delab codom
-            return (some domT, some codomT)
-          else
-            return (none, none)
-      let fldTy : TSyntax `term ←
-        match domStxOpt, codomStxOpt with
-        | some dom, none =>
-          `($idMachineRef × $dom → Bool)
-        | some dom, some codom =>
-          `($idMachineRef × $dom → $codom)
-        | _, _ =>
-          `($idMachineRef → $(v.ty))
-      let s ← `(Lean.Parser.Command.structSimpleBinder|
-        $fldId:ident : $fldTy)
-      contStxs := contStxs.push s
-  let idContainers : Ident := mkIdent `Containers
-  let hasContainers := !contStxs.isEmpty
-  if hasContainers then
-    elabCommand (← `(
-      structure $idContainers where
-        $[$contStxs]*
-        deriving Inhabited
-    ))
-  -- `<Mod>.Sig`, `<Mod>.PM'`, `<Mod>.GS` aliases. Set `C := Containers`
-  -- when at least one container var was declared; else default to
-  -- `Unit` via `ProgramSig.C`'s default.
-  if hasContainers then
-    elabCommand (← `(
-      abbrev $idSig : $idProgramSig :=
-        { E := $idE, G := $idG, S := $idS, F := $idFields, C := $idContainers }
-    ))
+    let some m := ctx.machines.find? mname | continue
+    for (sname, _, items) in machineStates m.body do
+      if let some (_, ty) := typedEntry items then
+        gCtors := gCtors.push (← `(Lean.Parser.Command.ctor|
+          | $(mkIdent (stateTagName mname sname)):ident (arg : $ty)))
+  elabCommand (← `(inductive $idG where
+      $gCtors*
+      deriving Inhabited))
+  -- W: one constructor per `receive` site, holding the saved locals.
+  if sites.isEmpty then
+    elabCommand (← `(abbrev $idW : Type := Unit))
   else
-    elabCommand (← `(
-      abbrev $idSig : $idProgramSig :=
-        { E := $idE, G := $idG, S := $idS, F := $idFields }
-    ))
-  elabCommand (← `(
-    abbrev $idPM (α : Type) := $idPM_PLean $idSig α
-  ))
-  elabCommand (← `(
-    abbrev $idGS : Type := $idGlobalState $idSig
-  ))
+    let ctors ← sites.mapM fun s => do
+      let bs ← s.saved.mapM fun v =>
+        `(Lean.Parser.Term.bracketedBinderF| ($(v.name):ident : $(v.ty)))
+      `(Lean.Parser.Command.ctor| | $(mkIdent (siteName s.idx)):ident $bs:bracketedBinder*)
+    elabCommand (← `(inductive $idW where
+        $ctors*))
+  elabCommand (← `(abbrev $idHM := PLean.HandlerM $idS $idE $idF $idG $idW))
+  elabCommand (← `(abbrev $idGW := PLean.GWorld $idS $idE $idF $idG $idW))
+  -- `if` through each field projection, for the obligation normaliser.
+  for mname in ctx.machineOrder do
+    for v in (vars.find? mname).getD #[] do
+      let f := mkIdent (fieldName mname v.name)
+      let thm := mkIdent (`F ++ (fieldName mname v.name).appendAfter "_ite")
+      elabCommand (← `(@[pverifySimp] theorem $thm {c : Prop} [Decidable c] (a b : $idF) :
+          (if c then a else b).$f:ident = if c then a.$f:ident else b.$f:ident := by
+        split <;> rfl))
 
-/-! ## Per-event tag-check predicates `is_<ev>`
-
-The `is` notation in `Syntax/Notation.lean` rewrites `lbl is <ev>` to
-`is_<ev> lbl` — a *tag-only* check (matching P's surface semantics).
-Emitting one per event side-steps the awkwardness of "constructor as
-first-class value" in Lean: the user never has to write a payload to
-do a tag check. -/
-
-private def emitIsPredicates (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  for ename in ctx.eventOrder do
-    let some e := ctx.events.find? ename | continue
-    let predName : Ident := mkIdent (Name.mkSimple ("is_" ++ e.name.toString))
-    let evCtor : Ident := mkIdent (`E ++ e.name)
-    -- The predicate inspects `lbl.action`: True iff the action is an
-    -- event whose ctor is `<ev>`. Payload (if any) is ignored.
-    match e.payload with
-    | none =>
-      elabCommand (← `(
-        @[inline] def $predName (lbl : ($idSig).Label) : Prop :=
-          match lbl.action with
-          | .event $evCtor => True
-          | _ => False
-      ))
-    | some _ =>
-      elabCommand (← `(
-        @[inline] def $predName (lbl : ($idSig).Label) : Prop :=
-          match lbl.action with
-          | .event ($evCtor _) => True
-          | _ => False
-      ))
-
-/-! ## Per-event payload extractor `<ev>_payload_of`
-
-Inside invariant bodies, `e : <ev>` (after the `system <s>` materialiser
-retypes the binder to `Sig.Label`) projects the payload via
-`<ev>_payload_of e`. The body uses an `Inhabited`-default fallback for
-the `lbl.action ≠ .event (E.<ev> _)` case — unreachable when the
-auto-injected `is_<ev> e` guard holds. The def is left **opaque** to
-SMT — lean-auto treats it as an uninterpreted function, which is the
-right SMT-level interpretation: `<ev>_payload_of e` becomes an
-applied uninterpreted symbol whose return value the user invariant
-constrains transitively via the `is_<ev>` predicate (kept in the
-goal as another uninterpreted predicate). -/
-
-private def emitEventPayloadAccessors (ctx : LocalPModuleCtx)
-    (eventPayloadFields : NameMap NameSet) : CommandElabM Unit := do
-  for ename in ctx.eventOrder do
-    let some e := ctx.events.find? ename | continue
-    let some _ := eventPayloadFields.find? ename | continue
-    let some payloadName := e.payload | continue
-    let extractor : Ident :=
-      mkIdent (Name.mkSimple (e.name.toString ++ "_payload_of"))
-    let payloadId : Ident := mkIdent payloadName
-    let evCtor : Ident := mkIdent (`E ++ e.name)
-    elabCommand (← `(
-      def $extractor (lbl : ($idSig).Label) : $payloadId :=
-        match lbl.action with
-        | .event ($evCtor p) => p
-        | _ => default
-    ))
-
-/-! ## Per-event payload characterisation `<ev>_payload_of_spec`
-
-`<ev>_payload_of` is sealed `@[irreducible]` so SMT treats it as an
-uninterpreted symbol — that's what lets a routing invariant
-`∀ e, is_<ev> e → … (<ev>_payload_of e) …` translate cleanly. The
-defining equation
-  `∀ lbl p, lbl.action = .event (E.<ev> p) → <ev>_payload_of lbl = p`
-is emitted as a separate theorem `<ev>_payload_of_spec`; the obligation
-generator brings it into the local context as a `have`, so SMT can
-compute the extractor's value on a freshly-sent label. -/
-
-private def emitPayloadCharacterizations (ctx : LocalPModuleCtx)
-    (eventPayloadFields : NameMap NameSet) : CommandElabM Unit := do
-  for ename in ctx.eventOrder do
-    let some e := ctx.events.find? ename | continue
-    let some _ := eventPayloadFields.find? ename | continue
-    let some payloadName := e.payload | continue
-    let extractor : Ident :=
-      mkIdent (Name.mkSimple (e.name.toString ++ "_payload_of"))
-    let mkThm : Ident :=
-      mkIdent (Name.mkSimple (e.name.toString ++ "_payload_of_mk"))
-    let specThm : Ident :=
-      mkIdent (Name.mkSimple (e.name.toString ++ "_payload_of_spec"))
-    let payloadId : Ident := mkIdent payloadName
-    let evCtor   : Ident := mkIdent (`E ++ e.name)
-    let labelMk  : Ident := mkIdent ``PLean.Label.mk
-    -- Defining equation on a literal `Label.mk` (proved before the
-    -- extractor is sealed). Kept as a public lemma for manual proofs.
-    elabCommand (← `(
-      theorem $mkThm (t : PLean.MachineRef) (p : $payloadId) (c : Nat) :
-          $extractor ($labelMk t (.event ($evCtor p)) c) = p := by
-        unfold $extractor; rfl
-    ))
-    -- Universal characterisation from any label whose action is known.
-    -- Proved via `_mk` after destructuring so it does NOT depend on the
-    -- extractor staying reducible.
-    elabCommand (← `(
-      theorem $specThm (lbl : ($idSig).Label) (p : $payloadId)
-          (h : lbl.action = .event ($evCtor p)) : $extractor lbl = p := by
-        obtain ⟨t, a, c⟩ := lbl
-        simp only at h
-        subst h
-        exact $mkThm t p c
-    ))
-    -- Seal the extractor so lean-auto always translates it as an
-    -- uninterpreted function (point 1 above). `_spec` supplies its value
-    -- to SMT where needed.
-    elabCommand (← `(attribute [irreducible] $extractor))
-
-/-! ## Per-event characterisation lemmas `is_<ev>_iff`
-
-Bridge the opaque `is_<ev>` tag predicate to a concrete `Label.action`
-constructor equality. `is_<ev>` is emitted (step 4b) as a `match`-on-
-`action` def left folded so lean-auto treats it as an uninterpreted
-predicate (its `match` body trips the monomorphizer if unfolded). With
-no axiom relating `is_<ev> e` to `e.action`, any obligation whose
-invariant quantifies `∀ e, e is <ev> → …` reaches SMT with `is_<ev>` as
-a free predicate — the solver can neither discharge the guard nor
-exclude a spurious label of that tag, so the goal comes back `unknown`.
-
-The `@[pverifySimp]` tag means `pverify_smt_prep`'s `simp only
-[pverifySimp]` rewrites every `is_<ev> e` into the action equality
-before `loom_smt` runs, so SMT sees a concrete constructor equality.
-Pairwise disjointness between events is then *derived* by the solver
-from `EventOrGoto` / `E` constructor injectivity — no separate
-disjointness lemma is needed. -/
-
-private def emitIsCharacterizations (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  for ename in ctx.eventOrder do
-    let some e := ctx.events.find? ename | continue
-    let thmName : Ident :=
-      mkIdent (Name.mkSimple ("is_" ++ e.name.toString ++ "_iff"))
-    let predName : Ident := mkIdent (Name.mkSimple ("is_" ++ e.name.toString))
-    let evCtor   : Ident := mkIdent (`E ++ e.name)
-    let evOrGoto : Ident := mkIdent ``PLean.EventOrGoto.event
-    -- `cases ev <;> simp_all` splits on however many `E` constructors
-    -- exist (do NOT hard-code the arity), then closes each arm. The
-    -- `goto` action arm closes by `simp_all` directly.
-    match e.payload with
-    | none =>
-      elabCommand (← `(
-        @[pverifySimp] theorem $thmName (lbl : ($idSig).Label) :
-            $predName lbl ↔ lbl.action = $evOrGoto $evCtor := by
-          unfold $predName
-          rcases h : lbl.action with ev | g
-          · cases ev <;> simp_all
-          · simp_all
-      ))
-    | some _ =>
-      elabCommand (← `(
-        @[pverifySimp] theorem $thmName (lbl : ($idSig).Label) :
-            $predName lbl ↔ ∃ p, lbl.action = $evOrGoto ($evCtor p) := by
-          unfold $predName
-          rcases h : lbl.action with ev | g
-          · cases ev <;> simp_all
-          · simp_all
-      ))
-
-/-! ## `#derive_lifted_wp` for the per-pmodule `get`/`set`
-
-These register `loomSpec` lemmas that teach `wpgen` how to step through
-state reads and writes. Without them, surface-emitted handler triples
-stall at the first `← get`. -/
-
-private def emitDerivedWP : CommandElabM Unit := do
-  -- The `open` is needed so `MAlgOrdered` and the lifted WP machinery
-  -- find the scoped instances. We *don't* bake it into the surrounding
-  -- file (that would force every importer into partial-correctness +
-  -- demonic-choice mode); we open it just for the duration of the
-  -- `#derive_lifted_wp` call.
-  let pcId : Ident := mkIdent `PartialCorrectness
-  let dcId : Ident := mkIdent `DemonicChoice
-  elabCommand (← `(open $pcId:ident $dcId:ident in
-    #derive_lifted_wp for
-      ($idGet : StateT $idGS $idDivM $idGS)
-      as $idPM $idGS
-  ))
-  elabCommand (← `(open $pcId:ident $dcId:ident in
-    #derive_lifted_wp (s : $idGS) for
-      ($idSet s : StateT $idGS $idDivM PUnit)
-      as $idPM PUnit
-  ))
-
-/-! ## Per-machine var accessors and state-tag aliases -/
-
-private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
-    CommandElabM Unit := do
-  for v in vars do
-    let fldName := (mname.toString ++ "_" ++ v.name.toString)
-    let fldId : Ident := mkIdent (Name.mkSimple fldName)
-    let getName : Ident := mkIdent (v.name.appendAfter "_get")
-    let setName : Ident := mkIdent (v.name.appendAfter "_set")
-    let ty := v.ty
-    if v.isContainer then
-      -- Container accessors operate on the uncurried `Containers`
-      -- field. `<v>_get this.ref` builds a Lean value of the original
-      -- type `<ty>` from the stored uncurried form by η-application;
-      -- `<v>_set this.ref new` builds the updated `Containers` by
-      -- re-introducing `<ty>`'s arrow over the swapped row.
-      --
-      -- For non-arrow `<ty>` (e.g. `seq`), the field is still
-      -- `MachineRef → <ty>` (single arrow, first-order) so the
-      -- accessors degrade to the standard `MachineRef` lookup /
-      -- `Function.update` pattern.
-      let idContainers : Ident := mkIdent `Containers
-      let isArrow ← Lean.Elab.Command.runTermElabM fun _ => do
-        let e ← Lean.Elab.Term.elabType v.ty
-        let n ← Lean.Meta.whnf e
-        return n.isForall || n.isArrow
-      if isArrow then
-        if v.isSetProp then
-          -- `set[T]` case: container field stores `MachineRef × T →
-          -- Bool` (the SMT-friendly encoding); accessor lifts back to
-          -- `Set T = T → Prop` for the user surface. Writes go through
-          -- `Classical.decide`-based conversion. Marked `noncomputable`
-          -- because the bridge uses classical decidability; not a
-          -- problem since handler bodies are only ever symbolically
-          -- evaluated.
-          elabCommand (← `(
-            @[reducible] noncomputable def $getName ($idThis : $idMachineRef) :
-                $idPM $ty := do
-              let s ← get
-              pure (fun x => s.containers.$fldId ($idThis, x) = true)
-          ))
-          elabCommand (← `(
-            @[reducible] noncomputable def $setName ($idThis : $idMachineRef)
-                (v : $ty) : $idPM Unit := do
-              let s ← get
-              let newSlot :=
-                fun (p : $idMachineRef × _) =>
-                  if p.1 = $idThis then
-                    @Decidable.decide (v p.2) (Classical.propDecidable _)
-                  else s.containers.$fldId p
-              let newContainers : $idContainers :=
-                { s.containers with $fldId:ident := newSlot }
-              set { s with containers := newContainers }
-          ))
-        else
-          elabCommand (← `(
-            @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
-              let s ← get
-              pure (fun x => s.containers.$fldId ($idThis, x))
-          ))
-          elabCommand (← `(
-            @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) :
-                $idPM Unit := do
-              let s ← get
-              let newSlot :=
-                fun (p : $idMachineRef × _) =>
-                  if p.1 = $idThis then v p.2 else s.containers.$fldId p
-              let newContainers : $idContainers :=
-                { s.containers with $fldId:ident := newSlot }
-              set { s with containers := newContainers }
-          ))
+/-- `is_<Mach>`, `is_<ev>`, `<ev>_payload_of` (+ its spec lemma). -/
+private def emitKindPredicates (ctx : LocalPModuleCtx) : CommandElabM Unit := do
+  for mname in ctx.machineOrder do
+    let some m := ctx.machines.find? mname | continue
+    let states := machineStates m.body
+    let r := mkIdent `r; let s := mkIdent `s
+    let disj ← match states.toList with
+      | [] => `(False)
+      | (s0, _, _) :: rest => do
+        let mut d ← `(((($s).machines $r).state) = some $(mkIdent (`S ++ stateTagName mname s0)))
+        for (si, _, _) in rest do
+          d ← `($d ∨ ((($s).machines $r).state = some $(mkIdent (`S ++ stateTagName mname si))))
+        pure d
+    let isId := mkIdent (Name.mkSimple ("is_" ++ mname.toString))
+    elabCommand (← `(@[reducible] def $isId ($r:ident : $idRef) ($s:ident : $idGW) : Prop := $disj))
+  for en in ctx.eventOrder do
+    let some e := ctx.events.find? en | continue
+    let isId := mkIdent (Name.mkSimple ("is_" ++ en.toString))
+    let ctor := mkIdent (`E ++ en)
+    let m := mkIdent `m
+    match e.hasPayload with
+    | false =>
+      elabCommand (← `(@[reducible] def $isId ($m:ident : PLean.Msg $idE) : Prop := ($m).ev = $ctor))
+    | true =>
+      let pty := mkIdent (en.appendAfter "_payload")
+      elabCommand (← `(@[reducible] def $isId ($m:ident : PLean.Msg $idE) : Prop := ∃ p, ($m).ev = $ctor p))
+      let ofId := mkIdent (Name.mkSimple (en.toString ++ "_payload_of"))
+      let specId := mkIdent (Name.mkSimple (en.toString ++ "_payload_of_spec"))
+      if ctx.eventOrder.size > 1 then
+        elabCommand (← `(def $ofId ($m:ident : PLean.Msg $idE) : $pty :=
+            match ($m).ev with
+            | $ctor p => p
+            | _ => default))
       else
-        elabCommand (← `(
-          @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
-            let s ← get
-            pure (s.containers.$fldId $idThis)
-        ))
-        elabCommand (← `(
-          @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) :
-              $idPM Unit := do
-            let s ← get
-            let newSlot : $idMachineRef → $ty :=
-              fun r => if r = $idThis then v else s.containers.$fldId r
-            let newContainers : $idContainers :=
-              { s.containers with $fldId:ident := newSlot }
-            set { s with containers := newContainers }
-        ))
-    else
-      -- Accessors are `@[reducible] def` so the obligation generator's
-      -- `unfold <v>_get/<v>_set` step reaches the underlying `get`/`set`
-      -- whose `loomSpec` is registered by the per-pmodule
-      -- `#derive_lifted_wp` (`emitDerivedWP`).
-      --
-      -- WHY no type ascription on `← get`: the ascribed
-      -- `(get : StateT _ _ _)` form does not match the registered
-      -- discr-tree key, so `wpgen` falls back to `WPGen.default`. Letting
-      -- Lean pick `get` from the `MonadStateOf` instance produces the
-      -- key shape the spec expects.
-      elabCommand (← `(
-        @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
-          let s ← get
-          pure (s.machines $idThis).fields.$fldId
-      ))
-      elabCommand (← `(
-        @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) :
-            $idPM Unit := do
-          let s ← get
-          let curr := s.machines $idThis
-          let newFields : $idFields := { curr.fields with $fldId:ident := v }
-          let newMS : ($idSig).MachineState :=
-            { stage := curr.stage, currentState := curr.currentState
-              fields := newFields, kind := curr.kind }
-          set (s.updateMachine $idThis newMS)
-      ))
+        elabCommand (← `(def $ofId ($m:ident : PLean.Msg $idE) : $pty :=
+            match ($m).ev with
+            | $ctor p => p))
+      elabCommand (← `(theorem $specId : ∀ ($m:ident : PLean.Msg $idE) (p : $pty),
+          ($m).ev = $ctor p → $ofId $m = p := by
+        intro m p h; simp only [$ofId:ident, h]))
+      let mkId := mkIdent (Name.mkSimple (en.toString ++ "_payload_of_mk"))
+      elabCommand (← `(@[pverifySimp] theorem $mkId (i : Nat) (a b : $idRef) (p : $pty) :
+          $ofId ⟨i, a, b, $ctor p⟩ = p := rfl))
 
-private def emitStateAliases (mname : Name) (states : Array PStateDecl) :
-    CommandElabM Unit := do
-  for sd in states do
-    let cName := (mname.toString ++ "_" ++ sd.name.toString)
-    let aliasName : Ident := mkIdent (sd.name.appendAfter "_st")
-    let sCtorIdent : Ident := mkIdent (`S ++ Name.mkSimple cName)
-    -- `@[reducible] def` (equivalently, `abbrev`) so SMT prep's
-    -- `dsimp only` reduces a goal's `currentState = <S>_st` to the raw
-    -- `S.<M>_<S>` constructor. Without this the solver leaves `<S>_st`
-    -- uninterpreted and returns `unknown` on base cases that need to
-    -- distinguish e.g. `Won_st ≠ Proposing_st`. Also matches the
-    -- coupling form the state/kind check in `<M>_allocated` produces.
-    elabCommand (← `(
-      @[reducible] def $aliasName : ($idSig).S := $sCtorIdent
-    ))
+/-- Per machine, inside `namespace <Mach>`: state aliases, accessors. -/
+private def emitMachineAliases (mname : Name) (states : Array (Name × Bool × Array Syntax))
+    (vars : Array VarInfo) : CommandElabM Unit := do
+  for (sname, _, items) in states do
+    let tag := mkIdent (`S ++ stateTagName mname sname)
+    elabCommand (← `(abbrev $(mkIdent (sname.appendAfter "_st")) : $idS := $tag))
+    if let some (_, ty) := typedEntry items then
+      let gctor := mkIdent (`G ++ stateTagName mname sname)
+      elabCommand (← `(abbrev $(mkIdent (sname.appendAfter "_garg")) (x : $ty) : $idG := $gctor x))
+  if let some (sname, _, items) := states.find? (·.2.1) then
+    let tag := mkIdent (`S ++ stateTagName mname sname)
+    elabCommand (← `(abbrev $(mkIdent `start_st) : $idS := $tag))
+    if let some (_, ty) := typedEntry items then
+      let gctor := mkIdent (`G ++ stateTagName mname sname)
+      elabCommand (← `(abbrev $(mkIdent `start_garg) (x : $ty) : $idG := $gctor x))
+  for v in vars do
+    let f := mkIdent (fieldName mname v.name)
+    elabCommand (← `(abbrev $(mkIdent (v.name.appendAfter "_set")) (x : $(v.ty)) : $idHM Unit :=
+        modify fun hs => { hs with ms := { hs.ms with fields := { hs.ms.fields with $f:ident := x } } }))
 
-/-! ## Handler emission
+/-- `let this : <Mach> := ⟨(← get).ref⟩` and `let mut v := …` for every var
+not in `shadow` (a parameter or local of the same name hides the var, as
+in P). -/
+private def handlerPrelude (mname : Name) (vars : Array VarInfo) (shadow : NameSet := {}) :
+    CommandElabM (Array (TSyntax ``Lean.Parser.Term.doSeqItem)) := do
+  let thisB ← `(Lean.Parser.Term.doSeqItem|
+      let $(mkIdent `this):ident : $(mkIdent mname) := ⟨(← get).ref⟩)
+  let vs ← (vars.filter (!shadow.contains ·.name)).mapM fun v => do
+    let f := mkIdent (fieldName mname v.name)
+    `(Lean.Parser.Term.doSeqItem| let mut $(mkIdent v.name):ident := (← get).ms.fields.$f:ident)
+  return #[thisB] ++ vs
 
-For each state body item, emit a Lean def. Handler defs take
-`(this : <MName>)` (the wrapper struct) as the explicit first
-parameter.
+/-- The events a state ignores. -/
+def ignoredOf (items : Array Syntax) : Array Name :=
+  items.foldl (init := #[]) fun acc it =>
+    match it with
+    | `(pStateBodyItem| ignore $evs:ident,*) => acc ++ evs.getElems.map (·.getId)
+    | _ => acc
 
-Each handler body is wrapped with leading `let v ← v_get this.ref` for
-every machine var, so the body can reference `v` as a Lean local.
+/-- The nodes of `stx`, in pre-order. -/
+private partial def nodesOf (stx : Syntax) : Array Syntax :=
+  stx.getArgs.foldl (init := #[stx]) fun acc c => acc ++ nodesOf c
 
-The `_handler` suffix avoids shadowing the event name itself when the
-handler body references the event (`send target, ePing, ...`). -/
+/-- Reject what P's type checker rejects and the model would otherwise read
+differently: `goto S` / `pnew M` without the argument a typed entry takes
+(or with one an untyped entry does not take), and `raise e` in a state that
+neither handles nor ignores `e`. -/
+def checkStatements (ctx : LocalPModuleCtx) : CommandElabM Unit := do
+  let startTyped (m : Name) : Option Bool := do
+    let md ← ctx.machines.find? m
+    let (_, _, items) ← (machineStates md.body).find? (·.2.1)
+    return (typedEntry items).isSome
+  for mname in ctx.machineOrder do
+    let some md := ctx.machines.find? mname | continue
+    let states := machineStates md.body
+    let typed (st : Name) : Option Bool :=
+      (states.find? (·.1 == st)).map fun (_, _, items) => (typedEntry items).isSome
+    for (sname, _, items) in states do
+      let handled := items.filterMap itemEvent?
+      let ignored := ignoredOf items
+      for it in items do
+        for n in nodesOf it do
+          let k := n.getKind
+          if k == ``pGotoNoPayload && typed n[1].getId == some true then
+            throwErrorAt n m!"`goto {n[1].getId}`: the entry of state `{n[1].getId}` takes an \
+              argument; pass it with `goto {n[1].getId}, e`"
+          if k == ``pGotoPayload && typed n[1].getId == some false then
+            throwErrorAt n m!"`goto {n[1].getId}, …`: the entry of state `{n[1].getId}` takes no \
+              argument"
+          if k == ``pNewNoArg && startTyped n[1].getId == some true then
+            throwErrorAt n m!"`pnew {n[1].getId}`: the entry of `{n[1].getId}`'s start state takes \
+              an argument; pass it with `pnew {n[1].getId}, e`"
+          if k == ``pNewArg && startTyped n[1].getId == some false then
+            throwErrorAt n m!"`pnew {n[1].getId}, …`: the entry of `{n[1].getId}`'s start state \
+              takes no argument"
+          if (k == ``pRaiseNoPayload || k == ``pRaisePayload) && n[1].isIdent then
+            let ev := n[1].getId
+            unless ev == `halt || handled.contains ev || ignored.contains ev do
+              throwErrorAt n m!"`raise {ev}`: state `{mname}.{sname}` neither handles nor \
+                ignores `{ev}` (in P, an unhandled-event error)"
 
-private def handlerName (sname : Name) (kind : Name) (suffix : Bool) : Ident :=
-  let base := sname ++ kind
-  mkIdent (if suffix then base.appendAfter "_handler" else base)
-
-/-- Build a sequence of `let <v> ← <v>_get this.ref` doSeqItems for every
-machine var, so handler bodies can use bare `v` for reads. -/
-private def buildVarBindings (vars : Array VarInfo) :
-    MacroM (Array (TSyntax `Lean.Parser.Term.doSeqItem)) := do
-  let thisI : Ident := mkIdent `this
-  vars.mapM fun v => do
-    let getName : Ident := mkIdent (v.name.appendAfter "_get")
-    let vId : Ident := mkIdent v.name
-    `(Lean.Parser.Term.doSeqItem|
-        let $vId:ident ← $getName:ident ($thisI |>.ref))
-
-private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
-    (eventPayloadTy : Name → Option Name)
-    (item : Syntax) : CommandElabM Unit := do
-  let mIdent := mkIdent mname
-  match item with
-  | `(pStateBodyItem| entry { $body:doSeq }) =>
-    let defName := handlerName sname `entry (suffix := false)
-    let bindings ← liftMacroM <| buildVarBindings vars
-    let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
-      liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
-    -- `noncomputable` so a handler that references an axiomatised
-    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
-    -- doesn't fail Lean's code-generator check. Handler bodies are
-    -- never compiled — they're only inspected by WP / SMT — so making
-    -- them noncomputable has no downstream effect.
-    elabCommand (← `(
-      noncomputable def $defName ($idThis : $mIdent) : $idPM Unit := do
-        $bindings*
-        $bodyItem
-    ))
-  | `(pStateBodyItem| entry ( $param:ident : $ty:term ) { $body:doSeq }) =>
-    let defName := handlerName sname `entry (suffix := false)
-    let bindings ← liftMacroM <| buildVarBindings vars
-    let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
-      liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
-    -- `noncomputable` so a handler that references an axiomatised
-    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
-    -- doesn't fail Lean's code-generator check. Handler bodies are
-    -- never compiled — they're only inspected by WP / SMT — so making
-    -- them noncomputable has no downstream effect.
-    elabCommand (← `(
-      noncomputable def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
-        $bindings*
-        $bodyItem
-    ))
-  | `(pStateBodyItem| on $ev:ident ( $param:ident : $ty:term ) { $body:doSeq }) =>
-    let defName := handlerName sname ev.getId (suffix := true)
-    let bindings ← liftMacroM <| buildVarBindings vars
-    let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
-      liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
-    -- `noncomputable` so a handler that references an axiomatised
-    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
-    -- doesn't fail Lean's code-generator check. Handler bodies are
-    -- never compiled — they're only inspected by WP / SMT — so making
-    -- them noncomputable has no downstream effect.
-    elabCommand (← `(
-      noncomputable def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
-        $bindings*
-        $bodyItem
-    ))
-  | `(pStateBodyItem| on $ev:ident { $body:doSeq }) =>
-    let defName := handlerName sname ev.getId (suffix := true)
-    let bindings ← liftMacroM <| buildVarBindings vars
-    let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
-      liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
-    -- `noncomputable` so a handler that references an axiomatised
-    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
-    -- doesn't fail Lean's code-generator check. Handler bodies are
-    -- never compiled — they're only inspected by WP / SMT — so making
-    -- them noncomputable has no downstream effect.
-    elabCommand (← `(
-      noncomputable def $defName ($idThis : $mIdent) : $idPM Unit := do
-        $bindings*
-        $bodyItem
-    ))
-  | `(pStateBodyItem| on $ev:ident goto $tgt:ident) =>
-    -- Emit a synthetic `_handler` whose body is just the `goto`. The
-    -- per-handler obligation needs a Lean def to apply `wpgen` to; without
-    -- one, the (state, event) pair was silently skipped and the goto's
-    -- `currentState` / `sent` / `actionCount` mutations went unverified.
-    -- The binder list matches the obligation generator's call shape:
-    -- payload events get a `param : <ev>_payload`, payload-less ones don't.
-    let defName := handlerName sname ev.getId (suffix := true)
-    let bindings ← liftMacroM <| buildVarBindings vars
-    let tgtAlias : Ident := mkIdent (tgt.getId.appendAfter "_st")
-    let gUnit : Ident := mkIdent (`G ++ `unit)
-    let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
-      liftMacroM <| `(Lean.Parser.Term.doSeqItem|
-        do PLean.goto ($idThis |>.ref) $tgtAlias $gUnit)
-    match eventPayloadTy ev.getId with
-    | some payloadTy =>
-      let payloadId : Ident := mkIdent payloadTy
-      elabCommand (← `(
-        noncomputable def $defName ($idThis : $mIdent) (_param : $payloadId) :
-            $idPM Unit := do
-          $bindings*
-          $bodyItem
-      ))
-    | none =>
-      elabCommand (← `(
-        noncomputable def $defName ($idThis : $mIdent) : $idPM Unit := do
-          $bindings*
-          $bodyItem
-      ))
-  | _ =>
-    -- `ignore <ev1>, <ev2>, …;` emits no handler def. The obligation
-    -- generator skips ignored events by consulting
-    -- `PStateDecl.ignoredEvents`. Match on the syntax kind because the
-    -- `ident,+` shape doesn't round-trip cleanly through a quotation
-    -- pattern.
-    if item.getKind == ``PLean.pStateIgnore then pure ()
-    else throwErrorAt item "unrecognised state body item (during materialisation)"
-
-private def materialiseMachineBody (mname : Name) (items : Array Syntax)
-    (vars : Array VarInfo)
-    (eventPayloadTy : Name → Option Name) : CommandElabM Unit := do
+/-- The handler / entry definitions of one state. -/
+private def emitStateHandlers (mname sname : Name) (items : Array Syntax) (vars : Array VarInfo)
+    (payloadTy : Name → Option Name) (plans : Array ((Name × Name × Name) × BodyPlan))
+    (sites : Array RecvSite) (typedStates : NameSet) : CommandElabM Unit := do
+  let hName (ev : Name) : Ident := mkIdent (sname ++ ev.appendAfter "_handler")
+  -- A definition, then the check that it compares no containers with `=`.
+  let emit (n : Ident) (cmd : TSyntax `command) (ref : Syntax) : CommandElabM Unit := do
+    elabCommand cmd
+    rejectContainerDecideEq ((← getCurrNamespace) ++ n.getId) ref
+  -- Parameters are bound after the prelude (which binds the machine
+  -- variables), so a parameter shadows a variable of the same name.
+  let argId := mkIdent `__arg
+  -- An ignored event's handler does nothing (what `raise` of it runs).
+  for ev in ignoredOf items do
+    match payloadTy ev with
+    | some pt =>
+      elabCommand (← `(def $(hName ev) (_ : $(mkIdent pt)) : $idHM Unit := pure ()))
+    | none => elabCommand (← `(def $(hName ev) : $idHM Unit := pure ()))
+  let ordered ← match orderForRaise items with
+    | .ok o => pure o
+    | .error msg => throwError "state `{mname}.{sname}`: {msg}"
+  let suspendAt (k : Nat) : CommandElabM (TSyntax ``Lean.Parser.Term.doSeqItem) := do
+    let some s := sites[k]? | throwError "internal: no receive site {k}"
+    let args := s.saved.map (·.name)
+    `(Lean.Parser.Term.doSeqItem| PLean.H.suspend ($(mkIdent (`W ++ siteName k)) $args*))
+  let itemsOf (body : Array Syntax) (next : Option Nat) :
+      CommandElabM (Array (TSyntax ``Lean.Parser.Term.doSeqItem)) := do
+    let mut out : Array (TSyntax ``Lean.Parser.Term.doSeqItem) := body.map (⟨·⟩)
+    if let some k := next then out := out.push (← suspendAt k)
+    if out.isEmpty then out := out.push (← `(Lean.Parser.Term.doSeqItem| pure ()))
+    return out
+  let bodyOf (owner : Name) :
+      CommandElabM (Array (TSyntax ``Lean.Parser.Term.doSeqItem) × Array (TSyntax ``Lean.Parser.Term.doSeqItem)) := do
+    let some (_, pl) := plans.find? (·.1 == (mname, sname, owner))
+      | throwError "internal: no body for `{mname}.{sname}.{owner}`"
+    return (← handlerPrelude mname vars pl.shadow, ← itemsOf pl.pre pl.first)
+  for it in ordered do
+    match it with
+    | `(pStateBodyItem| on $ev:ident ( $p:ident : $ty:term ) { $_:doSeq }) =>
+      let (pre, body) ← bodyOf ev.getId
+      emit (hName ev.getId) (← `(def $(hName ev.getId) ($argId : $ty) : $idHM Unit := do
+          $pre*
+          let mut $p:ident : $ty := $argId
+          $body*)) it
+    | `(pStateBodyItem| on $ev:ident { $_:doSeq }) =>
+      let (pre, body) ← bodyOf ev.getId
+      match payloadTy ev.getId with
+      | some pt =>
+        emit (hName ev.getId) (← `(def $(hName ev.getId) (_ : $(mkIdent pt)) : $idHM Unit := do
+            $pre*
+            $body*)) it
+      | none =>
+        emit (hName ev.getId) (← `(def $(hName ev.getId) : $idHM Unit := do
+            $pre*
+            $body*)) it
+    | `(pStateBodyItem| on $ev:ident goto $tgt:ident) =>
+      -- As in P, the event's payload is the argument of the target's entry.
+      let tag := mkIdent (tgt.getId.appendAfter "_st")
+      let typed := typedStates.contains tgt.getId
+      match payloadTy ev.getId, typed with
+      | some pt, true =>
+        let garg := mkIdent (tgt.getId.appendAfter "_garg")
+        elabCommand (← `(def $(hName ev.getId) ($argId : $(mkIdent pt)) : $idHM Unit :=
+            PLean.H.goto $tag ($garg $argId)))
+      | some pt, false =>
+        elabCommand (← `(def $(hName ev.getId) (_ : $(mkIdent pt)) : $idHM Unit :=
+            PLean.H.goto $tag $(mkIdent `G.none)))
+      | none, true =>
+        throwErrorAt it m!"`on {ev.getId} goto {tgt.getId}`: the entry of state \
+          `{tgt.getId}` takes an argument, but `{ev.getId}` has no payload"
+      | none, false =>
+        elabCommand (← `(def $(hName ev.getId) : $idHM Unit := PLean.H.goto $tag $(mkIdent `G.none)))
+    | _ => pure ()
+  -- entry
+  let entryName := mkIdent (sname ++ `entry)
+  let mut emitted := false
   for it in items do
     match it with
-    | `(pMachineBodyItem| var $_:ident : $_:term) =>
-      pure ()
-    | `(pMachineBodyItem| start state $sid:ident { $sitems:pStateBodyItem* }) =>
-      let sname := sid.getId
-      for sit in sitems do
-        materialiseStateBodyItem mname sname vars eventPayloadTy sit
-    | `(pMachineBodyItem| state $sid:ident { $sitems:pStateBodyItem* }) =>
-      let sname := sid.getId
-      for sit in sitems do
-        materialiseStateBodyItem mname sname vars eventPayloadTy sit
-    | _ => throwErrorAt it "unrecognised machine body item (during materialisation)"
+    | `(pStateBodyItem| entry { $_:doSeq }) =>
+      let (pre, body) ← bodyOf `entry
+      emit entryName (← `(def $entryName (_ : $idG) : $idHM Unit := do
+          $pre*
+          $body*)) it
+      emitted := true
+    | `(pStateBodyItem| entry ( $p:ident : $ty:term ) { $_:doSeq }) =>
+      let (pre, body) ← bodyOf `entry
+      let gctor := mkIdent (`G ++ stateTagName mname sname)
+      emit entryName (← `(def $entryName ($argId : $idG) : $idHM Unit := do
+          $pre*
+          let mut $p:ident : $ty := match $argId:ident with
+            | $gctor:ident x => x
+            | _ => default
+          $body*)) it
+      emitted := true
+    | _ => pure ()
+  unless emitted do
+    elabCommand (← `(def $entryName (_ : $idG) : $idHM Unit := pure ()))
+  -- resumers of this state's `receive` sites
+  for s in sites do
+    unless s.mname == mname && s.sname == sname do continue
+    let savedIds := (List.range s.saved.size).toArray.map fun j => mkIdent (Name.mkSimple s!"__s{j}")
+    let savedBs ← (s.saved.zip savedIds).mapM fun (v, a) =>
+      `(Lean.Parser.Term.bracketedBinderF| ($a:ident : $(v.ty)))
+    let restore ← (s.saved.zip savedIds).mapM fun (v, a) =>
+      `(Lean.Parser.Term.doSeqItem| let mut $(v.name):ident : $(v.ty) := $a:ident)
+    let rest ← itemsOf s.cont s.next
+    let pre ← handlerPrelude mname vars s.shadow
+    for c in s.cases do
+      -- The case's binder is bound in the case's own block, so its scope
+      -- ends with the case. Lean forbids shadowing a mutable variable, so a
+      -- binder named like a machine variable or a saved local is renamed in
+      -- its case.
+      let (plB, caseItem) ← match c.binder, payloadTy c.ev with
+        | some (x, ty), _ =>
+          let collides := vars.any (·.name == x.getId) || s.saved.any (·.name.getId == x.getId)
+          let x' : Ident := if collides then mkIdent (x.getId.appendBefore "__case_") else x
+          let body := if collides then renameIdent x.getId x'.getId c.body else c.body
+          let items : Array (TSyntax ``Lean.Parser.Term.doSeqItem) := (doSeqItemsOf body).map (⟨·⟩)
+          pure (#[← `(Lean.Parser.Term.bracketedBinderF| ($argId : $ty))],
+            ← `(Lean.Parser.Term.doSeqItem| do
+                let mut $x':ident : $ty := $argId
+                $items*))
+        | none, some pt =>
+          pure (#[← `(Lean.Parser.Term.bracketedBinderF| (_ : $(mkIdent pt)))],
+            ← `(Lean.Parser.Term.doSeqItem| do $(c.body)))
+        | none, none => pure (#[], ← `(Lean.Parser.Term.doSeqItem| do $(c.body)))
+      let rn := mkIdent (resumerName sname s.idx c.ev)
+      emit rn (← `(def $rn $savedBs:bracketedBinder* $plB:bracketedBinder* : $idHM Unit := do
+          $pre*
+          $restore*
+          $caseItem
+          $rest*)) c.body
 
-/-! ## State-indexed conjunction predicates.
-
-`emitConjPredicate name members` emits
-
-  def <name> : GS → Prop := fun s => c₁ ∧ c₂ ∧ ... ∧ cₙ
-
-The binder is always the unhygienic `s`. Eliding it while the body
-still names `s` via macro capture would silently decouple the
-predicate from per-handler state — a soundness hole. Each member is a
-`(term, applyState)` pair: when `applyState` is true the conjunct is
-rendered as `(m) s`; when false the conjunct is `m` verbatim — the
-user's clause is already a closed `Prop` that may reference `s`
-directly (e.g. a framework init clause like `s.actionCount = 0`, or
-an `init-holds (∀ x, P x)` body).
-
-The per-member flag lets `emitInitConditions` mix `s`-dependent
-framework clauses with closed user-supplied props in a single call.
-Empty `members` collapses to `fun _ => True`. -/
-
-private def emitConjPredicate (name : Ident)
-    (members : Array (TSyntax `term × Bool)) : CommandElabM Unit := do
-  if members.isEmpty then
-    elabCommand (← `(
-      def $name : ($idGS) → Prop := fun _ => True
-    ))
-    return
-  let sId : Ident := mkIdent `s
-  let renderOne (m : TSyntax `term × Bool) : CommandElabM (TSyntax `term) :=
-    liftMacroM <|
-      if m.2 then `(($(m.1)) $sId) else `($(m.1))
-  let last := members[members.size - 1]!
-  let init : TSyntax `term ← renderOne last
-  let mut body : TSyntax `term := init
-  for m in members.pop.reverse do
-    let head ← renderOne m
-    body ← liftMacroM <| `($head ∧ $body)
-  elabCommand (← `(def $name : ($idGS) → Prop := fun $sId => $body))
-
-/-- Convenience: every member uses the same `applyState` flag. -/
-private def emitConjPredicateUniform (name : Ident)
-    (members : Array (TSyntax `term)) (applyState : Bool) :
-    CommandElabM Unit :=
-  emitConjPredicate name (members.map (·, applyState))
-
-/-- Aggregate every saved `init-holds <prop>` clause **plus the
-framework init constraints** into the single predicate
-`<Mod>.InitConditions : GS → Prop`:
-- buffers `sent` / `received` start empty,
-- `actionCount` starts at 0,
-- every `MachineRef` starts in some machine's `start state`.
-
-The conjuncts are all closed `Prop`s that name the pmodule's
-`system`-declared `<σ>` directly via macro capture. The lambda binder
-is `<σ>` when the pmodule declared `system <σ>`, falling back to the
-unhygienic `s` for pmodules that didn't (state-independent init
-clauses still work; the body just can't reference the state).
-Per-clause state binders are unified to the pmodule's binder at
-materialisation — declaring `system σ` and then `init-holds … σ …`
-binds via `σ` so the user-facing name in error messages matches what
-they wrote. -/
-private def emitInitConditions (machineKinds eventKinds : NameSet)
-    (machineFields : NameMap NameSet)
-    (machineContainerFields : NameMap NameSet)
-    (machineSetPropFields : NameMap NameSet)
-    (machinePSetFields : NameMap NameSet)
-    (eventPayloadFields : NameMap NameSet)
-    (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  let sName : Name := ctx.sBinder.getD `s
-  let sId : Ident := mkIdent sName
-  let mut props : Array (TSyntax `term) :=
-    #[← `((∀ l : ($idSig).Label, ($sId).sent l = false)),
-      ← `((∀ l : ($idSig).Label, ($sId).received l = false)),
-      ← `(($sId).actionCount = 0)]
-  -- InStart: every machine ref starts in a start state. Allocated
-  -- machines are in their kind's declared `start state`; unallocated
-  -- refs hold the default `MachineState`, whose `currentState` is the
-  -- first `S` constructor — so include that ctor too. This lets
-  -- base-case VCs for state-dependent invariants (e.g. `∀ x, stateOf x
-  -- s = Won → …`) discharge: no machine is in a non-start state
-  -- initially. Sound because P machines begin in their start state.
-  let mut startCtors : Array Name := #[]
-  if let some m0 := ctx.machineOrder[0]? then
-    if let some md0 := ctx.machines.find? m0 then
-      if let some sd0 := md0.states[0]? then
-        startCtors := startCtors.push
-          (Name.mkSimple (m0.toString ++ "_" ++ sd0.name.toString))
+/-- `prog : PLean.Program S E F G W`: exhaustive matches over (state, event). -/
+private def emitProgram (ctx : LocalPModuleCtx) (sites : Array RecvSite) : CommandElabM Unit := do
+  let mut hAlts : Array (TSyntax ``Lean.Parser.Term.matchAlt) := #[]
+  let mut eAlts : Array (TSyntax ``Lean.Parser.Term.matchAlt) := #[]
+  let mut dAlts : Array (TSyntax ``Lean.Parser.Term.matchAlt) := #[]
+  let arg := mkIdent `arg
+  let p := mkIdent `p
+  let mut nStates := 0
   for mname in ctx.machineOrder do
-    if let some md := ctx.machines.find? mname then
-      for sd in md.states do
-        if sd.isStart then
-          let c := Name.mkSimple (mname.toString ++ "_" ++ sd.name.toString)
-          unless startCtors.contains c do startCtors := startCtors.push c
-  if let some c0 := startCtors[0]? then
-    let mId : Ident := mkIdent `m
-    let csRead : TSyntax `term ← `((($sId).machines $mId).currentState)
-    let mut disj : TSyntax `term ← `($csRead = $(mkIdent (`S ++ c0)))
-    for i in [1:startCtors.size] do
-      let ci := startCtors[i]!
-      disj ← `($disj ∨ $csRead = $(mkIdent (`S ++ ci)))
-    props := props.push (← `(∀ $mId : PLean.MachineRef, $disj))
+    let some m := ctx.machines.find? mname | continue
+    for (sname, _, items) in machineStates m.body do
+      nStates := nStates + 1
+      let tag := mkIdent (`S ++ stateTagName mname sname)
+      let sd? := m.states.find? (·.name == sname)
+      let ign := sd?.map (·.ignoredEvents) |>.getD #[]
+      let dfr := sd?.map (·.deferredEvents) |>.getD #[]
+      for ev in ctx.eventOrder do
+        let hasPayload := (ctx.events.find? ev).any (·.hasPayload)
+        let pat ← if hasPayload then `($(mkIdent (`E ++ ev)) $p) else `($(mkIdent (`E ++ ev)))
+        let h := mkIdent (mname ++ sname ++ ev.appendAfter "_handler")
+        let rhs ←
+          if items.any (itemEvent? · == some ev) then
+            if hasPayload then `(some ($h $p)) else `(some $h)
+          else if ign.contains ev then `(some (pure ()))
+          else `(none)
+        hAlts := hAlts.push (← `(Lean.Parser.Term.matchAltExpr| | $tag, $pat => $rhs))
+        let d ← if dfr.contains ev then `(true) else `(false)
+        dAlts := dAlts.push (← `(Lean.Parser.Term.matchAltExpr| | $tag, $pat => $d))
+      let entryFn := mkIdent (mname ++ sname ++ `entry)
+      eAlts := eAlts.push (← `(Lean.Parser.Term.matchAltExpr| | $tag => $entryFn $arg))
+  if nStates == 0 || ctx.eventOrder.isEmpty then
+    hAlts := hAlts.push (← `(Lean.Parser.Term.matchAltExpr| | _, _ => none))
+    dAlts := dAlts.push (← `(Lean.Parser.Term.matchAltExpr| | _, _ => false))
+  if nStates == 0 then
+    eAlts := eAlts.push (← `(Lean.Parser.Term.matchAltExpr| | _ => pure ()))
+  -- resumers, per (site, case)
+  let mut rAlts : Array (TSyntax ``Lean.Parser.Term.matchAlt) := #[]
+  for s in sites do
+    let args := (List.range s.saved.size).toArray.map fun j => mkIdent (Name.mkSimple s!"a{j}")
+    for c in s.cases do
+      let hasPayload := (ctx.events.find? c.ev).any (·.hasPayload)
+      let pat ← if hasPayload then `($(mkIdent (`E ++ c.ev)) $p) else `($(mkIdent (`E ++ c.ev)))
+      let fn := mkIdent (s.mname ++ resumerName s.sname s.idx c.ev)
+      let rhs ← if hasPayload then `(some ($fn $args* $p)) else `(some ($fn $args*))
+      rAlts := rAlts.push (← `(Lean.Parser.Term.matchAltExpr|
+        | $(mkIdent (`W ++ siteName s.idx)) $args*, $pat => $rhs))
+  let allCovered := !sites.isEmpty &&
+    sites.all fun s => ctx.eventOrder.all fun ev => s.cases.any (·.ev == ev)
+  unless allCovered do
+    rAlts := rAlts.push (← `(Lean.Parser.Term.matchAltExpr| | _, _ => none))
+  let s := mkIdent `s; let e := mkIdent `e; let k := mkIdent `k
+  elabCommand (← `(def $(mkIdent `prog) : PLean.Program $idS $idE $idF $idG $idW :=
+      ⟨fun $s $e => match $s:ident, $e:ident with $hAlts:matchAlt*,
+       fun $s $arg => match $s:ident with $eAlts:matchAlt*,
+       fun $k $e => match $k:ident, $e:ident with $rAlts:matchAlt*,
+       fun $s $e => match $s:ident, $e:ident with $dAlts:matchAlt*⟩))
+
+/-- `def name : GW → Prop := fun s => c₁ ∧ … ∧ cₙ` (`True` when empty);
+`applyState` conjuncts are applied to `s`. -/
+private def emitConj (name : Ident) (members : Array (TSyntax `term × Bool)) (sName : Name := `s) :
+    CommandElabM Unit := do
+  let sId := mkIdent sName
+  if members.isEmpty then
+    elabCommand (← `(@[reducible] def $name : $idGW → Prop := fun _ => True))
+    return
+  let render (m : TSyntax `term × Bool) : CommandElabM (TSyntax `term) :=
+    if m.2 then `(($(m.1)) $sId) else pure m.1
+  let mut body ← render members.back!
+  for m in members.pop.reverse do
+    body ← `($(← render m) ∧ $body)
+  elabCommand (← `(@[reducible] def $name : $idGW → Prop := fun $sId => $body))
+
+/-- `InitConditions`: the framework's initial-world facts plus `init-holds`. -/
+private def emitInitConditions (ctx : LocalPModuleCtx) (mk ek : NameSet)
+    (machineFields eventFields : NameMap NameSet) : CommandElabM Unit := do
+  let sName := ctx.sBinder.getD `s
+  let s := mkIdent sName
+  let r := mkIdent `r; let j := mkIdent `j
+  let mut startDisj : Option (TSyntax `term) := none
+  for mname in ctx.machineOrder do
+    let some m := ctx.machines.find? mname | continue
+    if let some (sname, _, _) := (machineStates m.body).find? (·.2.1) then
+      let c ← `((($s).machines $r).state = some $(mkIdent (`S ++ stateTagName mname sname)))
+      startDisj ← match startDisj with
+        | none => pure (some c)
+        | some d => some <$> `($d ∨ $c)
+  let startD ← match startDisj with | some d => pure d | none => `(False)
+  let mut props : Array (TSyntax `term × Bool) := #[
+    (← `(($s).clock = 0), false),
+    (← `(∀ $j:ident, ($s).net $j = none), false),
+    (← `(∀ $j:ident, ($s).log $j = none), false),
+    (← `(($s).error = none), false),
+    (← `(∀ $r:ident, ($s).nextRef ≤ $r → (($s).machines $r).state = none), false),
+    (← `(0 < ($s).nextRef ∧ (($s).machines PLean.MachineRef.null).state = none), false),
+    (← `(∀ $r:ident, $r ≠ PLean.MachineRef.null → $r < ($s).nextRef →
+        $startD ∧ (($s).machines $r).pending ≠ none), false),
+    (← `(∀ $r:ident, (($s).machines $r).halted = false ∧ (($s).machines $r).waiting = none), false)]
   for d in ctx.inits do
     if let some stx := d.defStx then
-      -- An `init-holds` body that names `GlobalState` as a binder type
-      -- would shadow the outer state binder and silently decouple the
-      -- clause from the actual init state — the same soundness hole
-      -- `rejectExplicitStateBinder` guards for invariants.
       PLean.rejectStateShadowIn "`init-holds`" stx[1]
-      -- A clause registered before `system <σ>` has no binder to bind
-      -- against; treat the body as a closed `Prop` verbatim.
       match d.stateBinder with
-      | none =>
-        props := props.push ⟨stx[1]⟩
+      | none => props := props.push (← `(pv_ext% $(⟨stx[1]⟩)), false)
       | some _ =>
-        let rewritten ← liftMacroM <|
-          PLean.rewriteFieldProjections machineKinds eventKinds
-            machineFields machineContainerFields machineSetPropFields
-            machinePSetFields eventPayloadFields sName stx[1]
-        let raw ← liftMacroM <|
-          PLean.injectKindGuards machineKinds eventKinds sName rewritten
-        props := props.push ⟨raw⟩
-  emitConjPredicateUniform (mkIdent `InitConditions)
-    props (applyState := false)
+        let rw ← liftMacroM <| PLean.rewriteFieldProjections mk ek machineFields {} {} eventFields sName stx[1]
+        let g ← liftMacroM <| PLean.injectKindGuards mk ek sName rw
+        props := props.push (← `(pv_ext% $(⟨g⟩)), false)
+  emitConj (mkIdent `InitConditions) props sName
 
-/-- Per-`Lemma X { invariant a; invariant b; }` (and `Theorem`) bundle
-predicate `<Mod>.X : GS → Prop := fun s => a s ∧ b s`. Each individual
-invariant is itself emitted as `GS → Prop` by `materialiseInvariant`,
-so the bundle applies `s` to each conjunct. -/
-private def emitLemmaBundles (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  for lname in ctx.lemmaOrder do
-    let some l := ctx.lemmas.find? lname | continue
-    let conjuncts : Array (TSyntax `term) := l.invariants.map fun n => ⟨mkIdent n⟩
-    emitConjPredicateUniform (mkIdent l.name) conjuncts (applyState := true)
+end Emit
 
-/-- `<Mod>.UserInv` — conjunction of every free-standing invariant in
-registration order. -/
-private def emitUserInv (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  let mut conjuncts : Array (TSyntax `term) := #[]
-  for invName in ctx.invariantOrder do
-    if ctx.invariants.contains invName then
-      conjuncts := conjuncts.push ⟨mkIdent invName⟩
-  emitConjPredicateUniform (mkIdent `UserInv) conjuncts (applyState := true)
-
-/-! ## The `#gen_module` command -/
+/-! ## The command -/
 
 syntax (name := pGenModule) "#gen_module " ident : command
 
-@[command_elab pGenModule]
-def elabPGenModule : CommandElab := fun stx => do
-  let `(#gen_module $name:ident) := stx
-    | throwUnsupportedSyntax
-  let modName := name.getId
-  match ← getPModule? modName with
-  | none =>
-    throwError "no `pmodule {modName}` is registered (did you import the file that declares it?)"
-  | some ctx =>
-    -- Open the pmodule namespace so all materialised aliases / structures /
-    -- handler defs live under <Mod>.* and so cross-references resolve.
-    elabCommand (← `(namespace $name))
-    emitMachineWrappers ctx
-    for tname in ctx.typeOrder do
-      let some t := ctx.types.find? tname | continue
-      materialiseType t
+/-- The targets of the `prove` directives, in order (not `default`). -/
+def proofTargets (ctx : LocalPModuleCtx) : Array Name := Id.run do
+  let mut tgts : Array Name := #[]
+  for pd in ctx.proofs do
+    for d in pd.directives do
+      unless d.isDefault || tgts.contains d.target do tgts := tgts.push d.target
+  return tgts
+
+/-- The automatic invariants `#gen_module` emitted for module `modName`. -/
+def autoTargets (env : Environment) (modName : Name) : Array Name :=
+  #[`NoHalt, `Transient, `Waiting].filter fun n => env.contains (modName ++ n)
+
+/-- The conjuncts of `AllInv`, in order: the proved targets, then the
+automatic invariants. `#gen_module` and `#pverify` both read it here. -/
+def allTargets (ctx : LocalPModuleCtx) (env : Environment) (modName : Name) : Array Name :=
+  proofTargets ctx ++ autoTargets env modName
+
+/-- What `pverify_close` gets for module `modName`, as names inside its
+namespace: the definitions to unfold (invariants, kind predicates, …), the
+hints (payload extractors' specs, `pinstance` laws) and the facts
+(`paxiom`s, normalised with the hypotheses). -/
+def closeLists (ctx : LocalPModuleCtx) (env : Environment) (modName : Name) :
+    Array Name × Array Name × Array Name := Id.run do
+  let mut defs : Array Name := #[`InitConditions] ++ ctx.invariantOrder ++ ctx.lemmaOrder
+  defs := defs ++ ctx.machineOrder.map (fun m => Name.mkSimple ("is_" ++ m.toString))
+  defs := defs ++ ctx.eventOrder.map (fun e => Name.mkSimple ("is_" ++ e.toString))
+  defs := defs ++ autoTargets env modName ++ #[`AllInv]
+  let mut hints : Array Name := #[]
+  for e in ctx.eventOrder do
+    if (ctx.events.find? e).any (·.hasPayload) then
+      hints := hints.push (Name.mkSimple (e.toString ++ "_payload_of_spec"))
+  let mut facts : Array Name := #[]
+  for (n, d) in ctx.axioms.toList do
+    if d.defStx.isSome then facts := facts.push n else hints := hints.push n
+  return (defs, hints, facts)
+
+/-- `#gen_module`'s emission, after the checks. -/
+private def genModuleBody (ctx : LocalPModuleCtx) (modName : Name) (name : Ident)
+    (plans : Array ((Name × Name × Name) × BodyPlan)) (sites : Array RecvSite) :
+    CommandElabM Unit := do
+  elabCommand (← `(namespace $name))
+  elabCommand (← `(open PLean))
+  emitMachineWrappers ctx
+  for tname in ctx.typeOrder do
+    if let some t := ctx.types.find? tname then materialiseType t
+  for ename in ctx.eventOrder do
+    if let some e := ctx.events.find? ename then materialiseEvent e
+  let mut vars : NameMap (Array VarInfo) := {}
+  for mname in ctx.machineOrder do
+    if let some m := ctx.machines.find? mname then vars := vars.insert mname (collectVars m.body)
+  emitProgramTypes ctx vars sites
+  emitKindPredicates ctx
+  let machineKinds : NameSet := ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
+  let eventKinds : NameSet := ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
+  let machineFields : NameMap NameSet := ctx.machineOrder.foldl (init := {}) fun acc m =>
+    acc.insert m (((vars.find? m).getD #[]).foldl (init := {}) fun s v => s.insert v.name)
+  let eventFields : NameMap NameSet := Id.run do
+    let mut out : NameMap NameSet := {}
     for ename in ctx.eventOrder do
       let some e := ctx.events.find? ename | continue
-      materialiseEvent e
-    let mut machineVars : NameMap (Array VarInfo) := {}
-    for mname in ctx.machineOrder do
-      let some m := ctx.machines.find? mname | continue
-      let vars ← collectVars m.body
-      machineVars := machineVars.insert mname vars
-    emitProgramUnions ctx machineVars
-    emitIsPredicates ctx
-    -- Machine-kind predicates emit between the `Sig`/`GS` aliases and the
-    -- per-machine accessors so invariants and obligations can reference them.
-    emitMachineKinds ctx
-    -- Build the field-projection maps used by the invariant rewriter.
-    -- machineFields[M] is the set of **first-order** `var` names for
-    -- machine M; machineContainerFields[M] is the set of
-    -- **container** `var` names (hoisted to `Containers`).
-    -- eventPayloadFields[ev] is the set of named-tuple field names for
-    -- event ev (empty if its payload isn't a named tuple).
-    let machineFields : NameMap NameSet := Id.run do
-      let mut out : NameMap NameSet := {}
-      for mname in ctx.machineOrder do
-        let some vars := machineVars.find? mname | continue
-        let s := vars.foldl (init := ({} : NameSet))
-          fun s v => if v.isContainer then s else s.insert v.name
-        out := out.insert mname s
-      out
-    let machineContainerFields : NameMap NameSet := Id.run do
-      let mut out : NameMap NameSet := {}
-      for mname in ctx.machineOrder do
-        let some vars := machineVars.find? mname | continue
-        let s := vars.foldl (init := ({} : NameSet))
-          fun s v => if v.isContainer then s.insert v.name else s
-        out := out.insert mname s
-      out
-    -- machineSetPropFields[M] is the subset of M's container vars whose
-    -- type is `set[T] = T → Prop` (Prop-codomain). The hoisted slot for
-    -- such a var stores `Bool` (lean-auto rejects `Prop`-codomain
-    -- function fields under quantifiers), and the field-projection sugar
-    -- `n.<v>` lifts back to `MachineRef → Prop` via `... = true`.
-    let machineSetPropFields : NameMap NameSet := Id.run do
-      let mut out : NameMap NameSet := {}
-      for mname in ctx.machineOrder do
-        let some vars := machineVars.find? mname | continue
-        let s := vars.foldl (init := ({} : NameSet))
-          fun s v => if v.isSetProp then s.insert v.name else s
-        out := out.insert mname s
-      out
-    -- machinePSetFields[M] is the subset of M's container vars that are
-    -- `set[T] = PLean.PSet T`. The hoisted slot stores the whole set per
-    -- machine (`MachineRef → PSet T`), so `n.<v>` projects to the `PSet`
-    -- value directly (no `(ref, elem)` uncurry) — first-order both as a
-    -- membership target and as a whole-value predicate argument.
-    let machinePSetFields : NameMap NameSet := Id.run do
-      let mut out : NameMap NameSet := {}
-      for mname in ctx.machineOrder do
-        let some vars := machineVars.find? mname | continue
-        let s := vars.foldl (init := ({} : NameSet))
-          fun s v => if v.isPSet then s.insert v.name else s
-        out := out.insert mname s
-      out
-    let eventPayloadFields : NameMap NameSet := Id.run do
-      let mut out : NameMap NameSet := {}
-      for ename in ctx.eventOrder do
-        let some e := ctx.events.find? ename | continue
-        let some payloadName := e.payload | continue
-        let some pType := ctx.types.find? payloadName | continue
-        let some payStx := pType.defStx | continue
-        match payStx with
-        | `(type $_:ident = ($[$flds:pNamedField],*)) =>
-          let mut s : NameSet := {}
-          for f in flds do
-            let fid := f.raw[0]
-            if fid.isIdent then s := s.insert fid.getId
-          out := out.insert ename s
-        | _ => pure ()
-      out
-    -- Payload extractor lives after the union types so it can
-    -- pattern-match on `E.<ev>`.
-    emitEventPayloadAccessors ctx eventPayloadFields
-    -- `_payload_of_mk` is the defining equation of the extractor on a
-    -- freshly-constructed event label; used by send-handler manual
-    -- proofs. Must follow `emitEventPayloadAccessors`.
-    emitPayloadCharacterizations ctx eventPayloadFields
-    -- `is_<ev>_iff` lemmas need both `is_<ev>` (from `emitIsPredicates`)
-    -- and the union types (so `E.<ev>` resolves).
-    emitIsCharacterizations ctx
-    emitDerivedWP
-    -- Materialise `pure` functions, `paxiom`s, and `pinstance`s before
-    -- the per-machine handler bodies and the verification declarations:
-    -- handler bodies and invariants may reference a `function`, an
-    -- axiom (via a `have`), or a typeclass projection (via the
-    -- anonymous instance `pinstance` emits). The pinstance bundle in
-    -- particular must precede handler-body emission so typeclass
-    -- resolution finds it; otherwise `failed to synthesize <Class>
-    -- MachineRef` fires inside a handler.
-    for (_, d) in ctx.pures.toList do      materialisePure d
-    -- `paxiom` bodies may name the pmodule's `system <σ>` binder; the
-    -- materialiser binds it via `∀ <σ> : GlobalState Sig, …` and runs
-    -- the same field-projection + kind-guard pipeline `invariant`
-    -- bodies get.
-    let machineKindsForAx : NameSet :=
-      ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
-    let eventKindsForAx : NameSet :=
-      ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
-    for (_, d) in ctx.axioms.toList do
-      materialiseAxiom machineKindsForAx eventKindsForAx
-        machineFields machineContainerFields machineSetPropFields
-        machinePSetFields eventPayloadFields d
-    for (_, d) in ctx.instances.toList do  materialiseInstance d
-    -- State-tag aliases emit before machine handler bodies so handler
-    -- bodies' `goto <S>` resolves to `<S>_st`, and before invariant
-    -- materialisation so an invariant naming `<M>.<S>_st` resolves too.
-    for mname in ctx.machineOrder do
-      let some m := ctx.machines.find? mname | continue
-      let mid := mkIdent m.name
-      elabCommand (← `(namespace $mid))
-      elabCommand (← `(open $name:ident))
-      emitStateAliases mname m.states
-      elabCommand (← `(end $mid))
-    -- Invariants and lemma bundles emit before machine handler bodies
-    -- so loop-invariant clauses inside an entry handler can reference
-    -- a `Lemma X` / `Theorem X` bundle by name (the post-loop WP needs
-    -- `X s` preserved across iterations). Handlers don't reference
-    -- invariants, so the order is sound.
-    let machineKindsEarly : NameSet :=
-      ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
-    let eventKindsEarly : NameSet :=
-      ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
-    for (_, d) in ctx.invariants.toList do
-      materialiseInvariant machineKindsEarly eventKindsEarly machineFields
-        machineContainerFields machineSetPropFields machinePSetFields
-        eventPayloadFields d
-    emitLemmaBundles ctx
-    -- Per-machine var accessors + handler defs, replayed inside each
-    -- machine namespace.
-    for mname in ctx.machineOrder do
-      let some m := ctx.machines.find? mname | continue
-      let vars := (machineVars.find? mname).getD #[]
-      let mid := mkIdent m.name
-      elabCommand (← `(namespace $mid))
-      elabCommand (← `(open $name:ident))
-      emitVarAccessors mname vars
-      -- Synthetic `on ev goto tgt` handler bodies need the event's
-      -- payload type identifier so the def's `param : <ev>_payload`
-      -- binder matches what the obligation generator expects when
-      -- `eventHasPayload ctx ev` is true.
-      let eventPayloadTy : Name → Option Name := fun ev =>
-        match ctx.events.find? ev with
-        | some e => if e.payload.isSome
-                    then some (ev.appendAfter "_payload")
-                    else none
-        | none => none
-      if !m.body.isEmpty then
-        materialiseMachineBody mname m.body vars eventPayloadTy
-      elabCommand (← `(end $mid))
-    -- Machine and event kind sets drive kind-guard auto-injection on
-    -- `∀ x : <M>, …` / `∀ e : <ev>, …` quantifiers inside state-bound
-    -- invariant bodies. Spec machines are included so `is_<M>` is
-    -- emitted for them too.
-    let machineKinds : NameSet :=
-      ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
-    let eventKinds : NameSet :=
-      ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
-    -- Per-pinstance: synthesise one top-level def per Prop-typed class
-    -- field. The names accumulate into `synthAxioms` so they flow into
-    -- the persistent `ctx.axioms` map and thus into the obligation
-    -- generator's `have hax_<name>` injection (the same SMT bridge
-    -- hand-written `paxiom`s use). Done here rather than in
-    -- `materialiseInstance` because adding to `ctx.axioms` requires the
-    -- enclosing pmodule's context.
-    let mut synthAxioms : NameMap PAxiomDecl := {}
-    for (_, d) in ctx.instances.toList do
-      let decls ← synthInstanceFieldAxioms modName d
-      for ax in decls do
-        synthAxioms := synthAxioms.insert ax.name ax
-    -- Aggregate `init-holds` clauses into `<Mod>.InitConditions` (the
-    -- base-case precondition for each invariant).
-    emitInitConditions machineKinds eventKinds machineFields
-      machineContainerFields machineSetPropFields machinePSetFields
-      eventPayloadFields ctx
-    -- Aggregate every free-standing invariant into `<Mod>.UserInv`
-    -- (empty → `True`).
-    emitUserInv ctx
-    elabCommand (← `(end $name))
-    -- Mark types/events/invariants/etc. as materialised by clearing
-    -- their `defStx`, so re-elaboration in another file's import won't
-    -- fire them again. The machine body Syntax is retained so the
-    -- obligation generator can extract `var` declarations and re-walk
-    -- for entry / goto-only clauses; the `materialised` flag tells
-    -- `#pwf` the machine has been emitted.
-    let machines' := ctx.machines.foldl (init := ({} : NameMap PMachineDecl))
-      fun acc n d => acc.insert n { d with materialised := true }
-    let types'    := ctx.types.foldl (init := ({} : NameMap PTypeDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let events'   := ctx.events.foldl (init := ({} : NameMap PEventDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let invs'     := ctx.invariants.foldl (init := ({} : NameMap PInvariantDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let axs'      := ctx.axioms.foldl
-      (init := synthAxioms)  -- start with the pinstance-synthesised axioms
-      fun acc n d => acc.insert n { d with defStx := none }
-    let pures'    := ctx.pures.foldl (init := ({} : NameMap PPureDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let insts'    := ctx.instances.foldl (init := ({} : NameMap PInstanceDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let inits'    := ctx.inits.map fun d => { d with defStx := none }
-    setPModule
-      { ctx with
-        machines := machines', types := types', events := events'
-        invariants := invs', axioms := axs', pures := pures'
-        instances := insts', inits := inits' }
+      let some pn := e.payload | continue
+      let some pt := ctx.types.find? pn | continue
+      let some ps := pt.defStx | continue
+      match ps with
+      | `(type $_:ident = ($[$flds:pNamedField],*)) =>
+        out := out.insert ename (flds.foldl (init := {}) fun s f =>
+          if f.raw[0].isIdent then s.insert f.raw[0].getId else s)
+      | _ => pure ()
+    return out
+  -- In source order: instances first (functions and axioms may use them),
+  -- then functions, then axioms.
+  for n in ctx.instanceOrder do
+    if let some d := ctx.instances.find? n then materialiseInstance d
+  for n in ctx.pureOrder do
+    if let some d := ctx.pures.find? n then materialisePure d
+  for n in ctx.axiomOrder do
+    if let some d := ctx.axioms.find? n then
+      materialiseAxiom machineKinds eventKinds machineFields {} {} eventFields d
+  -- per-machine aliases, accessors, handlers
+  let payloadTy : Name → Option Name := fun ev =>
+    match ctx.events.find? ev with
+    | some e => if e.hasPayload then some (ev.appendAfter "_payload") else none
+    | none => none
+  -- Axiomatised instances (`pinstance`) make the program noncomputable.
+  let noncomp := !ctx.instances.isEmpty
+  if noncomp then elabCommand (← `(noncomputable section))
+  for mname in ctx.machineOrder do
+    let some m := ctx.machines.find? mname | continue
+    let mvars := (vars.find? mname).getD #[]
+    let states := machineStates m.body
+    elabCommand (← `(namespace $(mkIdent mname)))
+    emitMachineAliases mname states mvars
+    let typedStates : NameSet := states.foldl (init := {}) fun acc (sn, _, items) =>
+      if (typedEntry items).isSome then acc.insert sn else acc
+    for (sname, _, items) in states do
+      emitStateHandlers mname sname items mvars payloadTy plans sites typedStates
+    elabCommand (← `(end $(mkIdent mname)))
+  emitProgram ctx sites
+  if noncomp then elabCommand (← `(end))
+  -- specifications
+  for (_, d) in ctx.invariants.toList do
+    materialiseInvariant machineKinds eventKinds machineFields {} {} eventFields d
+  for lname in ctx.lemmaOrder do
+    let some l := ctx.lemmas.find? lname | continue
+    emitConj (mkIdent l.name) (l.invariants.map fun n => (⟨mkIdent n⟩, true))
+  emitInitConditions ctx machineKinds eventKinds machineFields eventFields
+  unless programHalts ctx do
+    elabCommand (← `(@[reducible] def $(mkIdent `NoHalt) (s : $idGW) : Prop :=
+        ∀ r, (s.machines r).halted = false))
+  let mut transient : Array (TSyntax `term) := #[]
+  for mname in ctx.machineOrder do
+    let some md := ctx.machines.find? mname | continue
+    for sname in transientStates md do
+      transient := transient.push (← `(((s.machines r).state = some $(mkIdent (`S ++ stateTagName mname sname)))))
+  if let some last := transient.back? then
+    let disj ← transient.pop.foldrM (init := last) fun d acc => `($d ∨ $acc)
+    elabCommand (← `(@[reducible] def $(mkIdent `Transient) (s : $idGW) : Prop :=
+        ∀ r, $disj → (s.machines r).pending ≠ none))
+  -- A machine suspended at a `receive` site is in the site's state.
+  unless sites.isEmpty do
+    let conjs ← sites.mapM fun st => do
+      let args := (List.range st.saved.size).toArray.map fun j => mkIdent (Name.mkSimple s!"a{j}")
+      let tag := mkIdent (`S ++ stateTagName st.mname st.sname)
+      `(∀ $args*, (s.machines r).waiting = some ($(mkIdent (`W ++ siteName st.idx)) $args*) →
+          (s.machines r).state = some $tag)
+    let body ← conjs.pop.foldrM (init := conjs.back!) fun c acc => `($c ∧ $acc)
+    elabCommand (← `(@[reducible] def $(mkIdent `Waiting) (s : $idGW) : Prop := ∀ r, $body))
+  -- `AllInv`: every proved target and the automatic invariants, which the
+  -- obligations of `#pverify` assume.
+  emitConj (mkIdent `AllInv) ((allTargets ctx (← getEnv) modName).map fun n => (⟨mkIdent n⟩, true))
+  -- `pinstance` class fields become named facts, used as solver hints.
+  let mut axioms := ctx.axioms
+  for n in ctx.instanceOrder do
+    let some d := ctx.instances.find? n | continue
+    for ax in ← synthInstanceFieldAxioms modName d do
+      axioms := axioms.insert ax.name ax
+  elabCommand (← `(end $name))
+  setPModule
+    { ctx with
+      axioms
+      machines := ctx.machines.foldl (init := {}) fun acc n d => acc.insert n { d with materialised := true } }
+
+@[command_elab pGenModule]
+def elabPGenModule : CommandElab := fun stx => do
+  let `(#gen_module $name:ident) := stx | throwUnsupportedSyntax
+  let modName := name.getId
+  let some ctx ← getPModule? modName
+    | throwError "no `pmodule {modName}` is registered (did you import the file that declares it?)"
+  unless ctx.conflicts.isEmpty do
+    throwError "pmodule `{modName}`: its fragments disagree:\n{"\n".intercalate ctx.conflicts.toList}"
+  checkStatements ctx
+  let (plans, sites) ← planReceives ctx
+  -- On an error, close the namespaces opened below.
+  let scopes := (← get).scopes
+  try genModuleBody ctx modName name plans sites
+  catch e =>
+    modify fun st => { st with scopes }
+    throw e
 
 end PLean

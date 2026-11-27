@@ -281,6 +281,87 @@ private def manualAxiomsProblem? (ctx : LocalPModuleCtx) (modName full : Name) :
   return some s!"`{full}` uses {", ".intercalate (other.toList.map (s!"`{·}`"))}, \
     which the module does not declare"
 
+/-- The roots of the modules whose declarations the kernel re-check of a manual
+proof takes as checked: Lean's library and PLean's (with lean-crush). -/
+private def trustedRoots : Array Name := #[`Init, `Std, `Lean, `PLean, `Crush]
+
+/-- `e` with its constants, and the structures of its projections, renamed by `rn`. -/
+private partial def renameConsts (rn : Name → Name) (e : Expr) : Expr :=
+  e.replace fun
+    | .const n us => some (.const (rn n) us)
+    | .proj s i b => some (.proj (rn s) i (renameConsts rn b))
+    | _ => none
+
+/-- The declaration `c`, its name and the constants it mentions renamed by `rn`. -/
+private def renameConstInfo (rn : Name → Name) (c : ConstantInfo) : ConstantInfo :=
+  let ty := renameConsts rn c.type
+  match c with
+  | .defnInfo v =>
+    .defnInfo { v with name := rn v.name, «type» := ty, value := renameConsts rn v.value,
+                       all := v.all.map rn }
+  | .thmInfo v =>
+    .thmInfo { v with name := rn v.name, «type» := ty, value := renameConsts rn v.value,
+                      all := v.all.map rn }
+  | .opaqueInfo v =>
+    .opaqueInfo { v with name := rn v.name, «type» := ty, value := renameConsts rn v.value,
+                         all := v.all.map rn }
+  | .axiomInfo v => .axiomInfo { v with name := rn v.name, «type» := ty }
+  | .inductInfo v =>
+    .inductInfo { v with name := rn v.name, «type» := ty, all := v.all.map rn,
+                         ctors := v.ctors.map rn }
+  | .ctorInfo v => .ctorInfo { v with name := rn v.name, «type» := ty, induct := rn v.induct }
+  | .recInfo v =>
+    .recInfo { v with name := rn v.name, «type» := ty, all := v.all.map rn,
+                      rules := v.rules.map fun r =>
+                        { r with ctor := rn r.ctor, rhs := renameConsts rn r.rhs } }
+  | .quotInfo v => .quotInfo { v with name := rn v.name, «type» := ty }
+
+/-- Why the kernel does not accept the `@[pverifyProof]` theorem `full` as a
+proof of the obligation's statement `stmt`, if it does not. The elaborator's
+checks are not enough: a theorem added without the kernel (under
+`debug.skipKernelTC`, or by a metaprogram) can have any proof, and a proof
+can rest on a lemma added that way. So the proof is checked again, with
+`stmt` as its type, together with every declaration it depends on outside
+Lean's and PLean's libraries (lemmas, the module's definitions, the user's
+other files): fresh copies of them, under new names, are replayed through
+the kernel (`Lean.Kernel.Environment.replay`), and then discarded. -/
+private def manualKernelProblem? (full : Name) (stmt : Expr) : CommandElabM (Option String) := do
+  let env ← getEnv
+  let some (.thmInfo ti) := env.find? full | return some s!"`{full}` is not a theorem"
+  let mods := env.allImportedModuleNames
+  let trusted (n : Name) : Bool := match env.getModuleIdxFor? n with
+    | some i => mods[i]?.any fun m => trustedRoots.contains m.getRoot
+    | none => false
+  -- what the proof and the statement use, transitively, outside the libraries
+  -- (an inductive type with its whole block, constructors and recursors)
+  let mut todo : Array Name := stmt.getUsedConstants ++ ti.value.getUsedConstants
+  let mut seen : NameSet := NameSet.empty.insert full
+  let mut deps : Array ConstantInfo := #[]
+  while !todo.isEmpty do
+    let n := todo.back!
+    todo := todo.pop
+    if seen.contains n || trusted n then continue
+    seen := seen.insert n
+    let some ci := env.find? n | return some s!"`{n}`, which `{full}` uses, is missing"
+    deps := deps.push ci
+    todo := todo ++ ci.getUsedConstantsAsSet.toArray
+    match ci with
+    | .inductInfo v => todo := todo ++ v.all.toArray ++ v.ctors.toArray
+    | .ctorInfo v => todo := todo.push v.induct
+    | .recInfo v => todo := todo ++ v.all.toArray
+    | _ => pure ()
+  let pfx := `_pvcheck
+  let rn (n : Name) : Name := if seen.contains n then pfx ++ n else n
+  let mut consts : Std.HashMap Name ConstantInfo := {}
+  for ci in deps do
+    consts := consts.insert (rn ci.name) (renameConstInfo rn ci)
+  consts := consts.insert (rn full) (renameConstInfo rn (.thmInfo { ti with «type» := stmt }))
+  match ← (env.toKernelEnv.replay consts).toBaseIO with
+  | .ok _ => return none
+  | .error e =>
+    let msg := (toString e).replace (pfx.toString ++ ".") ""
+    return some s!"the kernel does not accept `{full}` as a proof of the obligation: {msg}"
+
 /-- A `@[pverifyProof]` skeleton for the obligation `full`, from its statement. -/
 private def skeletonOf (obName full : Name) : CommandElabM String := do
   let some ci := (← getEnv).find? full | return ""
@@ -497,7 +578,11 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     if pverifyProofAttr.hasTag (← getEnv) full then
       let err? ← match ← manualMismatch? full cmd with
         | some e => pure (some e)
-        | none => manualAxiomsProblem? ctx modName full
+        | none => match ← manualAxiomsProblem? ctx modName full with
+          | some e => pure (some e)
+          | none => match ← statementOf cmd with
+            | some stmt => manualKernelProblem? full stmt
+            | none => pure (some "internal: unexpected obligation shape")
       let trusted := err?.isNone && (← collectAxioms full).contains ``Crush.crushSorry
       return { name := obName, ok := err?.isNone, ms := (← IO.monoMsNow) - t0, manual := true,
                trusted, msg := (err?.map excerpt).getD "", fullMsg := err?.getD "" }
@@ -808,6 +893,18 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
           addDecl decl
       catch e => logError m!"#pverify: cannot add `{ci.name}`: {e.toMessageData}"
   results := (← slots.get).filterMap id
+  -- A manual proof that was rejected is not used: like an obligation that
+  -- failed, the assembly takes it as `sorry`, through a stand-in theorem
+  -- `_unproved.<obligation>` with the obligation's statement.
+  let unproved : NameSet := results.foldl (init := {}) fun s r =>
+    if r.manual && !r.ok then s.insert r.name else s
+  if only.isEmpty then
+    for (obName, cmd, _) in queued do
+      unless unproved.contains obName do continue
+      let `(command| theorem $_:ident $bs:bracketedBinder* : $ty := $_) := cmd | continue
+      elabCommand (← `(command| set_option warn.sorry false in
+        theorem $(mkIdent (`_unproved ++ obName)) $bs* : $ty := sorry))
+  let obId (n : Name) : Ident := mkIdent (if unproved.contains n then `_unproved ++ n else n)
   if only.isEmpty then
     Progress.setHead (status queued.size results) s!"[Assembling] {modName}.safe"
   -- assembly (not counted as obligations; skipped under `pverify.only`)
@@ -862,11 +959,11 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
         PLean.RunOK $(mkIdent `AllInv) (($g).consume $i) $dst (($g).machines $dst) act)
     let hasPl := (ctx.events.find? ev).any (·.hasPayload)
     let body ← combineRun fun t => do
-      let ob := mkIdent (mname ++ sname ++ Name.mkSimple (ev.toString ++ "_correct_" ++ t.toString))
+      let ob := obId (mname ++ sname ++ Name.mkSimple (ev.toString ++ "_correct_" ++ t.toString))
       let pr ← preOf t (transientIn mname sname)
       if hasPl then `($ob $g $i $src $dst $pl hF herr $pr hnet hlog hlt hs hpend hwait hhalt)
       else `($ob $g $i $src $dst hF herr $pr hnet hlog hlt hs hpend hwait hhalt)
-    let so := mkIdent (mname ++ sname ++ Name.mkSimple (ev.toString ++ "_safe"))
+    let so := obId (mname ++ sname ++ Name.mkSimple (ev.toString ++ "_safe"))
     let safe ← if hasPl then `($so $g $i $src $dst $pl hF herr hall hnet hlog hlt hs hpend hwait hhalt)
       else `($so $g $i $src $dst hF herr hall hnet hlog hlt hs hpend hwait hhalt)
     asm (← `(command| theorem $(mkIdent cn) ($g:ident : $gwTy) ($i:ident : Nat)
@@ -883,7 +980,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     let hyps ← deliverHyps g i src dst allPre (← evVal ev) tag
     let concl ← `(∃ act, $(mkIdent `prog).handler $tag $(← evVal ev) = some act ∧
         PLean.RunOK $(mkIdent `AllInv) (($g).consume $i) $dst (($g).machines $dst) act)
-    let nv := mkIdent (mname ++ sname ++ Name.mkSimple (ev.toString ++ "_never"))
+    let nv := obId (mname ++ sname ++ Name.mkSimple (ev.toString ++ "_never"))
     let hasPl := (ctx.events.find? ev).any (·.hasPayload)
     let app ← if hasPl then `($nv $g $i $src $dst $pl hF herr hpre hnet hlog hlt hs hpend hwait hhalt)
       else `($nv $g $i $src $dst hF herr hpre hnet hlog hlt hs hpend hwait hhalt)
@@ -897,7 +994,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     let cn := mname ++ sname ++ `entry_case
     entryCases := entryCases.push (stateTagName mname sname, cn)
     let body ← combineRun fun t => do
-      let ob := mkIdent (mname ++ sname ++ Name.mkSimple ("entry_correct_" ++ t.toString))
+      let ob := obId (mname ++ sname ++ Name.mkSimple ("entry_correct_" ++ t.toString))
       `($ob $g $m $arg hF herr $(← preOf t) hs hpend hhalt)
     asm (← `(command| theorem $(mkIdent cn) ($g:ident : $gwTy) ($m:ident : PLean.MachineRef)
         ($arg:ident : $(mkIdent `G)) : PLean.Framework $g → ($g).error = none → $allPre →
@@ -908,7 +1005,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       intro hF herr hpre hs hpend hhalt
       have hall := hpre
       $destruct:tactic
-      exact PLean.RunOK.of_safe_post ($(mkIdent (mname ++ sname ++ `entry_safe)) $g $m $arg hF herr hall hs hpend hhalt) $body))
+      exact PLean.RunOK.of_safe_post ($(obId (mname ++ sname ++ `entry_safe)) $g $m $arg hF herr hall hs hpend hhalt) $body))
   let mut recvTacs : Array (TSyntax `tactic) := #[]
   for s in sites do
     for c in s.cases do
@@ -918,9 +1015,9 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       let args := siteArgs s
       let plArg ← if hasPl then pure #[pl] else pure #[]
       let body ← combineRun fun t => do
-        `($(mkIdent (base.appendAfter ("_correct_" ++ t.toString))) $g $i $src $dst $args* $plArg*
+        `($(obId (base.appendAfter ("_correct_" ++ t.toString))) $g $i $src $dst $args* $plArg*
             hF herr $(← preOf t #[`Waiting]) hnet hlog hlt hpend hw hhalt)
-      let safe ← `($(mkIdent (base.appendAfter "_safe")) $g $i $src $dst $args* $plArg*
+      let safe ← `($(obId (base.appendAfter "_safe")) $g $i $src $dst $args* $plArg*
             hF herr hall hnet hlog hlt hpend hw hhalt)
       asm (← `(command| theorem $(mkIdent cn) ($g:ident : $gwTy) ($i:ident : Nat)
           ($src:ident $dst:ident : PLean.MachineRef) $((← siteBinders s) ++ (← plBinder c.ev))* :
@@ -957,7 +1054,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
                  pv_split_ands; simp_all))
     else
       let parts ← allTargets.mapM fun t => do
-        `($(mkIdent (Name.mkSimple ("drop_correct_" ++ t.toString))) g i p hF herr $(← preOf t) hnet hh)
+        `($(obId (Name.mkSimple ("drop_correct_" ++ t.toString))) g i p hF herr $(← preOf t) hnet hh)
       if parts.size == 1 then
         `(tactic| (intro g i p hF herr hpre hnet hh; exact $(parts[0]!)))
       else
@@ -978,7 +1075,7 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
         cases s
         $[$entryTacs:tactic]*
       · $dropTac:tactic)
-  let baseParts := allTargets.map fun t => mkIdent (Name.mkSimple ("base_" ++ t.toString))
+  let baseParts := allTargets.map fun t => obId (Name.mkSimple ("base_" ++ t.toString))
   let baseApps ← baseParts.mapM fun b => `($b g hI)
   let baseConj ← if baseApps.size = 1 then pure baseApps[0]! else `(⟨$[$baseApps],*⟩)
   let baseThm ← `(command|

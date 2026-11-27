@@ -328,7 +328,11 @@ explicit binders) and reports it as `✓ (manual)`. A manual proof fails
 when its statement differs, when it uses `sorry`, or when it uses an axiom
 the module does not declare (a `paxiom` or `pinstance` is fine; the
 solver's trust makes it `✓ (manual, trusted)`). Only a theorem can be
-tagged.
+tagged. The kernel checks the proof again, against the obligation's
+statement, together with every lemma and definition it depends on outside
+Lean's and PLean's libraries, so a theorem or lemma that skipped the
+kernel (`debug.skipKernelTC`, a metaprogram) is caught. A manual proof
+that fails is not used: `M.safe` takes its obligation as `sorry`.
 
 The obligation covers every invariant of its target, so a manual proof
 usually lets the solver do most of it. `pverify_auto` runs the solver

@@ -265,9 +265,13 @@ load-bearing invariants you need to respect when editing.
   on and a `@[pverifyProof]` skeleton of the obligation's statement. A
   `@[pverifyProof]` theorem named like an obligation (inside `namespace
   M`, before `#pverify M`) replaces its automatic proof once its
-  statement and the axioms it uses are checked; `pverify_auto` runs the
-  solver inside one and leaves open what it cannot prove
-  (`Tests/Verify/ManualProof.lean`).
+  statement and the axioms it uses are checked, and the kernel accepts it
+  as a proof of the obligation (re-checking it with every declaration it
+  depends on outside Lean's and PLean's libraries, as renamed copies:
+  `manualKernelProblem?`). A rejected manual proof is not used: the
+  assembly takes the obligation as `sorry` (`_unproved.<obligation>`).
+  `pverify_auto` runs the solver inside one and leaves open what it cannot
+  prove (`Tests/Verify/ManualProof.lean`).
 - **Tag new state-update helpers `@[pverifySimp]`.** The normalisation
   before crush uses this set.
 - **Macro hygiene through `mkIdent`.** Identifiers that resolve against

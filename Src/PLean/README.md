@@ -98,10 +98,12 @@ affects.
 
 [`Examples/`](Examples/) has ports of P's tutorial protocols
 (DistributedLock, LockServer, RingLeader, ShardedKV, Consensus,
-TwoPhaseCommit, Paxos) and of a clock-bound service (ClockBound). Each one
-verifies with no manual proof, except Paxos, where the steps that complete
-a majority are proved by hand; [`docs/STATUS.md`](docs/STATUS.md) lists
-their numbers.
+TwoPhaseCommit, Paxos) and of a clock-bound service (ClockBound), and
+models of Flexible Paxos (FlexiblePaxos) and of MultiPaxos (MultiPaxos).
+Each one verifies with no manual proof, except Paxos, FlexiblePaxos and
+MultiPaxos, where the steps that complete a quorum (and, in MultiPaxos,
+the merge of recovered votes) are proved by hand;
+[`docs/STATUS.md`](docs/STATUS.md) lists their numbers.
 
 ## Documents
 

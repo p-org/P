@@ -38,6 +38,7 @@ again with nothing changed (every proof replayed through the kernel).
 | [`Consensus`](../Examples/Consensus.lean) | 34 | 30 | 0 | 70 s | 5 s |
 | [`TwoPhaseCommit`](../Examples/TwoPhaseCommit.lean) | 203 | 184 | 0 | 23 s | 6 s |
 | [`ClockBound`](../Examples/ClockBound.lean) | 118 | 115 | 0 | 110 s | 8 s |
+| [`Paxos`](../Examples/Paxos.lean) | 337 | 322 | 0 | 385 s | 27 s |
 
 After an edit, only what it affects is proved again. Adding an invariant
 to ClockBound's `topology` lemma sends 8 goals to the solver and takes
@@ -45,9 +46,14 @@ to ClockBound's `topology` lemma sends 8 goals to the solver and takes
 assume `topology`, whose other goals are reused. Removing it again sends
 none (49 s).
 
-No example needs a manual proof. An obligation that is not proved is
-reported with a counterexample when z3 finds one (see
-[`ProofSkill.md`](ProofSkill.md)).
+Paxos is the only example with manual proofs, of four obligations. One is
+that two majorities share an Acceptor (`sizeof` is opaque to the solvers),
+a base case proved from `PSet.quorum_intersect`. The other three are the
+steps in which a Proposer completes a majority: each is a lemma about one
+world, proved by hand, that the obligation hands to `pverify_auto`.
+
+An obligation that is not proved is reported with a counterexample when
+z3 finds one (see [`ProofSkill.md`](ProofSkill.md)).
 
 ## Document index
 

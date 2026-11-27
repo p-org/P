@@ -106,9 +106,14 @@ lean_lib PLean where
   globs := #[Glob.one `PLean]
   extraDepTargets := #[``downloadDependencies]
 
+-- `lake build -KpverifyTimeout=<seconds> Examples` gives each solver call more
+-- time (solver timeouts are wall-clock: CI runs on slower machines).
 lean_lib Examples where
   globs := #[Glob.submodules `Examples]
   extraDepTargets := #[``downloadDependencies]
+  leanOptions := match (get_config? pverifyTimeout).bind String.toNat? with
+    | some t => #[⟨`weak.pverify.timeout, .ofNat t⟩]
+    | none => #[]
 
 -- The regression tests prove each file's obligations one at a time (lake
 -- builds several files at once, and solver timeouts are wall-clock), and

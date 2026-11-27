@@ -12,6 +12,9 @@ set_option experimental.vcgen true
 set_option crush.backend "cvc5"
 set_option crush.trust "reconstruct"
 set_option maxHeartbeats 4000000
+-- wall-clock seconds per solver call; the default (10) is too tight on a
+-- slower machine (CI)
+set_option crush.timeout 60
 
 namespace HandDL
 

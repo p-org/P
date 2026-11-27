@@ -47,7 +47,7 @@ pmodule Consensus
       entry {
         foreach (m in nodes)
           invariant only_requests :
-            new_sends e => e is eRequestVote ∧ (eRequestVote_payload_of e).src = hs.ref ;
+            new_sends e => e is eRequestVote ∧ (eRequestVote_payload_of e).src = this.ref ;
         {
           send m, eRequestVote, (src = this.ref)
         }

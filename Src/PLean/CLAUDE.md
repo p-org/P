@@ -265,9 +265,26 @@ load-bearing invariants you need to respect when editing.
   on and a `@[pverifyProof]` skeleton of the obligation's statement. A
   `@[pverifyProof]` theorem named like an obligation (inside `namespace
   M`, before `#pverify M`) replaces its automatic proof once its
-  statement and the axioms it uses are checked; `pverify_auto` runs the
-  solver inside one and leaves open what it cannot prove
-  (`Tests/Verify/ManualProof.lean`).
+  statement and the axioms it uses are checked, and the kernel accepts it
+  as a proof of the obligation. `pverify_auto` runs the solver inside one
+  and leaves open what it cannot prove (`Tests/Verify/ManualProof.lean`).
+- **What the theorems rest on is kernel-checked.** A declaration made
+  without the kernel (`debug.skipKernelTC`, a metaprogram) can state
+  anything. `checkDeps` replays through the kernel, as copies renamed under
+  a fresh prefix, every declaration made before the run, outside PLean's
+  library and its imports, that a manual proof (typed with its obligation's
+  statement), an automatic proof or the assembly uses; one that uses a
+  declaration the run made is rejected. `#pverify` keeps the kernel on for
+  what it declares itself, so that is not replayed. An obligation that
+  rests on a rejected declaration fails, and the assembly takes it as
+  `sorry` (`_unproved.<obligation>`, not from the cache); when the assembly
+  itself rests on one, its step and base case become `sorry`
+  (`Tests/Verify/KernelCheck.lean`). The limit: code that runs during
+  `#pverify` (a user's tactic, simproc or command) is trusted, as it can
+  declare without the kernel or replace `#pverify`. CI
+  (`.github/workflows/plean.yml`) runs `leanchecker` on the built library
+  and examples, which covers that: `lake env leanchecker <Module>`, one
+  module per call (it crashes when one call covers several).
 - **Tag new state-update helpers `@[pverifySimp]`.** The normalisation
   before crush uses this set.
 - **Macro hygiene through `mkIdent`.** Identifiers that resolve against
@@ -311,7 +328,9 @@ load-bearing invariants you need to respect when editing.
   obligations run one by one.
 - `pverify.timeout` (seconds), `pverify.trust` (`reconstructOrTrust` by
   default: obligations whose proof could not be replayed are reported
-  `✓ (trusted)`), `pverify.heartbeats`.
+  `✓ (trusted)`), `pverify.heartbeats`. On a slower machine,
+  `lake build -R -KpverifyTimeout=<seconds> Examples` sets the timeout for
+  the examples (CI does).
 - Each obligation line says how its goals were closed (`[norm]`: nothing
   left after `vcgen` and normalisation; `smt n` / `pre n` / `hyp n`: by an
   SMT solver, by crush before SMT translation, as a hypothesis). In the

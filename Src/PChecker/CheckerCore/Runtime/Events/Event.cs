@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.ComponentModel;
 using System.Runtime.Serialization;
 using PChecker.Runtime.Values;
 
@@ -13,6 +14,9 @@ namespace PChecker.Runtime.Events
     [DataContract]
     public class Event: IPValue
     {
+        /// <summary>
+        /// Initializes an event without a payload.
+        /// </summary>
         public Event()
         {
         }
@@ -21,8 +25,46 @@ namespace PChecker.Runtime.Events
         {
             Payload = payload;
         }
+
+        /// <summary>
+        /// Initializes an event whose payload is the default value of its payload type, which is
+        /// built when the payload is first read: generated code creates events like this, and
+        /// usually assigns their payload right after.
+        /// </summary>
+        protected Event(LazyDefaultPayload _)
+        {
+            isDefaultPayloadPending = true;
+        }
         
-        public IPValue Payload { get; set; }
+        private IPValue payload;
+        private bool isDefaultPayloadPending;
+
+        /// <summary>
+        /// The payload.
+        /// </summary>
+        public IPValue Payload
+        {
+            get
+            {
+                if (isDefaultPayloadPending)
+                {
+                    payload = CreateDefaultPayload();
+                    isDefaultPayloadPending = false;
+                }
+
+                return payload;
+            }
+            set
+            {
+                payload = value;
+                isDefaultPayloadPending = false;
+            }
+        }
+
+        /// <summary>
+        /// Returns the default value of the payload type.
+        /// </summary>
+        protected virtual IPValue CreateDefaultPayload() => null;
         
         public bool Equals(IPValue other)
         {
@@ -55,8 +97,21 @@ namespace PChecker.Runtime.Events
         }
     }
     
+    /// <summary>
+    /// Selects the event constructor that gives the event the default payload of its type.
+    /// For generated code.
+    /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public readonly struct LazyDefaultPayload
+    {
+    }
+
     public class PHalt : Event
     {
+        public PHalt()
+        {
+        }
+
         public PHalt(IPValue payload) : base(payload)
         {
         }

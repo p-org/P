@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -132,6 +132,91 @@ namespace PChecker.Runtime.StateMachines
         private Transition PendingTransition;
 
         /// <summary>
+        /// Sends, creates and announces requested by foreign code, in program order. Foreign code
+        /// cannot be suspended, so they wait here until generated code takes their scheduling points
+        /// right after the foreign call returns (see <see cref="EndForeignCallAsync"/>). Allocated on
+        /// first use.
+        /// </summary>
+        private List<ForeignOperation> ForeignOperations;
+
+        /// <summary>
+        /// Number of foreign calls of this state machine that are running. P functions that foreign
+        /// code calls back run inside them, so their sends and creates are deferred as well.
+        /// </summary>
+        private int ForeignCallDepth;
+
+        /// <summary>
+        /// The kind of a <see cref="ForeignOperation"/>.
+        /// </summary>
+        private enum ForeignOperationKind : byte
+        {
+            /// <summary>
+            /// A send, announced to monitors like a P <c>send</c>.
+            /// </summary>
+            Send,
+
+            /// <summary>
+            /// A send that is not announced (<see cref="ControlledRuntime.SendEvent"/>).
+            /// </summary>
+            SendUnannounced,
+
+            /// <summary>
+            /// A create.
+            /// </summary>
+            Create,
+
+            /// <summary>
+            /// An announce. It is not a scheduling point, but it is deferred too, so that monitors
+            /// observe it in order with the deferred sends.
+            /// </summary>
+            Announce
+        }
+
+        /// <summary>
+        /// A deferred send, create or announce requested by foreign code.
+        /// </summary>
+        private readonly struct ForeignOperation
+        {
+            internal readonly ForeignOperationKind Kind;
+
+            /// <summary>
+            /// The target of the send, or the id of the state machine to create.
+            /// </summary>
+            internal readonly StateMachineId Id;
+
+            /// <summary>
+            /// The event to send or announce, or the initial event of the state machine to create.
+            /// </summary>
+            internal readonly Event Event;
+
+            /// <summary>
+            /// The type of the state machine to create.
+            /// </summary>
+            internal readonly Type Type;
+
+            /// <summary>
+            /// The name of the state machine to create.
+            /// </summary>
+            internal readonly string Name;
+
+            /// <summary>
+            /// The payload of the announced event, for the trace.
+            /// </summary>
+            internal readonly object Payload;
+
+            internal ForeignOperation(ForeignOperationKind kind, StateMachineId id, Event ev, Type type, string name,
+                object payload)
+            {
+                Kind = kind;
+                Id = id;
+                Event = ev;
+                Type = type;
+                Name = name;
+                Payload = payload;
+            }
+        }
+
+        /// <summary>
         /// Gets the <see cref="Type"/> of the current state.
         /// </summary>
         protected internal State CurrentState { get; private set; }
@@ -160,24 +245,57 @@ namespace PChecker.Runtime.StateMachines
         }
         
         /// <summary>
-        /// 
+        /// Creates a state machine implementing the interface <typeparamref name="T"/>, for foreign
+        /// code. Foreign code runs synchronously and cannot be suspended, so the id of the machine
+        /// is returned right away, but the machine is created (after the Create scheduling point of
+        /// a P <c>new</c>) only once the foreign call returns to P code. Until then the caller can
+        /// only pass the returned reference around or send to it.
         /// </summary>
-        /// <param name="creator"></param>
-        /// <param name="payload"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <remarks>
+        /// The payload is copied, so that the new machine gets it as it is now, even if the foreign
+        /// code changes it before returning.
+        /// </remarks>
         public PMachineValue CreateInterface<T>(StateMachine creator, IPValue payload = null)
+            where T : PMachineValue
+        {
+            Runtime.CheckForeignCaller(this, "CreateInterface");
+            var createdInterface = GetCreatedInterface<T>(creator);
+            var machineId = DeferCreateStateMachine(null, PModule.interfaceDefinitionMap[createdInterface],
+                createdInterface.Substring(2), GetConstructorEvent(PValues.Clone(payload)));
+            return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
+        }
+
+        /// <summary>
+        /// Creates a state machine implementing the interface <typeparamref name="T"/>. This is a
+        /// scheduling point, so the caller must await it. Generated code uses it for a P <c>new</c>;
+        /// foreign code must use <see cref="CreateInterface{T}"/>.
+        /// </summary>
+        public ValueTask<PMachineValue> CreateInterfaceAsync<T>(StateMachine creator, IPValue payload = null)
+            where T : PMachineValue =>
+            // A P function that foreign code calls back cannot be suspended either.
+            ForeignCallDepth > 0 ?
+                new ValueTask<PMachineValue>(CreateInterface<T>(creator, payload)) :
+                CreateInterfaceAtSchedulingPointAsync<T>(creator, payload);
+
+        private async ValueTask<PMachineValue> CreateInterfaceAtSchedulingPointAsync<T>(StateMachine creator,
+            IPValue payload)
+            where T : PMachineValue
+        {
+            var createdInterface = GetCreatedInterface<T>(creator);
+            var machineId = await CreateStateMachineAsync(PModule.interfaceDefinitionMap[createdInterface],
+                createdInterface.Substring(2), GetConstructorEvent(payload));
+            return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
+        }
+
+        private string GetCreatedInterface<T>(StateMachine creator)
             where T : PMachineValue
         {
             var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
-            var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = CreateStateMachine(createMachine, createdInterface.Substring(2),
-                GetConstructorEvent(payload));
-            return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
+            return createdInterface;
         }
-        
+
 
         /// <summary>
         /// 
@@ -219,8 +337,19 @@ namespace PChecker.Runtime.StateMachines
             }
         }
 
+        /// <summary>
+        /// False while exploring schedules that are not traced. Generated code skips
+        /// formatting print messages then.
+        /// </summary>
+        public bool IsTraceEnabled => Runtime.LogWriter.IsTraceEnabled;
+
         public void LogLine(string message)
         {
+            if (!IsTraceEnabled)
+            {
+                return;
+            }
+
             Logger.WriteLine($"<PrintLog> {message}");
 
             // Log message to JSON output
@@ -231,19 +360,80 @@ namespace PChecker.Runtime.StateMachines
 
         public void Log(string message)
         {
+            if (!IsTraceEnabled)
+            {
+                return;
+            }
+
             Logger.Write($"{message}");
         }
 
         public void Announce(Event ev, object payload = null)
         {
-            Assert(ev != null, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
+            if (ev == null)
+            {
+                Assert(false, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
+            }
+
             if (ev is PHalt)
             {
                 ev = HaltEvent.Instance;
             }
 
-            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
+            var factory = AnnouncedEventFactories.GetOrAdd(ev.GetType(), CreateAnnouncedEventFactory);
+            if (ForeignCallDepth > 0)
+            {
+                // Announced by foreign code, or by a P function it calls back: monitors must observe
+                // it after the sends requested before it, which are deferred. They observe the payload
+                // as it is now, even if the foreign code changes it before returning.
+                Runtime.CheckForeignCaller(this, "Announce");
+                if (payload is IPValue value)
+                {
+                    payload = PValues.Clone(value);
+                }
+
+                AddForeignOperation(new ForeignOperation(ForeignOperationKind.Announce, null, factory(payload), null,
+                    null, payload));
+                return;
+            }
+
+            var @event = factory(payload);
+
+            if (IsTraceEnabled)
+            {
+                LogAnnounce(ev, payload);
+            }
+
+            AnnounceInternal(@event);
+        }
+
+        private static readonly ConcurrentDictionary<Type, Func<object, Event>> AnnouncedEventFactories = new();
+
+        /// <summary>
+        /// Compiles a call to the payload constructor of the event type, which announce would
+        /// otherwise look up and invoke through reflection on every call.
+        /// </summary>
+        private static Func<object, Event> CreateAnnouncedEventFactory(Type eventType)
+        {
+            var constructor = eventType.GetConstructors().First(x => x.GetParameters().Length > 0);
+            var parameterType = constructor.GetParameters()[0].ParameterType;
+            var payload = Expression.Parameter(typeof(object), "payload");
+            Expression argument = Expression.Convert(payload, parameterType);
+            if (parameterType.IsValueType)
+            {
+                // Reflection passes default for a null value-type argument; unboxing null would throw.
+                argument = Expression.Condition(
+                    Expression.Equal(payload, Expression.Constant(null)),
+                    Expression.Default(parameterType),
+                    argument);
+            }
+
+            var body = Expression.Convert(Expression.New(constructor, argument), typeof(Event));
+            return Expression.Lambda<Func<object, Event>>(body, payload).Compile();
+        }
+
+        private void LogAnnounce(Event ev, object payload)
+        {
             var pText = payload == null ? "" : $" with payload {((IPValue)payload).ToEscapedString()}";
 
             Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
@@ -258,19 +448,21 @@ namespace PChecker.Runtime.StateMachines
             }
             JsonLogger.AddLog($"{Id} announced event {ev.GetType().Name}{pText}.");
             JsonLogger.AddToLogs(updateVcMap: true);
-
-            AnnounceInternal(@event);
         }
 
         private void AnnounceInternal(Event ev)
         {
-            Assert(ev != null, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
-            if (!PModule.monitorMap.ContainsKey(interfaceName))
+            if (ev == null)
+            {
+                Assert(false, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
+            }
+
+            if (!PModule.monitorMap.TryGetValue(interfaceName, out var monitors))
             {
                 return;
             }
 
-            foreach (var monitor in PModule.monitorMap[interfaceName])
+            foreach (var monitor in monitors)
             {
                 if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))
                 {
@@ -520,29 +712,233 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="name">Optional name used for logging.</param>
         /// <param name="initialEvent">Optional initialization event.</param>
         /// <returns>The unique state machine id.</returns>
-        protected StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null) =>
-            Runtime.CreateStateMachine(null, type, name, initialEvent, this);
-        
-        
+        /// <remarks>
+        /// This is not a scheduling point, so it can be called from code that cannot await, like
+        /// <see cref="CreateInterface{T}"/>: the id is returned right away, and the machine is
+        /// created at its scheduling point once control returns to P code. Use
+        /// <see cref="CreateStateMachineAsync"/> from code that can await. The payload of
+        /// <paramref name="initialEvent"/> is copied, so that the new machine gets it as it is now.
+        /// </remarks>
+        protected StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null)
+        {
+            Runtime.CheckForeignCaller(this, "CreateStateMachine");
+            if (initialEvent != null)
+            {
+                initialEvent.Payload = PValues.Clone(initialEvent.Payload);
+            }
+
+            return DeferCreateStateMachine(null, type, name, initialEvent);
+        }
+
         /// <summary>
-        /// Sends an asynchronous <see cref="Event"/> to a target.
+        /// Creates a new state machine of the specified type and name, and with the specified
+        /// optional <see cref="Event"/>. This is a scheduling point, so the caller must await it.
+        /// </summary>
+        /// <param name="type">Type of the state machine.</param>
+        /// <param name="name">Optional name used for logging.</param>
+        /// <param name="initialEvent">Optional initialization event.</param>
+        /// <returns>The unique state machine id.</returns>
+        protected ValueTask<StateMachineId> CreateStateMachineAsync(Type type, string name, Event initialEvent = null) =>
+            Runtime.CreateStateMachineAsync(null, type, name, initialEvent, this);
+
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a target, for foreign code. It must be called
+        /// on the state machine that is currently executing, i.e. the one passed to the foreign
+        /// function. Foreign code runs synchronously and cannot be suspended, so the send is checked
+        /// right away, but it is announced to monitors and enqueued (after the Send scheduling point
+        /// of a P <c>send</c>) only once the foreign call returns to P code.
         /// </summary>
         /// <param name="target">The target.</param>
         /// <param name="ev">The event to send.</param>
+        /// <remarks>
+        /// The payload is copied, so that monitors and the target observe it as it is now, even if
+        /// the foreign code changes it before returning.
+        /// </remarks>
         public void SendEvent(PMachineValue target, Event ev)
         {
-            Assert(ev != null, $"Machine cannot send a null event. Machine {Id} trying to send null event in state {CurrentStateName}.");
-            Assert(target != null, $"Target in send cannot be null. Machine {Id} trying to send event {ev.GetType().Name} to null target in state {CurrentStateName}.");
-            Assert(sends.Contains(ev.GetType().Name),
-                $"Event {ev.GetType().Name} is not in the sends set of the Machine {GetType().Name}");
-            Assert(target.Permissions.Contains(ev.GetType().Name),
-                $"Event {ev.GetType().Name} is not in the permissions set of the target machine {target.Id}");
+            DeferCheckedSend(target, ev);
+            ev.Payload = PValues.Clone(ev.Payload);
+        }
+
+        /// <summary>
+        /// Checks a send from foreign code, or from a P function it calls back, and defers it.
+        /// </summary>
+        private void DeferCheckedSend(PMachineValue target, Event ev)
+        {
+            // Check for misuse first, so monitors never observe a send that cannot happen.
+            Runtime.CheckForeignCaller(this, "SendEvent");
+            CheckSend(target, ev);
+            DeferSendEvent(target.Id, ev, announce: true);
+        }
+
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a target. This is a scheduling point,
+        /// so the caller must await it. Generated code uses it for a P <c>send</c>; foreign code
+        /// must use <see cref="SendEvent"/>.
+        /// </summary>
+        /// <param name="target">The target.</param>
+        /// <param name="ev">The event to send.</param>
+        public ValueTask SendEventAsync(PMachineValue target, Event ev)
+        {
+            if (ForeignCallDepth > 0)
+            {
+                // A P function that foreign code calls back cannot be suspended either. Its payload
+                // is already a copy.
+                DeferCheckedSend(target, ev);
+                return default;
+            }
+
+            CheckSend(target, ev);
+            AnnounceSend(ev);
+            return Runtime.SendEventAsync(target.Id, ev, this);
+        }
+
+        /// <summary>
+        /// Checks that the send is allowed.
+        /// </summary>
+        private void CheckSend(PMachineValue target, Event ev)
+        {
+            // Messages are only formatted on failure: sends are hot.
+            if (ev == null)
+            {
+                Assert(false, $"Machine cannot send a null event. Machine {Id} trying to send null event in state {CurrentStateName}.");
+            }
+
+            var eventName = ev.GetType().Name;
+            if (target == null)
+            {
+                Assert(false, $"Target in send cannot be null. Machine {Id} trying to send event {eventName} to null target in state {CurrentStateName}.");
+            }
+
+            if (!sends.Contains(eventName))
+            {
+                Assert(false, $"Event {eventName} is not in the sends set of the Machine {GetType().Name}");
+            }
+
+            if (!target.Permissions.Contains(eventName))
+            {
+                Assert(false, $"Event {eventName} is not in the permissions set of the target machine {target.Id}");
+            }
+        }
+
+        /// <summary>
+        /// Announces a send to monitors and advances the vector clock.
+        /// </summary>
+        private void AnnounceSend(Event ev)
+        {
             AnnounceInternal(ev);
             // Update vector clock
             VectorTime.Increment();
-            Runtime.SendEvent(target.Id, ev, this);
         }
-        
+
+        /// <summary>
+        /// Marks the start of a call from generated code into foreign code.
+        /// </summary>
+        /// <remarks>
+        /// Generated code calls it right before each foreign call, and awaits
+        /// <see cref="EndForeignCallAsync"/> right after it.
+        /// </remarks>
+        public void BeginForeignCall() => ForeignCallDepth++;
+
+        /// <summary>
+        /// Marks the end of a call from generated code into foreign code. When the outermost foreign
+        /// call returns, it takes the scheduling point of each send and create that the call
+        /// requested, and then performs it, in order. This explores the same interleavings as if
+        /// the foreign code had been suspended at each of them.
+        /// </summary>
+        public ValueTask EndForeignCallAsync()
+        {
+            ForeignCallDepth--;
+            if (ForeignCallDepth > 0 || ForeignOperations is null || ForeignOperations.Count == 0)
+            {
+                return default;
+            }
+
+            return PerformForeignOperationsAsync();
+        }
+
+        /// <summary>
+        /// Records a send to perform at its scheduling point once control returns to P code.
+        /// </summary>
+        /// <param name="targetId">The target.</param>
+        /// <param name="ev">The event to send.</param>
+        /// <param name="announce">True to announce the send to monitors, like a P <c>send</c>.</param>
+        internal void DeferSendEvent(StateMachineId targetId, Event ev, bool announce) =>
+            AddForeignOperation(new ForeignOperation(
+                announce ? ForeignOperationKind.Send : ForeignOperationKind.SendUnannounced, targetId, ev, null, null,
+                null));
+
+        /// <summary>
+        /// Records a create to perform at its scheduling point once control returns to P code, and
+        /// returns the id of the state machine to create. A new id gets its value only when the
+        /// machine is created, after the scheduling point, like the id of a P <c>new</c> (see
+        /// <see cref="StateMachineId.CreateUnbound"/>).
+        /// </summary>
+        internal StateMachineId DeferCreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent)
+        {
+            Assert(type.IsSubclassOf(typeof(StateMachine)), "Type '{0}' is not a state machine.", type.FullName);
+            id ??= StateMachineId.CreateUnbound(type, name, Runtime);
+            AddForeignOperation(new ForeignOperation(ForeignOperationKind.Create, id, initialEvent, type, name, null));
+            return id;
+        }
+
+        private void AddForeignOperation(in ForeignOperation operation)
+        {
+            ForeignOperations ??= new List<ForeignOperation>();
+            ForeignOperations.Add(operation);
+        }
+
+        /// <summary>
+        /// Takes the scheduling point of each deferred send and create, in order, and performs it.
+        /// Deferred announces are delivered to monitors in the same order.
+        /// </summary>
+        private async ValueTask PerformForeignOperationsAsync()
+        {
+            var operations = ForeignOperations;
+            for (var i = 0; i < operations.Count; i++)
+            {
+                var operation = operations[i];
+                switch (operation.Kind)
+                {
+                    case ForeignOperationKind.Send:
+                        AnnounceSend(operation.Event);
+                        await Runtime.SendEventAsync(operation.Id, operation.Event, this);
+                        break;
+                    case ForeignOperationKind.SendUnannounced:
+                        await Runtime.SendEventAsync(operation.Id, operation.Event, this);
+                        break;
+                    case ForeignOperationKind.Create:
+                        await Runtime.CreateStateMachineAsync(operation.Id, operation.Type, operation.Name,
+                            operation.Event, this);
+                        break;
+                    default:
+                        if (IsTraceEnabled)
+                        {
+                            LogAnnounce(operation.Event, operation.Payload);
+                        }
+
+                        AnnounceInternal(operation.Event);
+                        break;
+                }
+            }
+
+            operations.Clear();
+        }
+
+        /// <summary>
+        /// Stops with an internal error if a P function that foreign code calls back receives: the
+        /// foreign code cannot be suspended until an event arrives.
+        /// </summary>
+        private void CheckNotReceivingInForeignCall()
+        {
+            if (ForeignCallDepth > 0)
+            {
+                Runtime.Scheduler.NotifyInternalError($"{Id} tried to receive an event in a P function called " +
+                                                      "from foreign code. Foreign code cannot be suspended, so " +
+                                                      "it must not call P functions that receive.");
+            }
+        }
+
         /// <summary>
         /// Waits to receive an <see cref="Event"/> of the specified type
         /// that satisfies an optional predicate.
@@ -550,9 +946,10 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="eventType">The event type.</param>
         /// <param name="predicate">The optional predicate.</param>
         /// <returns>The received event.</returns>
-        public Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
+        public ValueTask<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            CheckNotReceivingInForeignCall();
             Runtime.NotifyReceiveCalled(this);
             return Inbox.ReceiveEventAsync(eventType, predicate);
         }
@@ -562,9 +959,10 @@ namespace PChecker.Runtime.StateMachines
         /// </summary>
         /// <param name="eventTypes">The event types to wait for.</param>
         /// <returns>The received event.</returns>
-        public Task<Event> ReceiveEventAsync(params Type[] eventTypes)
+        public ValueTask<Event> ReceiveEventAsync(params Type[] eventTypes)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            CheckNotReceivingInForeignCall();
             Runtime.NotifyReceiveCalled(this);
             return Inbox.ReceiveEventAsync(eventTypes);
         }
@@ -575,9 +973,10 @@ namespace PChecker.Runtime.StateMachines
         /// </summary>
         /// <param name="events">Event types and predicates.</param>
         /// <returns>The received event.</returns>
-        public Task<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
+        public ValueTask<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            CheckNotReceivingInForeignCall();
             Runtime.NotifyReceiveCalled(this);
             return Inbox.ReceiveEventAsync(events);
         }
@@ -591,7 +990,7 @@ namespace PChecker.Runtime.StateMachines
             Event lastDequeuedEvent = null;
             while (CurrentStatus != Status.Halted && Runtime.IsRunning)
             {
-                (var status, var e, var info) = Inbox.Dequeue();
+                (var status, var e, var info) = await Inbox.DequeueAsync();
                 
                 if (status is DequeueStatus.Success)
                 {
@@ -601,7 +1000,7 @@ namespace PChecker.Runtime.StateMachines
                     // Notify the runtime for a new event to handle. This is only used
                     // during bug-finding and operation bounding, because the runtime
                     // has to schedule an state machine when a new operation is dequeued.
-                    Runtime.NotifyDequeuedEvent(this, e, info);
+                    await Runtime.NotifyDequeuedEventAsync(this, e, info);
                     await InvokeUserCallbackAsync(UserCallbackType.OnEventDequeued, e);
                     lastDequeuedEvent = e;
                 }
@@ -618,7 +1017,7 @@ namespace PChecker.Runtime.StateMachines
                     // If the default event was dequeued, then notify the runtime.
                     // This is only used during bug-finding, because the runtime must
                     // instrument a scheduling point between default event handlers.
-                    Runtime.NotifyDefaultEventDequeued(this);
+                    await Runtime.NotifyDefaultEventDequeuedAsync(this);
                 }
                 else if (status is DequeueStatus.NotAvailable)
                 {
@@ -672,7 +1071,6 @@ namespace PChecker.Runtime.StateMachines
                     task = OnEventUnhandledAsync(e, currentState);
                 }
 
-                Runtime.NotifyWaitTask(this, task);
                 await task;
             }
             catch (Exception ex) when (OnExceptionHandler(ex, callbackType, e))
@@ -706,7 +1104,6 @@ namespace PChecker.Runtime.StateMachines
                         task = taskFunc();
                     }
 
-                    Runtime.NotifyWaitTask(this, task);
 
                     // We have no reliable stack for awaited operations.
                     await task;
@@ -718,6 +1115,14 @@ namespace PChecker.Runtime.StateMachines
                 else if (cachedAction.Handler is Action action)
                 {
                     action();
+                }
+
+                if (ForeignOperations is { Count: > 0 })
+                {
+                    // Generated code performs deferred operations right after each foreign call;
+                    // this only catches those requested outside of one (e.g. by a C# action).
+                    ForeignCallDepth = 0;
+                    await PerformForeignOperationsAsync();
                 }
             }
             catch (Exception ex) when (OnExceptionHandler(ex, cachedAction.MethodInfo.Name, e))
@@ -858,9 +1263,7 @@ namespace PChecker.Runtime.StateMachines
             var v = ex is UnhandledEventException;
             if (!v)
             {
-                return ex is PNonStandardReturnException
-                    ? OnExceptionOutcome.HandledException
-                    : OnExceptionOutcome.ThrowException;
+                return OnExceptionOutcome.ThrowException;
             }
 
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
@@ -960,11 +1363,20 @@ namespace PChecker.Runtime.StateMachines
         public void RaiseEvent(Event e)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked RaiseEvent while halting.", Id);
-            Assert(e != null, $"{Id} is raising a null event in state {CurrentStateName}");
+            if (e == null)
+            {
+                Assert(false, $"{Id} is raising a null event in state {CurrentStateName}");
+            }
+
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.RaiseEvent, default, e);
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
+
+        /// <summary>
+        /// True if the current action raised an event or a goto transition. Generated code
+        /// checks it after each call that may raise, and returns to unwind the action.
+        /// </summary>
+        public bool HasPendingTransition => PendingTransition.TypeValue != Transition.Type.None;
 
         /// <summary>
         /// Raise a special event that performs a goto state operation at the end of the current action.
@@ -989,7 +1401,6 @@ namespace PChecker.Runtime.StateMachines
         {
             gotoPayload = payload;
             RaiseGotoStateEvent(typeof(S));
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         /// <summary>
@@ -1129,6 +1540,7 @@ namespace PChecker.Runtime.StateMachines
             o = null;
             return false;
         }
+
 
         private async Task HandleEventAsync(Event e, State declaringState, EventHandlerDeclaration eventHandler)
         {
@@ -1282,17 +1694,25 @@ namespace PChecker.Runtime.StateMachines
         /// <summary>
         /// Performs a goto transition to the specified state.
         /// </summary>
+        private static readonly ConcurrentDictionary<Type, string> StateQualifiedNames = new();
+
+        private static readonly ConcurrentDictionary<(Type, Type), State> StateInstancesByType = new();
+
+        private State GetStateInstance(Type stateType) =>
+            StateInstancesByType.GetOrAdd((GetType(), stateType),
+                key => StateInstanceCache[key.Item1].First(val => val.GetType().Equals(key.Item2)));
+
         private async Task GotoStateAsync(Type s, string onExitActionName, Event e)
         {
             Runtime.LogWriter.LogGotoState(Id, CurrentStateName,
-                $"{s.DeclaringType}.{s.Name}");
+                StateQualifiedNames.GetOrAdd(s, type => $"{type.DeclaringType}.{type.Name}"));
 
             // The state machine performs the on exit action of the current state.
             await ExecuteCurrentStateOnExitAsync(onExitActionName, e);
             if (CurrentStatus is Status.Active)
             {
                 // The state machine transitions to the new state.
-                var nextState = StateInstanceCache[GetType()].First(val => val.GetType().Equals(s));
+                var nextState = GetStateInstance(s);
                 DoStateTransition(nextState);
 
                 // The state machine performs the on entry action of the new state.
@@ -1614,8 +2034,15 @@ namespace PChecker.Runtime.StateMachines
         /// </summary>
         private void AssertStateValidity()
         {
-            Assert(StateTypeCache[GetType()].Count > 0, InternalExceptionMessage($"{Id} must have one or more states."));
-            Assert(CurrentState != null, InternalExceptionMessage($"{Id} must not have a null current state."));
+            if (StateTypeCache[GetType()].Count == 0)
+            {
+                Assert(false, InternalExceptionMessage($"{Id} must have one or more states."));
+            }
+
+            if (CurrentState == null)
+            {
+                Assert(false, InternalExceptionMessage($"{Id} must not have a null current state."));
+            }
         }
 
         /// <summary>

@@ -280,7 +280,9 @@ namespace PChecker.Coverage
                             var info = inbox[i];
                             if (info.Event == eventName)
                             {
+                                // Handled now; left in place it would pile up for every goto and raise.
                                 Dequeued[id] = info;
+                                inbox.RemoveAt(i);
                                 break;
                             }
                         }
@@ -522,11 +524,36 @@ namespace PChecker.Coverage
             }
         }
 
+        /// <summary>
+        /// Memoizes graph updates for the current graph. The same machine states and event links
+        /// recur throughout a schedule, and building their string ids dominates the cost otherwise.
+        /// </summary>
+        private Graph CachedGraph;
+        private readonly Dictionary<(string, string, string, string), GraphNode> ChildCache = new();
+        private readonly Dictionary<(GraphNode, GraphNode, string), GraphLink> EventLinkCache = new();
+
+        private void InvalidateCachesIfGraphChanged()
+        {
+            if (!ReferenceEquals(CachedGraph, Graph))
+            {
+                ChildCache.Clear();
+                EventLinkCache.Clear();
+                CachedGraph = Graph;
+            }
+        }
+
         private GraphNode GetOrCreateChild(string name, string type, string stateName, string label = null)
         {
             GraphNode child = null;
             lock (Inbox)
             {
+                InvalidateCachesIfGraphChanged();
+                var cacheKey = (name, type, stateName, label);
+                if (ChildCache.TryGetValue(cacheKey, out child))
+                {
+                    return child;
+                }
+
                 AddNamespace(type);
 
                 var initalStateName = stateName;
@@ -550,6 +577,7 @@ namespace PChecker.Coverage
 
                 child = Graph.GetOrCreateNode(id, label);
                 Graph.GetOrCreateLink(parent, child, null, null, "Contains");
+                ChildCache[cacheKey] = child;
             }
 
             return child;
@@ -560,10 +588,19 @@ namespace PChecker.Coverage
             GraphLink link = null;
             lock (Inbox)
             {
-                var label = GetEventLabel(e.Event);
-                var index = GetLinkIndex(source, target, label);
-                var category = GetEventCategory(e.Event);
-                link = Graph.GetOrCreateLink(source, target, index, label, category);
+                InvalidateCachesIfGraphChanged();
+                // Only finding the link is memoized. Its attributes are set on every call, as the
+                // latest event linking the two states determines them.
+                var cacheKey = (source, target, e.Event);
+                if (!EventLinkCache.TryGetValue(cacheKey, out link))
+                {
+                    var label = GetEventLabel(e.Event);
+                    var index = GetLinkIndex(source, target, label);
+                    var category = GetEventCategory(e.Event);
+                    link = Graph.GetOrCreateLink(source, target, index, label, category);
+                    EventLinkCache[cacheKey] = link;
+                }
+
                 if (MergeEventLinks)
                 {
                     if (link.AddListAttribute("EventIds", e.Event) > 1)

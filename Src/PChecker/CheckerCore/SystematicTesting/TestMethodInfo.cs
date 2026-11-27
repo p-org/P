@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using PChecker.IO.Debugging;
 using PChecker.Runtime;
-using PChecker.Tasks;
 
 namespace PChecker.SystematicTesting
 {
@@ -159,14 +158,11 @@ namespace PChecker.SystematicTesting
 
             var hasVoidReturnType = testMethod.ReturnType == typeof(void) &&
                                     testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) == null;
-            var hasAsyncReturnType = testMethod.ReturnType == typeof(Task) &&
-                                     testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) != null;
 
             var hasNoInputParameters = testParams.Length is 0;
             var hasStateMachineInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ControlledRuntime);
-            var hasTaskInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ControlledRuntime);
 
-            if (!((hasVoidReturnType || hasAsyncReturnType) && (hasNoInputParameters || hasStateMachineInputParameters || hasTaskInputParameters) &&
+            if (!(hasVoidReturnType && (hasNoInputParameters || hasStateMachineInputParameters) &&
                   !testMethod.IsAbstract && !testMethod.IsVirtual && !testMethod.IsConstructor &&
                   !testMethod.ContainsGenericParameters && testMethod.IsPublic && testMethod.IsStatic))
             {
@@ -176,47 +172,21 @@ namespace PChecker.SystematicTesting
                                     $"  public static void {testMethod.Name}() {{ ... }}\n\n" +
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
                                     $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}\n\n" +
-                                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}\n\n" +
-                                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}() {{ ... await ... }}\n\n" +
-                                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ControlledRuntime runtime) {{ ... await ... }}\n\n" +
-                                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ControlledRuntime runtime) {{ ... await ... }}");
+                                    "Asynchronous (async or Task-returning) test methods are no longer supported: the " +
+                                    "test method runs synchronously, and the state machines it creates start running " +
+                                    "after it returns.");
             }
 
             Delegate test;
-            if (hasAsyncReturnType)
+            if (hasStateMachineInputParameters)
             {
-                if (hasStateMachineInputParameters)
-                {
-                    test = Delegate.CreateDelegate(typeof(Func<ControlledRuntime, Task>), testMethod);
-                }
-                else if (hasTaskInputParameters)
-                {
-                    test = Delegate.CreateDelegate(typeof(Func<ControlledRuntime, Task>), testMethod);
-                }
-                else
-                {
-                    test = Delegate.CreateDelegate(typeof(Func<Task>), testMethod);
-                }
+                test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
             }
             else
             {
-                if (hasStateMachineInputParameters)
-                {
-                    test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
-                }
-                else if (hasTaskInputParameters)
-                {
-                    test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
-                }
-                else
-                {
-                    test = Delegate.CreateDelegate(typeof(Action), testMethod);
-                }
+                test = Delegate.CreateDelegate(typeof(Action), testMethod);
             }
+
 
             return (test, $"{testMethod.DeclaringType.Name}");
         }
@@ -255,6 +225,36 @@ namespace PChecker.SystematicTesting
             }
 
             return testMethods[0];
+        }
+
+        /// <summary>
+        /// Returns a hint to append to the error message when test discovery failed with the
+        /// specified exception, or an empty string.
+        /// </summary>
+        /// <remarks>
+        /// An assembly built against an older PCheckerCore can reference types that no longer exist
+        /// (e.g. from the PChecker.Tasks namespace), and then none of its types can be loaded.
+        /// </remarks>
+        internal static string GetDiscoveryFailureHint(Exception ex)
+        {
+            if (!(ex is ReflectionTypeLoadException typeLoadException))
+            {
+                return string.Empty;
+            }
+
+            var reasons = typeLoadException.LoaderExceptions.Where(e => e != null).Select(e => e.Message)
+                .Distinct().ToList();
+            var hint = ":\n  " + string.Join("\n  ", reasons) + "\n" +
+                       "The assembly was probably compiled against another version of the P runtime. Please " +
+                       "recompile it (re-run 'p compile' for a P project).";
+            if (reasons.Any(r => r.Contains("PChecker.Tasks")))
+            {
+                hint += " The PChecker.Tasks namespace, asynchronous test methods and " +
+                        "TestingEngine.Create(CheckerConfiguration, Func<Task>) are no longer supported: test " +
+                        "methods must be synchronous ('public static void').";
+            }
+
+            return hint;
         }
 
         /// <summary>

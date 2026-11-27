@@ -39,6 +39,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
             CanCreate = false;
             CanSend = false;
+            CanSendToMachine = false;
             IsNondeterministic = false;
             CanReceive = false;
             CanRaiseEvent = false;
@@ -49,6 +50,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         {
             CanCreate = false;
             CanSend = false;
+            CanSendToMachine = false;
             IsNondeterministic = false;
             CanReceive = false;
             CanRaiseEvent = false;
@@ -122,7 +124,16 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public bool CanRaiseEvent { get; set; }
         public bool CanReceive { get; set; }
 
+        /// <summary>
+        /// Whether the function can send or announce an event, directly or through callees.
+        /// </summary>
         public bool CanSend { get; set; }
+
+        /// <summary>
+        /// Whether the function can send an event to a machine (not just announce one to monitors),
+        /// directly or through callees. Unlike announcing, sending is a scheduling point.
+        /// </summary>
+        public bool CanSendToMachine { get; set; }
 
         public bool CanCreate { get; set; }
         public bool IsNondeterministic { get; set; }

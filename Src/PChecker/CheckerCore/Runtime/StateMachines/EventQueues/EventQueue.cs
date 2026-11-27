@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -43,9 +43,9 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         private Dictionary<Type, Func<Event, bool>> EventWaitTypes;
 
         /// <summary>
-        /// Task completion source that contains the event obtained using an explicit receive.
+        /// The event delivered to a receive statement that was waiting for it.
         /// </summary>
-        private TaskCompletionSource<Event> ReceiveCompletionSource;
+        private Event ReceivedEvent;
 
         /// <summary>
         /// Checks if the queue is accepting new events.
@@ -86,8 +86,8 @@ namespace PChecker.Runtime.StateMachines.EventQueues
                 (predicate is null || predicate(e)))
             {
                 EventWaitTypes.Clear();
+                ReceivedEvent = e;
                 StateMachineManager.OnReceiveEvent(e, info);
-                ReceiveCompletionSource.SetResult(e);
                 return EnqueueStatus.EventHandlerRunning;
             }
 
@@ -109,7 +109,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         }
 
         /// <inheritdoc/>
-        public (DequeueStatus status, Event e, EventInfo info) Dequeue()
+        public async ValueTask<(DequeueStatus status, Event e, EventInfo info)> DequeueAsync()
         {
             // Try to get the raised event, if there is one. Raised events
             // have priority over the events in the inbox.
@@ -132,7 +132,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
             var hasDefaultHandler = StateMachineManager.IsDefaultHandlerAvailable();
             if (hasDefaultHandler)
             {
-                StateMachine.Runtime.NotifyDefaultEventHandlerCheck(StateMachine);
+                await StateMachine.Runtime.NotifyDefaultEventHandlerCheck(StateMachine);
             }
 
             // Try to dequeue the next event, if there is one.
@@ -213,7 +213,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         }
 
         /// <inheritdoc/>
-        public Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
+        public ValueTask<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
         {
             var eventWaitTypes = new Dictionary<Type, Func<Event, bool>>
             {
@@ -224,7 +224,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         }
 
         /// <inheritdoc/>
-        public Task<Event> ReceiveEventAsync(params Type[] eventTypes)
+        public ValueTask<Event> ReceiveEventAsync(params Type[] eventTypes)
         {
             var eventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             foreach (var type in eventTypes)
@@ -236,7 +236,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         }
 
         /// <inheritdoc/>
-        public Task<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
+        public ValueTask<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
         {
             var eventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             foreach (var e in events)
@@ -250,7 +250,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         /// <summary>
         /// Waits for an event to be enqueued.
         /// </summary>
-        private Task<Event> ReceiveEventAsync(Dictionary<Type, Func<Event, bool>> eventWaitTypes)
+        private async ValueTask<Event> ReceiveEventAsync(Dictionary<Type, Func<Event, bool>> eventWaitTypes)
         {
             StateMachine.Runtime.NotifyReceiveCalled(StateMachine);
 
@@ -272,14 +272,17 @@ namespace PChecker.Runtime.StateMachines.EventQueues
 
             if (receivedEvent == default)
             {
-                ReceiveCompletionSource = new TaskCompletionSource<Event>();
                 EventWaitTypes = eventWaitTypes;
-                StateMachineManager.OnWaitEvent(EventWaitTypes.Keys);
-                return ReceiveCompletionSource.Task;
+
+                // Resumes once Enqueue delivered a matching event and the scheduler picked this machine.
+                await StateMachineManager.OnWaitEventAsync(EventWaitTypes.Keys);
+                var e = ReceivedEvent;
+                ReceivedEvent = null;
+                return e;
             }
 
-            StateMachineManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.info);
-            return Task.FromResult(receivedEvent.e);
+            await StateMachineManager.OnReceiveEventWithoutWaitingAsync(receivedEvent.e, receivedEvent.info);
+            return receivedEvent.e;
         }
 
         /// <inheritdoc/>

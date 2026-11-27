@@ -251,7 +251,12 @@ namespace PChecker.Coverage
         {
         }
 
-        private static string GetStateId(string stateMachineType, string stateName)
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string, string), string> StateIds = new();
+
+        private static string GetStateId(string stateMachineType, string stateName) =>
+            StateIds.GetOrAdd((stateMachineType, stateName), key => ComputeStateId(key.Item1, key.Item2));
+
+        private static string ComputeStateId(string stateMachineType, string stateName)
         {
             var id = ResolvestateMachineTypeName(stateMachineType);
             if (string.IsNullOrEmpty(stateName))

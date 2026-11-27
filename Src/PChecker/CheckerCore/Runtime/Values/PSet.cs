@@ -64,9 +64,8 @@ namespace PChecker.Runtime.Values
 
         public bool Add(IPValue item)
         {
-            MutabilityHelper.EnsureFrozen(item);
             IsDirty = true;
-            return set.Add(item.Clone());
+            return set.Add(MutabilityHelper.FrozenCopy(item));
         }
 
         public void Clear()
@@ -99,7 +98,7 @@ namespace PChecker.Runtime.Values
         public IPValue Clone()
         {
             var clone = new PSet(new HashSet<IPValue>());
-            foreach (var item in set) clone.Add(item.Clone());
+            foreach (var item in set) clone.Add(PValues.Clone(item));
             return clone;
         }
 
@@ -165,7 +164,8 @@ namespace PChecker.Runtime.Values
         }
         public void UnionWith(IEnumerable<IPValue> other)
         {
-            set.UnionWith(other.Select(i => i.Clone()));
+            IsDirty = true;
+            set.UnionWith(other.Select(MutabilityHelper.FrozenCopy));
         }
 
         public void IntersectWith(IEnumerable<IPValue> other)

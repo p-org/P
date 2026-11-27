@@ -12,6 +12,19 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+_ERROR_LOG_PATTERN = re.compile(r'<ErrorLog>\s*(.+)')
+
+
+def reported_error_message(trace_log: str) -> Optional[str]:
+    """Return the message of the bug that PChecker reported in a trace, or None.
+
+    It is the last <ErrorLog> line. A trace normally has one, but when the replay
+    that traces the failing schedule hits another bug first, the trace shows that
+    bug where the replay hit it, and ends with the bug that was reported.
+    """
+    messages = _ERROR_LOG_PATTERN.findall(trace_log)
+    return messages[-1] if messages else None
+
 
 class CheckerErrorCategory(Enum):
     """Categories of PChecker errors."""
@@ -229,9 +242,9 @@ class PCheckerErrorParser:
         """Parse a trace log and return a CheckerError."""
         lines = trace_log.strip().split('\n')
         
-        # Find the error line
+        # Find the error line: the last one is the reported bug (see reported_error_message)
         error_line = None
-        for line in lines:
+        for line in reversed(lines):
             if '<ErrorLog>' in line:
                 error_line = line
                 break

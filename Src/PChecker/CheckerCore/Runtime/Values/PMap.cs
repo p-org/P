@@ -51,8 +51,7 @@ namespace PChecker.Runtime.Values
 
         public void Add(KeyValuePair<IPValue, IPValue> item)
         {
-            MutabilityHelper.EnsureFrozen(item.Key);
-            map.Add(item.Key?.Clone(), item.Value?.Clone());
+            map.Add(MutabilityHelper.FrozenCopy(item.Key), PValues.Clone(item.Value));
             IsDirty = true;
         }
 
@@ -87,8 +86,7 @@ namespace PChecker.Runtime.Values
 
         public void Add(IPValue key, IPValue value)
         {
-            MutabilityHelper.EnsureFrozen(key);
-            map.Add(key?.Clone(), value?.Clone());
+            map.Add(MutabilityHelper.FrozenCopy(key), PValues.Clone(value));
             IsDirty = true;
         }
 
@@ -114,7 +112,13 @@ namespace PChecker.Runtime.Values
             get => map[key];
             set
             {
-                MutabilityHelper.EnsureFrozen(key);
+                if (!map.ContainsKey(key))
+                {
+                    // A new key is stored: store a frozen copy, as Add does. Tuples are not
+                    // IPMutableValue but change in place, so every new key is copied.
+                    key = MutabilityHelper.FrozenCopy(key);
+                }
+
                 map[key] = value;
                 IsDirty = true;
             }
@@ -134,8 +138,8 @@ namespace PChecker.Runtime.Values
         public IPValue Clone()
         {
             return new PMap(map.ToDictionary(
-                kv => kv.Key?.Clone(),
-                kv => kv.Value?.Clone()));
+                kv => PValues.Clone(kv.Key),
+                kv => PValues.Clone(kv.Value)));
         }
 
         public void Freeze()
@@ -150,12 +154,12 @@ namespace PChecker.Runtime.Values
 
         public PSeq CloneKeys()
         {
-            return new PSeq(map.Keys.Select(v => v.Clone()));
+            return new PSeq(map.Keys.Select(v => PValues.Clone(v)));
         }
 
         public PSeq CloneValues()
         {
-            return new PSeq(map.Values.Select(v => v.Clone()));
+            return new PSeq(map.Values.Select(v => PValues.Clone(v)));
         }
 
         public override int GetHashCode()

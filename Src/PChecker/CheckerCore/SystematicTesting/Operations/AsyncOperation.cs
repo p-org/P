@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 #if !DEBUG
@@ -36,20 +36,11 @@ namespace PChecker.SystematicTesting.Operations
         public int HashedProgramState { get; internal set; }
 
         /// <summary>
-        /// Is the source of the operation active.
+        /// Resumes the operation when the scheduler run loop selects it: either the start
+        /// of a new handler or the continuation parked at a <see cref="SchedulingPoint"/>.
         /// </summary>
-        internal bool IsActive; // TODO: figure out if this can be replaced by status.
+        internal System.Action Continuation;
 
-        /// <summary>
-        /// True if the handler of the source of the operation is running, else false.
-        /// </summary>
-        internal bool IsHandlerRunning; // TODO: figure out if this can be replaced by status.
-
-        /// <summary>
-        /// True if the next awaiter is controlled, else false.
-        /// </summary>
-        internal bool IsAwaiterControlled;
-        
         /// <summary>
         /// The receiver if the operation is Send.
         /// </summary>
@@ -61,9 +52,6 @@ namespace PChecker.SystematicTesting.Operations
         internal AsyncOperation()
         {
             Status = AsyncOperationStatus.None;
-            IsActive = false;
-            IsHandlerRunning = false;
-            IsAwaiterControlled = false;
             Type = AsyncOperationType.Start;
         }
 
@@ -73,8 +61,6 @@ namespace PChecker.SystematicTesting.Operations
         internal void OnEnabled()
         {
             Status = AsyncOperationStatus.Enabled;
-            IsActive = false;
-            IsHandlerRunning = false;
         }
 
         /// <summary>
@@ -83,14 +69,7 @@ namespace PChecker.SystematicTesting.Operations
         internal virtual void OnCompleted()
         {
             Status = AsyncOperationStatus.Completed;
-            IsHandlerRunning = false;
-        }
-
-        /// <summary>
-        /// Tries to enable the operation, if it was not already enabled.
-        /// </summary>
-        internal virtual void TryEnable()
-        {
+            Continuation = null;
         }
 
         /// <summary>

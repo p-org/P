@@ -15,7 +15,7 @@ namespace UnitTests.Runners
 {
     internal class PCheckerRunner : ICompilerTestRunner
     {
-        private static readonly object CheckerLock = new object();
+        internal static readonly object CheckerLock = new object();
         private static readonly object RunTestLock = new object();
         private readonly FileInfo[] nativeSources;
         private readonly FileInfo[] sources;
@@ -247,6 +247,14 @@ namespace UnitTests.Runners
                     {
                         stdout += bug;
                         exitCode = 1;
+                    }
+
+                    // An internal error is neither a pass nor an expected bug.
+                    string internalError = engine.TestReport.InternalErrors.FirstOrDefault();
+                    if (internalError != null)
+                    {
+                        stderr += $"Internal error: {internalError}";
+                        exitCode = 2;
                     }
 
                     context.Unload();

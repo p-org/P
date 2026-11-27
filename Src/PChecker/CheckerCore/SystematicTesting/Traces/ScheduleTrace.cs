@@ -105,38 +105,6 @@ namespace PChecker.SystematicTesting.Traces
         }
 
         /// <summary>
-        /// Returns the latest schedule step and removes
-        /// it from the trace.
-        /// </summary>
-        internal ScheduleStep Pop()
-        {
-            if (Count > 0)
-            {
-                Steps[Count - 1].Next = null;
-            }
-
-            var step = Steps[Count - 1];
-            Steps.RemoveAt(Count - 1);
-
-            return step;
-        }
-
-        /// <summary>
-        /// Returns the latest schedule step without removing it.
-        /// </summary>
-        internal ScheduleStep Peek()
-        {
-            ScheduleStep step = null;
-
-            if (Steps.Count > 0)
-            {
-                step = Steps[Count - 1];
-            }
-
-            return step;
-        }
-
-        /// <summary>
         /// Returns an enumerator.
         /// </summary>
         IEnumerator IEnumerable.GetEnumerator()
@@ -155,15 +123,6 @@ namespace PChecker.SystematicTesting.Traces
         /// <summary>
         /// Pushes a new step to the trace.
         /// </summary>
-        private void Push(ScheduleStep step)
-        {
-            if (Count > 0)
-            {
-                Steps[Count - 1].Next = step;
-                step.Previous = Steps[Count - 1];
-            }
-
-            Steps.Add(step);
-        }
+        private void Push(ScheduleStep step) => Steps.Add(step);
     }
 }

@@ -4,11 +4,14 @@ using PChecker.Generator.Object;
 using PChecker.IO.Debugging;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
+using PChecker.SystematicTesting.Strategies;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic;
 
 internal class POSScheduler: IScheduler
 {
+    private protected readonly List<AsyncOperation> EnabledBuffer = new List<AsyncOperation>();
+
     private IRandomValueGenerator _randomValueGenerator;
 
     /// <summary>
@@ -28,7 +31,7 @@ internal class POSScheduler: IScheduler
     public bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
     {
         next = null;
-        var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
+        var enabledOperations = EnabledOperations.Collect(ops, EnabledBuffer);
         if (enabledOperations.Count == 0)
         {
             return false;
@@ -63,7 +66,7 @@ internal class POSScheduler: IScheduler
         AsyncOperation prioritizedOp = null;
         foreach (var entity in PrioritizedOperations)
         {
-            if (choices.Any(m => m == entity))
+            if (EnabledOperations.ContainsReference(choices, entity))
             {
                 prioritizedOp = entity;
                 break;
@@ -114,7 +117,7 @@ internal class POSScheduler: IScheduler
             }
         }
 
-        return ops.First(op => op.Equals(prioritizedSchedulable));
+        return EnabledOperations.FirstEqual(ops, prioritizedSchedulable);
     }
 
     private bool FindNonRacingOperation(IEnumerable<AsyncOperation> ops, out AsyncOperation next)

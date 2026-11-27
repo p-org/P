@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Exceptions;
 using PChecker.Runtime.StateMachines;
@@ -120,7 +119,8 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc/>
         public void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType)
         {
-            var source = creatorName ?? $"task '{Task.CurrentId}'";
+            // A state machine without a creator was created by the test method.
+            var source = creatorName ?? "the test";
             var log = $"{id} was created by {source}.";
 
             Writer.AddLogType(JsonWriter.LogType.CreateStateMachine);
@@ -181,11 +181,6 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc />
         public void OnExceptionHandled(StateMachineId id, string stateName, string actionName, Exception ex)
         {
-            if (ex is PNonStandardReturnException)
-            {
-                return;
-            }
-
             var log = stateName is null
                 ? $"{id} running action '{actionName}' chose to handle exception '{ex.GetType().Name}'."
                 : $"{id} running action '{actionName}' in state '{stateName}' chose to handle exception '{ex.GetType().Name}'.";
@@ -202,11 +197,6 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc />
         public void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
         {
-            if (ex is PNonStandardReturnException)
-            {
-                return;
-            }
-
             var log = stateName is null
                 ? $"{id} running action '{actionName}' chose to handle exception '{ex.GetType().Name}'."
                 : $"{id} running action '{actionName}' in state '{stateName}' threw exception '{ex.GetType().Name}'.";

@@ -22,6 +22,7 @@ from core.compilation.error_parser import (
     parse_compilation_output,
 )
 from core.compilation.checker_error_parser import (
+    reported_error_message,
     PCheckerErrorParser,
     CheckerErrorCategory,
     CheckerError,
@@ -256,6 +257,26 @@ class TestPCheckerErrorParser:
         parser = PCheckerErrorParser()
         error = parser.parse("")
         assert error.category == CheckerErrorCategory.UNKNOWN
+
+    # When the replay that traces the failing schedule hits another bug, PChecker
+    # writes that bug where the replay hit it, and ends the trace with the reported one.
+    REPLAY_DIVERGED_TRACE = """
+<StrategyLog> WARNING: Replaying the failing schedule to trace it did not reproduce the bug: the replay found another bug: Assertion Failed: c=2.
+<ErrorLog> Assertion Failed: c=2
+<StateLog> 'Server(2)' enters state 'Active'
+<ErrorLog> Server(2) received event 'eShutdown' that cannot be handled
+"""
+
+    def test_parse_reports_the_last_error_log(self):
+        error = PCheckerErrorParser().parse(self.REPLAY_DIVERGED_TRACE)
+        assert error.category == CheckerErrorCategory.UNHANDLED_EVENT
+        assert error.event_name == "eShutdown"
+
+    def test_reported_error_message_is_the_last_error_log(self):
+        assert reported_error_message(self.REPLAY_DIVERGED_TRACE) == \
+            "Server(2) received event 'eShutdown' that cannot be handled"
+        assert reported_error_message("<ErrorLog> only one") == "only one"
+        assert reported_error_message("no error") is None
 
 
 class TestPCheckerAnalyze:

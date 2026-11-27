@@ -6,104 +6,64 @@ namespace PChecker.SystematicTesting.Traces
     /// <summary>
     /// Class implementing a program schedule step.
     /// </summary>
-    internal sealed class ScheduleStep
+    internal readonly struct ScheduleStep
     {
         /// <summary>
         /// The unique index of this schedule step.
         /// </summary>
-        internal int Index;
+        internal readonly int Index;
 
         /// <summary>
         /// The type of this schedule step.
         /// </summary>
-        internal ScheduleStepType Type { get; private set; }
+        internal readonly ScheduleStepType Type;
 
         /// <summary>
         /// The id of the scheduled operation. Only relevant if this is
         /// a regular schedule step.
         /// </summary>
-        internal ulong ScheduledOperationId;
+        internal readonly ulong ScheduledOperationId;
 
         /// <summary>
         /// The non-deterministic boolean choice value. Only relevant if
         /// this is a choice schedule step.
         /// </summary>
-        internal bool? BooleanChoice;
+        internal readonly bool? BooleanChoice;
 
         /// <summary>
         /// The non-deterministic integer choice value. Only relevant if
         /// this is a choice schedule step.
         /// </summary>
-        internal int? IntegerChoice;
+        internal readonly int? IntegerChoice;
 
-        /// <summary>
-        /// Previous schedule step.
-        /// </summary>
-        internal ScheduleStep Previous;
 
-        /// <summary>
-        /// Next schedule step.
-        /// </summary>
-        internal ScheduleStep Next;
-
-        /// <summary>
-        /// Creates a schedule step.
-        /// </summary>
-        internal static ScheduleStep CreateSchedulingChoice(int index, ulong scheduledStateMachineId)
+        private ScheduleStep(int index, ScheduleStepType type, ulong scheduledOperationId, bool? booleanChoice,
+            int? integerChoice)
         {
-            var scheduleStep = new ScheduleStep();
-
-            scheduleStep.Index = index;
-            scheduleStep.Type = ScheduleStepType.SchedulingChoice;
-
-            scheduleStep.ScheduledOperationId = scheduledStateMachineId;
-
-            scheduleStep.BooleanChoice = null;
-            scheduleStep.IntegerChoice = null;
-
-            scheduleStep.Previous = null;
-            scheduleStep.Next = null;
-
-            return scheduleStep;
+            Index = index;
+            Type = type;
+            ScheduledOperationId = scheduledOperationId;
+            BooleanChoice = booleanChoice;
+            IntegerChoice = integerChoice;
         }
+
+        /// <summary>
+        /// Creates a schedule step with a scheduling choice.
+        /// </summary>
+        internal static ScheduleStep CreateSchedulingChoice(int index, ulong scheduledStateMachineId) =>
+            new ScheduleStep(index, ScheduleStepType.SchedulingChoice, scheduledStateMachineId, null, null);
 
         /// <summary>
         /// Creates a nondeterministic boolean choice schedule step.
         /// </summary>
-        internal static ScheduleStep CreateNondeterministicBooleanChoice(int index, bool choice)
-        {
-            var scheduleStep = new ScheduleStep();
-
-            scheduleStep.Index = index;
-            scheduleStep.Type = ScheduleStepType.NondeterministicChoice;
-
-            scheduleStep.BooleanChoice = choice;
-            scheduleStep.IntegerChoice = null;
-
-            scheduleStep.Previous = null;
-            scheduleStep.Next = null;
-
-            return scheduleStep;
-        }
+        internal static ScheduleStep CreateNondeterministicBooleanChoice(int index, bool choice) =>
+            new ScheduleStep(index, ScheduleStepType.NondeterministicChoice, 0, choice, null);
 
         /// <summary>
         /// Creates a nondeterministic integer choice schedule step.
         /// </summary>
-        internal static ScheduleStep CreateNondeterministicIntegerChoice(int index, int choice)
-        {
-            var scheduleStep = new ScheduleStep();
-
-            scheduleStep.Index = index;
-            scheduleStep.Type = ScheduleStepType.NondeterministicChoice;
-
-            scheduleStep.BooleanChoice = null;
-            scheduleStep.IntegerChoice = choice;
-
-            scheduleStep.Previous = null;
-            scheduleStep.Next = null;
-
-            return scheduleStep;
-        }
+        internal static ScheduleStep CreateNondeterministicIntegerChoice(int index, int choice) =>
+            new ScheduleStep(index, ScheduleStepType.NondeterministicChoice, 0, null, choice);
 
         /// <summary>
         /// Determines whether the specified System.Object is equal

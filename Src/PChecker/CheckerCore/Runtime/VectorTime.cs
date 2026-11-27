@@ -1,72 +1,69 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using PChecker.Runtime.StateMachines;
 
+/// <summary>
+/// Vector clock of a state machine. It is copied on every send, so it is kept as a dense array
+/// indexed by <see cref="StateMachineId.Value"/>, with missing entries meaning 0.
+/// </summary>
 public class VectorTime
 {
-    // Dictionary that uses StateMachineId as the key and stores the logical clock as the value
-    public Dictionary<StateMachineId, int> Clock { get; private set; }
+    private int[] clock;
 
-    // The ID of the current state machine
-    
-    private StateMachineId stateMachineId;
+    // Index of the owning state machine.
+    private readonly int ownIndex;
 
     public VectorTime(StateMachineId stateMachineId)
     {
-        this.stateMachineId = stateMachineId;
-        Clock = new Dictionary<StateMachineId, int>();
-        Clock[stateMachineId] = 0;  // Initialize the clock for this state machine
+        ownIndex = checked((int)stateMachineId.Value);
+        clock = new int[ownIndex + 1];
     }
-    
+
     // Clone constructor (creates a snapshot of the vector clock)
     public VectorTime(VectorTime other)
     {
-        Clock = new Dictionary<StateMachineId, int>(other.Clock);
+        ownIndex = other.ownIndex;
+        clock = (int[])other.clock.Clone();
     }
 
     // Increment the logical clock for this state machine
     public void Increment()
     {
-        Clock[stateMachineId]++;
+        clock[ownIndex]++;
     }
 
-    // Merge another vector clock into this one
+    // Merge another vector clock into this one, taking the maximum timestamp per state machine.
     public void Merge(VectorTime otherTime)
     {
-        foreach (var entry in otherTime.Clock)
+        var other = otherTime.clock;
+        if (other.Length > clock.Length)
         {
-            StateMachineId otherMachineId = entry.Key;
-            int otherTimestamp = entry.Value;
+            Array.Resize(ref clock, other.Length);
+        }
 
-            if (Clock.ContainsKey(otherMachineId))
+        for (var i = 0; i < other.Length; i++)
+        {
+            if (other[i] > clock[i])
             {
-                // Take the maximum timestamp for each state machine
-                Clock[otherMachineId] = Math.Max(Clock[otherMachineId], otherTimestamp);
-            }
-            else
-            {
-                // Add the state machine's timestamp if it doesn't exist in this time
-                Clock[otherMachineId] = otherTimestamp;
+                clock[i] = other[i];
             }
         }
     }
-    
+
     // Compare this vector clock to another (partial order over vector clocks).
     // Follows the IComparable convention: negative => this happens-BEFORE other;
     // positive => this happens-AFTER other; 0 => clocks are equal or concurrent.
-    // Missing entries are treated as 0, so the comparison must range over the UNION of
-    // both clocks' keys — otherwise a machine present only in `other` is never examined
-    // and a genuine ordering can be silently misreported as concurrent.
+    // Missing entries are treated as 0.
     public int CompareTo(VectorTime other)
     {
         bool atLeastOneLess = false;
         bool atLeastOneGreater = false;
 
-        foreach (var machineId in Clock.Keys.Union(other.Clock.Keys))
+        var length = Math.Max(clock.Length, other.clock.Length);
+        for (var i = 0; i < length; i++)
         {
-            int thisTime = Clock.TryGetValue(machineId, out var t) ? t : 0;
-            int otherTime = other.Clock.TryGetValue(machineId, out var o) ? o : 0;
+            int thisTime = i < clock.Length ? clock[i] : 0;
+            int otherTime = i < other.clock.Length ? other.clock[i] : 0;
 
             if (thisTime < otherTime)
             {
@@ -91,34 +88,45 @@ public class VectorTime
         }
         return 0;
     }
-
     
     public override string ToString()
     {
         var elements = new List<string>();
-        foreach (var entry in Clock)
+        for (var i = 0; i < clock.Length; i++)
         {
-            elements.Add($"StateMachine {entry.Key.Name}: {entry.Value}");
+            if (clock[i] != 0)
+            {
+                elements.Add($"StateMachine {i}: {clock[i]}");
+            }
         }
         return $"[{string.Join(", ", elements)}]";
     }
-    
-    public override bool Equals(object obj)
+
+    public override bool Equals(object obj) => obj is VectorTime other && IsEqualTo(other);
+
+    private bool IsEqualTo(VectorTime other)
     {
-        if (obj is VectorTime other)
+        var length = Math.Max(clock.Length, other.clock.Length);
+        for (var i = 0; i < length; i++)
         {
-            return Clock.OrderBy(x => x.Key).SequenceEqual(other.Clock.OrderBy(x => x.Key));
+            if ((i < clock.Length ? clock[i] : 0) != (i < other.clock.Length ? other.clock[i] : 0))
+            {
+                return false;
+            }
         }
-        return false;
+        return true;
     }
 
     public override int GetHashCode()
     {
         int hash = 17;
-        foreach (var entry in Clock)
+        for (var i = 0; i < clock.Length; i++)
         {
-            hash = hash * 31 + entry.Key.GetHashCode();
-            hash = hash * 31 + entry.Value.GetHashCode();
+            if (clock[i] != 0)
+            {
+                hash = hash * 31 + i;
+                hash = hash * 31 + clock[i];
+            }
         }
         return hash;
     }

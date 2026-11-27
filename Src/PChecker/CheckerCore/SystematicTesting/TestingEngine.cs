@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -32,7 +32,6 @@ using PChecker.SystematicTesting.Strategies.Special;
 using PChecker.SystematicTesting.Traces;
 using PChecker.Utilities;
 using Debug = PChecker.IO.Debugging.Debug;
-using Task = PChecker.Tasks.Task;
 
 namespace PChecker.SystematicTesting
 {
@@ -184,9 +183,10 @@ namespace PChecker.SystematicTesting
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
                 Console.Out.WriteLine($".. Test case :: {testMethodInfo.Name}");
             }
-            catch
+            catch (Exception ex)
             {
-                Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
+                Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly " +
+                                    $"'{assembly.FullName}'{TestMethodInfo.GetDiscoveryFailureHint(ex)}");
             }
 
             return new TestingEngine(checkerConfiguration, testMethodInfo);
@@ -202,18 +202,6 @@ namespace PChecker.SystematicTesting
         /// Creates a new systematic testing engine.
         /// </summary>
         public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<ControlledRuntime> test) =>
-            new TestingEngine(checkerConfiguration, test);
-
-        /// <summary>
-        /// Creates a new systematic testing engine.
-        /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<Task> test) =>
-            new TestingEngine(checkerConfiguration, test);
-
-        /// <summary>
-        /// Creates a new systematic testing engine.
-        /// </summary>
-        internal static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ControlledRuntime, Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -331,7 +319,7 @@ namespace PChecker.SystematicTesting
         {
             try
             {
-                var task = CreateTestingTask();
+                var body = CreateTestingBody();
                 if (_checkerConfiguration.Timeout > 0)
                 {
                     CancellationTokenSource.CancelAfter(
@@ -341,8 +329,7 @@ namespace PChecker.SystematicTesting
                 Profiler.StartMeasuringExecutionTime();
                 if (!CancellationTokenSource.IsCancellationRequested)
                 {
-                    task.Start();
-                    task.Wait(CancellationTokenSource.Token);
+                    StartOnTestingThread(body).Wait(CancellationTokenSource.Token);
                 }
             }
             catch (OperationCanceledException)
@@ -389,9 +376,52 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Creates a new testing task.
+        /// Stack size of the thread that runs the schedules.
         /// </summary>
-        private System.Threading.Tasks.Task CreateTestingTask()
+        /// <remarks>
+        /// Every operation runs on this one thread, and a P function that sends or creates is an
+        /// async method, so each level of a recursion of such functions costs several frames, both
+        /// on the way down and when the operation is resumed and the calls complete back up. Once
+        /// the stack runs low, .NET also moves the remaining continuations to the thread pool, out
+        /// of the scheduler. The default stack of a thread pool thread (e.g. 1.5 MB on macOS) runs
+        /// low after a few hundred levels, so the schedules run on a thread with a larger stack. Only
+        /// the pages that are used are committed.
+        /// </remarks>
+        private const int TestingThreadStackSize = 256 * 1024 * 1024;
+
+        /// <summary>
+        /// Starts running the specified testing body on a new background thread with a stack of
+        /// <see cref="TestingThreadStackSize"/> bytes, instead of on a thread pool thread.
+        /// </summary>
+        /// <returns>A task that completes, or faults, when the body returns.</returns>
+        private static System.Threading.Tasks.Task StartOnTestingThread(Action body)
+        {
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    body();
+                    completion.SetResult();
+                }
+                catch (Exception ex)
+                {
+                    completion.SetException(ex);
+                }
+            }, TestingThreadStackSize)
+            {
+                IsBackground = true,
+                Name = "PChecker"
+            };
+
+            thread.Start();
+            return completion.Task;
+        }
+
+        /// <summary>
+        /// Creates the body of the testing thread, which runs every schedule.
+        /// </summary>
+        private Action CreateTestingBody()
         {
             var options = string.Empty;
             if (_checkerConfiguration.SchedulingStrategy is "random" ||
@@ -409,7 +439,7 @@ namespace PChecker.SystematicTesting
             Logger.WriteLine($"... Checker is " +
                              $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
 
-            return new System.Threading.Tasks.Task(() =>
+            return () =>
             {
                 try
                 {
@@ -438,6 +468,7 @@ namespace PChecker.SystematicTesting
 
                         if (IsReplayModeEnabled || (!_checkerConfiguration.PerformFullExploration &&
                                                     TestReport.NumOfFoundBugs > 0) ||
+                            TestReport.InternalErrors.Count > 0 ||
                             !Strategy.PrepareForNextIteration())
                         {
                             break;
@@ -491,7 +522,7 @@ namespace PChecker.SystematicTesting
                     using var jsonStreamFile = File.Create(jsonVerbosePath);
                     JsonSerializer.Serialize(jsonStreamFile, JsonVerboseLogs, jsonSerializerConfig);
                 }
-            }, CancellationTokenSource.Token);
+            };
         }
 
         /// <summary>
@@ -535,6 +566,14 @@ namespace PChecker.SystematicTesting
             // is installed and if verbosity is turned off.
             InMemoryLogger runtimeLogger = null;
 
+            // Untraced schedules skip building text and JSON traces; a failing one is
+            // replayed with tracing to produce them.
+            var isTraced = _checkerConfiguration.IsVerbose || IsReplayModeEnabled ||
+                           _checkerConfiguration.IsTracingEverySchedule;
+
+            // Why the replay of a failing schedule did not reproduce its bug, if it did not.
+            string traceDivergence = null;
+
             // Gets a handle to the standard output and error streams.
             var stdOut = Console.Out;
             var stdErr = Console.Error;
@@ -543,6 +582,7 @@ namespace PChecker.SystematicTesting
             {
                 // Creates a new instance of the controlled runtime.
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy);
+                runtime.LogWriter.IsTraceEnabled = isTraced;
 
                 runtime.RegisterLog(timelineObserver);
                 runtime.RegisterLog(scenarioObserver);
@@ -553,8 +593,11 @@ namespace PChecker.SystematicTesting
                 // the standard output and error streams to a nul logger.
                 if (!_checkerConfiguration.IsVerbose)
                 {
-                    runtimeLogger = new InMemoryLogger();
-                    runtime.SetLogger(runtimeLogger);
+                    if (isTraced)
+                    {
+                        runtimeLogger = new InMemoryLogger();
+                        runtime.SetLogger(runtimeLogger);
+                    }
 
                     var writer = TextWriter.Null;
                     Console.SetOut(writer);
@@ -565,7 +608,6 @@ namespace PChecker.SystematicTesting
 
                 // Runs the test and waits for it to terminate.
                 runtime.RunTest(TestMethodInfo.Method, TestMethodInfo.Name);
-                runtime.WaitAsync().Wait();
 
                 // Invokes the user-specified schedule disposal method.
                 TestMethodInfo.DisposeCurrentIteration();
@@ -625,11 +667,22 @@ namespace PChecker.SystematicTesting
                     }
                 }
 
-                if (!IsReplayModeEnabled && TestReport.NumOfFoundBugs > 0)
+                // Traces are only built for a schedule that found a bug. With full exploration they
+                // are never emitted, so only the reproducible trace of the first bug is kept, and
+                // no schedule is replayed: a replay would also rerun foreign code between schedules.
+                if (!IsReplayModeEnabled && runtime.Scheduler.BugFound &&
+                    (!_checkerConfiguration.PerformFullExploration || string.IsNullOrEmpty(ReproducableTrace)))
                 {
+                    if (!isTraced && !_checkerConfiguration.PerformFullExploration)
+                    {
+                        runtimeLogger = TraceSchedule(runtime, out traceDivergence);
+                    }
+
                     if (runtimeLogger != null)
                     {
-                        ReadableTrace = runtimeLogger.ToString();
+                        ReadableTrace = traceDivergence is null ? string.Empty :
+                            $"<StrategyLog> WARNING: {GetTraceDivergenceWarning(traceDivergence)}{Environment.NewLine}";
+                        ReadableTrace += runtimeLogger.ToString();
                         ReadableTrace += TestReport.GetText(_checkerConfiguration, "<StrategyLog>");
                     }
 
@@ -651,6 +704,17 @@ namespace PChecker.SystematicTesting
                     var seconds = watch.Elapsed.TotalSeconds;
                 }
 
+                if (traceDivergence != null)
+                {
+                    Logger.WriteLine($"... WARNING: {GetTraceDivergenceWarning(traceDivergence)}");
+                }
+
+                if (runtime?.Scheduler.InternalError != null)
+                {
+                    Logger.WriteLine($"... Checker failed due to an internal error in schedule #{schedule + 1}: " +
+                                     runtime.Scheduler.InternalError);
+                }
+
                 if (!IsReplayModeEnabled && _checkerConfiguration.PerformFullExploration && runtime.Scheduler.BugFound)
                 {
                     Logger.WriteLine($"..... Schedule #{schedule + 1} " +
@@ -664,6 +728,94 @@ namespace PChecker.SystematicTesting
                 runtime?.Dispose();
             }
         }
+
+        /// <summary>
+        /// Replays the schedule that the specified runtime has just explored with tracing enabled,
+        /// and returns its text trace. The JSON trace is left in <see cref="JsonLogger"/>.
+        /// </summary>
+        /// <param name="explored">The runtime that explored the schedule and found a bug.</param>
+        /// <param name="divergence">
+        /// Why the replay did not reproduce the bug of the explored schedule, or null if it did. Both
+        /// traces then end with the bug found by exploration.
+        /// </param>
+        private InMemoryLogger TraceSchedule(ControlledRuntime explored, out string divergence)
+        {
+            // Replays with the same configuration, fairness and steps bound, and reports the
+            // description of the strategy that explored the schedule (e.g. its seed).
+            var strategy = new ReplayStrategy(_checkerConfiguration, explored.Scheduler.ScheduleTrace, Strategy);
+            var runtime = new ControlledRuntime(_checkerConfiguration, strategy);
+            var logger = new InMemoryLogger();
+            try
+            {
+                RegisterObservers(runtime);
+                runtime.SetLogger(logger);
+                runtime.RunTest(TestMethodInfo.Method, TestMethodInfo.Name);
+
+                // Like after any schedule, so that state the test resets per schedule is clean again.
+                TestMethodInfo.DisposeCurrentIteration();
+                if (!runtime.Scheduler.BugFound)
+                {
+                    runtime.CheckNoMonitorInHotStateAtTermination();
+                }
+
+                divergence = GetReplayDivergence(explored.Scheduler, runtime.Scheduler, strategy);
+                if (divergence != null && runtime.Scheduler.BugReport != explored.Scheduler.BugReport)
+                {
+                    // The trace must still say which bug was found.
+                    runtime.LogWriter.LogAssertionFailure($"<ErrorLog> {explored.Scheduler.BugReport}");
+                    runtime.LogWriter.LogStrategyDescription(_checkerConfiguration.SchedulingStrategy,
+                        Strategy.GetDescription());
+                }
+
+                runtime.LogWriter.LogCompletion();
+            }
+            finally
+            {
+                runtime.Dispose();
+            }
+
+            return logger;
+        }
+
+        /// <summary>
+        /// Returns why the replay of an explored schedule did not reproduce it, or null if it found
+        /// the same bug after the same number of steps.
+        /// </summary>
+        private static string GetReplayDivergence(OperationScheduler explored, OperationScheduler replayed,
+            ReplayStrategy strategy)
+        {
+            string reason = null;
+            if (!replayed.BugFound)
+            {
+                reason = replayed.InternalError is null ? "the replay found no bug" :
+                    $"the replay failed with an internal error: {replayed.InternalError}";
+            }
+            else if (replayed.BugReport != explored.BugReport)
+            {
+                reason = $"the replay found another bug: {replayed.BugReport}";
+            }
+            else if (replayed.ScheduleTrace.Count != explored.ScheduleTrace.Count)
+            {
+                reason = $"the replay took {replayed.ScheduleTrace.Count} steps instead of " +
+                         $"{explored.ScheduleTrace.Count}";
+            }
+
+            if (reason != null && !string.IsNullOrEmpty(strategy.ErrorText))
+            {
+                reason += $" ({strategy.ErrorText.TrimEnd('.')})";
+            }
+
+            return reason;
+        }
+
+        /// <summary>
+        /// Returns the warning that the trace of a failing schedule does not show its bug.
+        /// </summary>
+        private static string GetTraceDivergenceWarning(string divergence) =>
+            "Replaying the failing schedule to trace it did not reproduce the bug: " + divergence + ". " +
+            "The trace may not show how the bug happens. This happens when the program depends on " +
+            "state that the schedule does not control, such as static state in foreign code. Rerun " +
+            "with --verbose to trace every schedule as it runs.";
 
         /// <summary>
         /// Stops the testing engine.
@@ -909,6 +1061,15 @@ namespace PChecker.SystematicTesting
             catch (FileNotFoundException ex)
             {
                 Error.ReportAndExit(ex.Message);
+            }
+
+            // Running generated code against a runtime it was not compiled for reports bogus bugs
+            // (or misses real ones), so this is a tool error, not a bug.
+            var incompatibility = GeneratedCodeVersionAttribute.GetIncompatibilityError(assembly);
+            if (incompatibility != null)
+            {
+                Error.Report("{0}", incompatibility);
+                Environment.Exit((int)ExitCode.InternalError);
             }
 
 #if NETFRAMEWORK

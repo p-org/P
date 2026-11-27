@@ -45,6 +45,12 @@ Obligations are proved in parallel, `pverify.jobs` at a time (default: one
 per hardware thread), each kernel-checked on its own copy of the
 environment; the report keeps their order.
 
+What the theorems rest on is checked by the kernel too (`checkDeps`): a
+declaration made without it can state anything. Every declaration outside
+PLean's library and its imports that a manual proof, an automatic proof or
+the assembly uses is replayed through the kernel; an obligation that rests
+on one it rejects fails, and the assembly takes it as `sorry`.
+
 The report ends with what `M.safe` assumes beyond Lean's axioms (`paxiom`s,
 `pinstance`s, the solver's answers in trusted obligations, `sorry`), and
 warns when `InitConditions` is unsatisfiable.
@@ -281,9 +287,26 @@ private def manualAxiomsProblem? (ctx : LocalPModuleCtx) (modName full : Name) :
   return some s!"`{full}` uses {", ".intercalate (other.toList.map (s!"`{·}`"))}, \
     which the module does not declare"
 
-/-- The roots of the modules whose declarations the kernel re-check of a manual
-proof takes as checked: Lean's library and PLean's (with lean-crush). -/
-private def trustedRoots : Array Name := #[`Init, `Std, `Lean, `PLean, `Crush]
+/-- The modules whose declarations the kernel check (`checkDeps`) takes as
+checked: PLean's library and what it imports, transitively (Lean's and
+lean-crush's). A module is trusted for being one of PLean's imports, not for
+the root of its name. -/
+private def trustedModules (env : Environment) : Std.HashSet Name := Id.run do
+  let names := env.header.moduleNames
+  let data := env.header.moduleData
+  let mut idx : Std.HashMap Name Nat := {}
+  for h : i in [0:names.size] do idx := idx.insert names[i] i
+  let mut todo : Array Name := #[`PLean, `PLean.Commands.PVerify]
+  let mut seen : Std.HashSet Name := {}
+  while !todo.isEmpty do
+    let m := todo.back!
+    todo := todo.pop
+    if seen.contains m then continue
+    let some i := idx[m]? | continue
+    seen := seen.insert m
+    if let some d := data[i]? then
+      todo := todo ++ d.imports.map (·.module)
+  return seen
 
 /-- `e` with its constants, and the structures of its projections, renamed by `rn`. -/
 private partial def renameConsts (rn : Name → Name) (e : Expr) : Expr :=
@@ -316,51 +339,148 @@ private def renameConstInfo (rn : Name → Name) (c : ConstantInfo) : ConstantIn
                         { r with ctor := rn r.ctor, rhs := renameConsts rn r.rhs } }
   | .quotInfo v => .quotInfo { v with name := rn v.name, «type» := ty }
 
-/-- Why the kernel does not accept the `@[pverifyProof]` theorem `full` as a
-proof of the obligation's statement `stmt`, if it does not. The elaborator's
-checks are not enough: a theorem added without the kernel (under
-`debug.skipKernelTC`, or by a metaprogram) can have any proof, and a proof
-can rest on a lemma added that way. So the proof is checked again, with
-`stmt` as its type, together with every declaration it depends on outside
-Lean's and PLean's libraries (lemmas, the module's definitions, the user's
-other files): fresh copies of them, under new names, are replayed through
-the kernel (`Lean.Kernel.Environment.replay`), and then discarded. -/
-private def manualKernelProblem? (full : Name) (stmt : Expr) : CommandElabM (Option String) := do
+/-- What `checkDeps` found. -/
+private structure DepCheck where
+  /-- The declarations the kernel rejects, with its message. -/
+  rejected : Std.HashMap Name String := {}
+  /-- For each root that rests on a rejected declaration, one of them. -/
+  culprit : Std.HashMap Name Name := {}
+  /-- The declarations it visited (outside the trusted modules) that rest on no
+  rejected one. -/
+  sound : Std.HashSet Name := {}
+
+/-- The declaration a message of `Lean.Kernel.Environment.replay` names. -/
+private def replayedDecl? (msg : String) : Option String := do
+  let rest ← (msg.splitOn "while replaying declaration '")[1]?
+  (rest.splitOn "':\n")[0]?
+
+/-- The kernel check of what `roots` rest on. Elaboration alone proves
+nothing: a declaration added without the kernel (under `debug.skipKernelTC`,
+or by a metaprogram) can state anything, and so can a proof that uses one.
+So every declaration the roots depend on, transitively, outside the trusted
+modules (`trustedModules`) is replayed through the kernel
+(`Lean.Kernel.Environment.replay`) as a copy renamed under a prefix no
+declared name has, and the copies are discarded. A declaration `checked`
+holds as checked (one this run of `#pverify` added, with the kernel on) is not
+replayed, but what it uses is; `known` ones (checked before) are not visited.
+`retype` gives a theorem the statement to check it against (a manual proof:
+its obligation's). When the kernel rejects a declaration, it is set aside
+with what rests on it, and the rest is replayed again. -/
+private def checkDeps (roots : Array Name) (checked : Name → Bool := fun _ => false)
+    (known : Std.HashSet Name := {}) (retype : Std.HashMap Name Expr := {}) :
+    CommandElabM DepCheck := do
   let env ← getEnv
-  let some (.thmInfo ti) := env.find? full | return some s!"`{full}` is not a theorem"
+  let trustedMods := trustedModules env
   let mods := env.allImportedModuleNames
   let trusted (n : Name) : Bool := match env.getModuleIdxFor? n with
-    | some i => mods[i]?.any fun m => trustedRoots.contains m.getRoot
+    | some i => mods[i]?.any trustedMods.contains
     | none => false
-  -- what the proof and the statement use, transitively, outside the libraries
-  -- (an inductive type with its whole block, constructors and recursors)
-  let mut todo : Array Name := stmt.getUsedConstants ++ ti.value.getUsedConstants
-  let mut seen : NameSet := NameSet.empty.insert full
-  let mut deps : Array ConstantInfo := #[]
+  -- the dependency graph (an inductive type with its block, constructors and
+  -- recursors, and a recursor with what its rules use)
+  let mut uses : Std.HashMap Name (Array Name) := {}
+  let mut replay : Array ConstantInfo := #[]
+  let mut rejected : Std.HashMap Name String := {}
+  let mut todo := roots
   while !todo.isEmpty do
     let n := todo.back!
     todo := todo.pop
-    if seen.contains n || trusted n then continue
-    seen := seen.insert n
-    let some ci := env.find? n | return some s!"`{n}`, which `{full}` uses, is missing"
-    deps := deps.push ci
-    todo := todo ++ ci.getUsedConstantsAsSet.toArray
+    if uses.contains n || known.contains n || trusted n then continue
+    let some ci := env.find? n
+      | uses := uses.insert n #[]; rejected := rejected.insert n s!"`{n}` is not declared"
+    -- the constructors and recursors of a known inductive type are known too:
+    -- the kernel generates them with the type, which is not replayed
+    let ofKnown := match ci with
+      | .ctorInfo v => known.contains v.induct
+      | .recInfo v => v.all.any known.contains
+      | _ => false
+    if ofKnown then
+      uses := uses.insert n #[]
+      continue
+    let ci : ConstantInfo := match retype[n]?, ci with
+      | some t, .thmInfo v => ConstantInfo.thmInfo { v with «type» := t }
+      | _, ci => ci
+    let mut deps := ci.getUsedConstantsAsSet.toArray
     match ci with
-    | .inductInfo v => todo := todo ++ v.all.toArray ++ v.ctors.toArray
-    | .ctorInfo v => todo := todo.push v.induct
-    | .recInfo v => todo := todo ++ v.all.toArray
+    | .inductInfo v => deps := deps ++ v.all.toArray ++ v.ctors.toArray
+    | .ctorInfo v => deps := deps.push v.induct
+    | .recInfo v =>
+      deps := deps ++ v.all.toArray ++ v.rules.toArray.flatMap (·.rhs.getUsedConstants)
     | _ => pure ()
-  let pfx := `_pvcheck
-  let rn (n : Name) : Name := if seen.contains n then pfx ++ n else n
-  let mut consts : Std.HashMap Name ConstantInfo := {}
-  for ci in deps do
-    consts := consts.insert (rn ci.name) (renameConstInfo rn ci)
-  consts := consts.insert (rn full) (renameConstInfo rn (.thmInfo { ti with «type» := stmt }))
-  match ← (env.toKernelEnv.replay consts).toBaseIO with
-  | .ok _ => return none
-  | .error e =>
-    let msg := (toString e).replace (pfx.toString ++ ".") ""
-    return some s!"the kernel does not accept `{full}` as a proof of the obligation: {msg}"
+    deps := deps.filter fun d => d != n && !known.contains d && !trusted d
+    uses := uses.insert n deps
+    unless checked n do replay := replay.push ci
+    todo := todo ++ deps
+  let usedBy : Std.HashMap Name (Array Name) := uses.fold (init := {}) fun m n ds =>
+    ds.foldl (init := m) fun m d => m.insert d (((m[d]?).getD #[]).push n)
+  let taintOf (bad : Std.HashMap Name String) : Std.HashSet Name := Id.run do
+    let mut seen : Std.HashSet Name := {}
+    let mut todo := bad.toArray.map (·.1)
+    while !todo.isEmpty do
+      let n := todo.back!
+      todo := todo.pop
+      if seen.contains n then continue
+      seen := seen.insert n
+      todo := todo ++ (usedBy[n]?).getD #[]
+    return seen
+  -- a prefix under which no copy's name is declared: a theorem already
+  -- declared under a copy's name would be taken as checked (`replay` skips it)
+  let kenv := env.toKernelEnv
+  let free (p : Name) : Bool := replay.all fun ci =>
+    !env.contains (p ++ ci.name) && (kenv.find? (p ++ ci.name)).isNone
+  let mut pfx := `_pvcheck
+  let mut k := 0
+  while !free pfx do
+    k := k + 1
+    pfx := Name.mkSimple s!"_pvcheck{k}"
+  let names : Std.HashSet Name := replay.foldl (·.insert ·.name) {}
+  let rn (n : Name) : Name := if names.contains n then pfx ++ n else n
+  let byStr : Std.HashMap String Name :=
+    replay.foldl (init := {}) fun m ci => m.insert (toString (rn ci.name)) ci.name
+  repeat
+    let tainted := taintOf rejected
+    let consts := replay.foldl (init := ({} : Std.HashMap Name ConstantInfo)) fun m ci =>
+      if tainted.contains ci.name then m else m.insert (rn ci.name) (renameConstInfo rn ci)
+    if consts.isEmpty then break
+    match ← (kenv.replay consts).toBaseIO with
+    | .ok _ => break
+    | .error e =>
+      let raw := toString e
+      let msg := raw.replace (pfx.toString ++ ".") ""
+      match (replayedDecl? raw).bind (byStr[·]?) with
+      | some b => if tainted.contains b then break else rejected := rejected.insert b msg
+      | none =>
+        -- not attributable: reject everything replayed
+        for ci in replay do
+          unless tainted.contains ci.name do rejected := rejected.insert ci.name msg
+        break
+  let tainted := taintOf rejected
+  let mut culprit : Std.HashMap Name Name := {}
+  for r in roots do
+    unless tainted.contains r do continue
+    let mut q := #[r]
+    let mut seen : Std.HashSet Name := {}
+    while !q.isEmpty do
+      let n := q.back!
+      q := q.pop
+      if seen.contains n then continue
+      seen := seen.insert n
+      if rejected.contains n then
+        culprit := culprit.insert r n
+        break
+      q := q ++ ((uses[n]?).getD #[]).filter tainted.contains
+  let sound := uses.fold (init := {}) fun s n _ => if tainted.contains n then s else s.insert n
+  return { rejected, culprit, sound }
+
+/-- Why the kernel does not accept the `@[pverifyProof]` theorem `full` as a
+proof of the obligation's statement `stmt`, if it does not: the proof is
+checked again, with `stmt` as its type, together with every declaration it
+depends on outside PLean's library and its imports (`checkDeps`). -/
+private def manualKernelProblem? (full : Name) (stmt : Expr) : CommandElabM (Option String) := do
+  let some (.thmInfo _) := (← getEnv).find? full | return some s!"`{full}` is not a theorem"
+  let dc ← checkDeps #[full] (retype := ({} : Std.HashMap Name Expr).insert full stmt)
+  let some b := dc.culprit[full]? | return none
+  return some s!"the kernel does not accept `{full}` as a proof of the obligation: \
+    {(dc.rejected[b]?).getD ""}"
 
 /-- A `@[pverifyProof]` skeleton for the obligation `full`, from its statement. -/
 private def skeletonOf (obName full : Name) : CommandElabM String := do
@@ -446,6 +566,14 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   unless ctx.machines.toList.all (·.2.materialised) do
     throwError "run `#gen_module {modName}` before `#pverify {modName}`"
   let env ← getEnv
+  -- The declarations made before this run. What the obligations use from them
+  -- is checked again (`checkDeps`); what the run adds is checked as it is added
+  -- (`elabPVerify` keeps the kernel on).
+  let startConsts : Std.HashSet Name :=
+    env.constants.map₂.foldl (init := {}) fun s n _ => s.insert n
+  let ranHereNow : CommandElabM (Name → Bool) := do
+    let now := (← getEnv).constants.map₂
+    return fun n => now.contains n && !startConsts.contains n
   let opts ← getOptions
   let timeout := pverify.timeout.get opts
   let trust := pverify.trust.get opts
@@ -893,11 +1021,26 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
           addDecl decl
       catch e => logError m!"#pverify: cannot add `{ci.name}`: {e.toMessageData}"
   results := (← slots.get).filterMap id
-  -- A manual proof that was rejected is not used: like an obligation that
-  -- failed, the assembly takes it as `sorry`, through a stand-in theorem
+  -- The kernel check of what the automatic proofs rest on (`checkDeps`): one
+  -- that uses a declaration the kernel rejects (a `@[pverifySimp]` or `@[spec]`
+  -- lemma, an instance, made without the kernel) fails. Manual proofs were
+  -- checked already, against their obligations' statements.
+  let dcA ← checkDeps (results.filter (fun r => r.ok && !r.manual) |>.map (modName ++ ·.name))
+    (← ranHereNow)
+  results := results.map fun r =>
+    match dcA.culprit[modName ++ r.name]? with
+    | some b =>
+      let m := s!"`{modName ++ r.name}` rests on `{b}`, which the kernel does not accept: \
+        {(dcA.rejected[b]?).getD ""}"
+      { r with ok := false, cached := false, trusted := false, msg := excerpt m, fullMsg := m }
+    | none => r
+  -- A manual proof that was rejected, or a proof that rests on a declaration
+  -- the kernel rejects, is not used: like an obligation that failed, the
+  -- assembly takes it as `sorry`, through a stand-in theorem
   -- `_unproved.<obligation>` with the obligation's statement.
   let unproved : NameSet := results.foldl (init := {}) fun s r =>
-    if r.manual && !r.ok then s.insert r.name else s
+    if (r.manual && !r.ok) || dcA.culprit.contains (modName ++ r.name) then s.insert r.name
+    else s
   if only.isEmpty then
     for (obName, cmd, _) in queued do
       unless unproved.contains obName do continue
@@ -905,6 +1048,9 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
       elabCommand (← `(command| set_option warn.sorry false in
         theorem $(mkIdent (`_unproved ++ obName)) $bs* : $ty := sorry))
   let obId (n : Name) : Ident := mkIdent (if unproved.contains n then `_unproved ++ n else n)
+  -- the environment before the assembly (it is assembled again from here if a
+  -- declaration it rests on is rejected)
+  let envAsm ← getEnv
   if only.isEmpty then
     Progress.setHead (status queued.size results) s!"[Assembling] {modName}.safe"
   -- assembly (not counted as obligations; skipped under `pverify.only`)
@@ -917,6 +1063,10 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     let t0 ← IO.monoMsNow
     let doElab : CommandElabM (Array String) := do
       if capture then elabCapture (← wrap cmd) else do elabCommand cmd; pure #[]
+    -- Not from the cache while an obligation is taken as `sorry`: an assembly
+    -- theorem's key is its statement, and a cached proof would name the
+    -- obligation's theorem, not its stand-in.
+    unless unproved.isEmpty do return ← doElab
     let some (stmt, key) ← cacheKeyOf cmd | doElab
     let `(command| theorem $nm:ident $_* : $_ := $_) := cmd.raw | doElab
     let full := (← getCurrNamespace) ++ nm.getId
@@ -1097,18 +1247,37 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
     theorem $(mkIdent `safe_fifo) : ∀ g, PLean.GReachable $(mkIdent `prog) .fifo $(mkIdent `InitConditions) g →
         $(mkIdent `AllInv) g ∧ g.error = none := fun g hg => $(mkIdent `safe) g hg.fifo_bag)
   if tdbg then IO.eprintln s!"TIME merge+asm-build {(← IO.monoMsNow) - tPh} ms"; tPh ← IO.monoMsNow
-  let mut asmErrs : Array String := #[]
-  for cmd in (if only.isEmpty then #[stepThm, baseThm, safeThm, safeFifo] else #[]) do
-    asmErrs := asmErrs ++ (← asmCached cmd true)
+  let mut holdsCmds : Array (Name × TSyntax `command) := #[]
   for (t, k) in allTargets.toList.zipIdx do
     if t == `NoHalt || t == `Transient || t == `Waiting || !only.isEmpty then continue
     let (gq, hgq) := (mkIdent `g, mkIdent `hg)
     let proj ← (List.range k).foldlM (init := ← `(($(mkIdent `safe_fifo) $gq $hgq).1)) fun acc _ => `(($acc).2)
     let proj ← if k + 1 < n then `(($proj).1) else pure proj
-    asmErrs := asmErrs ++ (← elabCapture (← `(command|
-      theorem $(mkIdent (Name.mkSimple (t.toString ++ "_holds"))) : ∀ g,
+    let hn := Name.mkSimple (t.toString ++ "_holds")
+    holdsCmds := holdsCmds.push (hn, ← `(command|
+      theorem $(mkIdent hn) : ∀ g,
           PLean.GReachable $(mkIdent `prog) .fifo $(mkIdent `InitConditions) g → $(mkIdent t) g :=
-        fun $gq $hgq => $proj)))
+        fun $gq $hgq => $proj))
+  let mut asmErrs : Array String := #[]
+  for cmd in (if only.isEmpty then #[stepThm, baseThm, safeThm, safeFifo] else #[]) do
+    asmErrs := asmErrs ++ (← asmCached cmd true)
+  for (_, cmd) in holdsCmds do
+    asmErrs := asmErrs ++ (← elabCapture cmd)
+  -- The kernel check of what the assembly rests on besides the obligations
+  -- (the default simp set its tactics use, say). If the kernel rejects one, it
+  -- is assembled again with the step and the base case as `sorry`.
+  if only.isEmpty then
+    let finals := (#[`safe, `safe_fifo] ++ holdsCmds.map (·.1)).map (modName ++ ·)
+    let dcB ← checkDeps (finals.filter (← getEnv).contains) (← ranHereNow) (known := dcA.sound)
+    if let some (_, b) := dcB.culprit.toList.head? then
+      asmErrs := asmErrs.push s!"the assembly rests on `{b}`, which the kernel does not accept: \
+        {(dcB.rejected[b]?).getD ""}"
+      setEnv envAsm
+      for cmd in #[stepThm, baseThm] do
+        let `(command| theorem $nm:ident : $ty := $_) := cmd | continue
+        elabCommand (← `(command| set_option warn.sorry false in theorem $nm : $ty := sorry))
+      for cmd in #[safeThm, safeFifo] ++ holdsCmds.map (·.2) do
+        discard <| elabCapture cmd
   if tdbg then IO.eprintln s!"TIME assembly {(← IO.monoMsNow) - tPh} ms"; tPh ← IO.monoMsNow
   -- `InitConditions` (with the axioms) must be satisfiable, or every theorem
   -- holds vacuously: a quick attempt to refute it.
@@ -1246,8 +1415,12 @@ def elabPVerify : CommandElab := fun stx => do
         { diagnostics := ← Snapshot.Diagnostics.ofMessageLog log } #[]))
   let scopes := (← get).scopes
   try
-    -- The obligations are commands themselves; they must not take over the snapshot.
-    withReader ({ · with snap? := none }) (pverifyBody stx)
+    -- The obligations are commands themselves; they must not take over the
+    -- snapshot. The kernel checks everything the run declares
+    -- (`debug.skipKernelTC` is off), which `checkDeps` relies on.
+    withReader ({ · with snap? := none }) <|
+      withScope (fun sc => { sc with opts := debug.skipKernelTC.set sc.opts false }) <|
+        pverifyBody stx
   catch e =>
     -- close the namespace `pverifyBody` opened
     modify fun st => { st with scopes }

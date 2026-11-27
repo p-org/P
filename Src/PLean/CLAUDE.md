@@ -266,12 +266,19 @@ load-bearing invariants you need to respect when editing.
   `@[pverifyProof]` theorem named like an obligation (inside `namespace
   M`, before `#pverify M`) replaces its automatic proof once its
   statement and the axioms it uses are checked, and the kernel accepts it
-  as a proof of the obligation (re-checking it with every declaration it
-  depends on outside Lean's and PLean's libraries, as renamed copies:
-  `manualKernelProblem?`). A rejected manual proof is not used: the
-  assembly takes the obligation as `sorry` (`_unproved.<obligation>`).
-  `pverify_auto` runs the solver inside one and leaves open what it cannot
-  prove (`Tests/Verify/ManualProof.lean`).
+  as a proof of the obligation. `pverify_auto` runs the solver inside one
+  and leaves open what it cannot prove (`Tests/Verify/ManualProof.lean`).
+- **What the theorems rest on is kernel-checked.** A declaration made
+  without the kernel (`debug.skipKernelTC`, a metaprogram) can state
+  anything. `checkDeps` replays through the kernel, as copies renamed under
+  a fresh prefix, every declaration outside PLean's library and its imports
+  that a manual proof (typed with its obligation's statement), an
+  automatic proof or the assembly uses; `#pverify` keeps the kernel on for
+  what it declares itself, so that is not replayed. An obligation that
+  rests on a rejected declaration fails, and the assembly takes it as
+  `sorry` (`_unproved.<obligation>`, not from the cache); when the assembly
+  itself rests on one, its step and base case become `sorry`
+  (`Tests/Verify/KernelCheck.lean`).
 - **Tag new state-update helpers `@[pverifySimp]`.** The normalisation
   before crush uses this set.
 - **Macro hygiene through `mkIdent`.** Identifiers that resolve against

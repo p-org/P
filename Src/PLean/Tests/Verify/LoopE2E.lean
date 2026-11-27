@@ -25,7 +25,7 @@ pmodule LoopT
       entry {
         foreach (m in peers)
           invariant only_req :
-            new_sends e => e is eReq ∧ (eReq_payload_of e).origin = e.src ∧ e.src = hs.ref ;
+            new_sends e => e is eReq ∧ (eReq_payload_of e).origin = e.src ∧ e.src = this.ref ;
         {
           send m, eReq, (origin = this.ref)
         }

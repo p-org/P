@@ -56,13 +56,15 @@ jobs:
       - name: Regression tests
         run: lake build Tests
 
-      # One example at a time: solver timeouts are wall-clock.
+      # One example module at a time, with more time per solver call: solver
+      # timeouts are wall-clock, and this machine is slower than a desktop.
+      # (`-R` applies the setting; the lakefile reads it.)
       - name: Verify the examples
         run: |
-          for f in Examples/*.lean; do
-            m="Examples.$(basename "$f" .lean)"
+          lake build -R -KpverifyTimeout=60 PLean
+          for m in $(find Examples -name '*.lean' | sed 's|/|.|g; s|\.lean$||' | sort); do
             echo "::group::$m"
-            lake build "$m"
+            lake build -KpverifyTimeout=60 "$m"
             echo "::endgroup::"
           done
 

@@ -328,7 +328,9 @@ load-bearing invariants you need to respect when editing.
   obligations run one by one.
 - `pverify.timeout` (seconds), `pverify.trust` (`reconstructOrTrust` by
   default: obligations whose proof could not be replayed are reported
-  `✓ (trusted)`), `pverify.heartbeats`.
+  `✓ (trusted)`), `pverify.heartbeats`. On a slower machine,
+  `lake build -R -KpverifyTimeout=<seconds> Examples` sets the timeout for
+  the examples (CI does).
 - Each obligation line says how its goals were closed (`[norm]`: nothing
   left after `vcgen` and normalisation; `smt n` / `pre n` / `hyp n`: by an
   SMT solver, by crush before SMT translation, as a hypothesis). In the

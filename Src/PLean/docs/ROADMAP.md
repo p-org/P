@@ -1,10 +1,9 @@
 # PLean — Roadmap
 
 Contributor-facing entry point. [`STATUS.md`](STATUS.md) carries the
-current snapshot; [`TransitionModel.md`](TransitionModel.md) is the
-design the phases below implement.
+current snapshot.
 
-## Phases of the transition-model redesign
+## Phases
 
 | Phase | Status | Deliverable |
 |---|---|---|

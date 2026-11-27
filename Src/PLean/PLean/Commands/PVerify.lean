@@ -1,7 +1,7 @@
 /-
 PLean.Commands.PVerify — `#pverify M`: emit the proof obligations of
-pmodule `M` (docs/TransitionModel.md §4), discharge each with
-`pverify_close`, and assemble the safety theorems:
+pmodule `M`, discharge each with `pverify_close`, and assemble the safety
+theorems:
 
   M.safe      : ∀ g, GReachable prog .bag  InitConditions g → AllInv g ∧ g.error = none
   M.safe_fifo : ∀ g, GReachable prog .fifo InitConditions g → AllInv g ∧ g.error = none
@@ -613,9 +613,12 @@ private def pverifyBody (stx : Syntax) : CommandElabM Unit := do
   let allTargets := PLean.allTargets ctx env modName
   -- names to unfold / hints / facts
   let (defNames, hintNames, factNames) := closeLists ctx env modName
-  let defs : Array Ident := defNames.map mkIdent
-  let hints : Array (TSyntax `term) := hintNames.map fun n => ⟨mkIdent n⟩
-  let facts : Array (TSyntax `term) := factNames.map fun n => ⟨mkIdent n⟩
+  -- Qualified (as in `pverify_auto`), so that a handler local named like an invariant or a
+  -- lemma does not capture the name in `pverify_close`'s `simp` call.
+  let full (n : Name) : Ident := mkIdent (`_root_ ++ modName ++ n)
+  let defs : Array Ident := defNames.map full
+  let hints : Array (TSyntax `term) := hintNames.map fun n => ⟨full n⟩
+  let facts : Array (TSyntax `term) := factNames.map fun n => ⟨full n⟩
   let closeTac (handlers : Array Ident) : CommandElabM (TSyntax ``Lean.Parser.Tactic.tacticSeq) :=
     `(Lean.Parser.Tactic.tacticSeq|
         pverify_close [$[$handlers],*] [$[$defs],*] [$[$hints],*] [$[$facts],*])

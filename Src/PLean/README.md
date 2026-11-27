@@ -109,7 +109,6 @@ their numbers.
 |---|---|
 | [`docs/STATUS.md`](docs/STATUS.md) | Current status and results |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | What is next |
-| [`docs/TransitionModel.md`](docs/TransitionModel.md) | The design of the model and the obligations |
 | [`docs/ProofSkill.md`](docs/ProofSkill.md) | Writing invariants and reading `#pverify`'s report |
 | [`CLAUDE.md`](CLAUDE.md) | Contributor guide: architecture, conventions, surface syntax |
 | [`docs/STYLE.md`](docs/STYLE.md) | Code style |

@@ -32,6 +32,7 @@ proved, and the goal and solver it is on.
 | `✓ (manual)` | proved by a `@[pverifyProof]` theorem | — |
 | `✗ [counterexample]` | z3 found a state where the step breaks the invariant | the invariant is false or not inductive: strengthen it |
 | `✗ [unknown]` | the solver timed out, and no counterexample was found | the query is too big or needs too much reasoning: give the target fewer premises, add intermediate invariants, or prove it by hand |
+| `✗ [reconstruct-failed]` | under `pverify.trust "reconstruct"`: the solver proved it, but its proof could not be replayed | as for `✓ (trusted)` |
 | `✗ [error]` | something else failed, e.g. a manual proof whose statement is not the obligation's | read the message |
 
 A proved obligation's line says how its goals (one per invariant and
@@ -173,18 +174,19 @@ Keep a disjunction out of the top of a conclusion too: write `A ∨ B` as
 set stalled crush's own search in Lean; the implication did not.)
 
 **Sets a handler has just changed.** Lookups (`x ∈ s`) are unfolded by
-normalisation, where they occur in the goal. Inside the solver, `∈` on
-`votes.add x` (what `votes += (x)` leaves) is uninterpreted. So a fact
-quantified over sets, `∀ q : set[…], …`, cannot be used at the set a
-handler has just extended, which is where a size test (`votes.card ≥ k`)
-needs it. State the fact for a set and the element added: a binder `x`
-beside `q`, the size premise on `q.add x`, and a conclusion that speaks
-of `x` and `q` separately.
+normalisation, where they occur in the goal, and the solvers get the
+lookup's equation at each update in the goal (`votes.add x`, what
+`votes += (x)` leaves). They know nothing about `card`. A fact quantified
+over sets with a size premise, `∀ q : set[…], …`, is needed at the set a
+handler has just extended, where the size test reads
+`(votes.add x).card ≥ k`. State the fact for a set and the element added:
+a binder `x` beside `q`, the size premise on `q.add x`, and a conclusion
+that speaks of `x` and `q` separately.
 
 ```lean
--- cannot be used at `votes.add x`
+-- about the extended set as a whole
 ∀ q : set[T], (q.card : Int) ≥ k → ∃ a, a ∈ q ∧ P a
--- can
+-- about the set and the element added: the form to state
 ∀ (q : set[T]) (x : T), ((q.add x).card : Int) ≥ k → ¬ P x → ∃ a, a ∈ q ∧ P a
 ```
 
@@ -215,7 +217,7 @@ from the old value) is an invariant with the opposite guard,
 
 ## Iterating on one obligation
 
-Verification is slow: an example takes from seconds to over ten minutes,
+Verification is slow: an example takes from seconds to a few minutes,
 and a goal the solver cannot prove costs its full timeout, plus the
 search for a counterexample. Plan each run so that it answers a question.
 Decide beforehand what you want to learn (which obligation fails, which

@@ -12,8 +12,7 @@ invariants, the temporal `≺` precedence operator — and adds
 verification-declaration blocks (`Lemma` / `Theorem` / `Proof`).
 
 Programs elaborate to an executable transition system in the style of
-Verdi (Wilcox et al., PLDI'15), designed in
-[`docs/TransitionModel.md`](docs/TransitionModel.md):
+Verdi (Wilcox et al., PLDI'15):
 
 - a **world** of machine states plus in-flight packets, and a **ghost
   world** that also logs every packet ever sent;
@@ -29,7 +28,7 @@ Verdi (Wilcox et al., PLDI'15), designed in
   on the same model (explicit-state BMC is the next phase).
 
 The user-facing pipeline:
-1. Author a `pmodule M { … }` (one or more files contribute fragments).
+1. Author a `pmodule M … end M` (one or more files contribute fragments).
 2. `#gen_module M` synthesises the program (types, handlers, `prog`) and
    the specification definitions from the registered metadata.
 3. `#pwf M` reports well-formedness (a fast subset check).
@@ -119,8 +118,6 @@ Tests/               -- regressions; Tests.** is globbed
 
 ## Contributor docs
 
-- [`docs/TransitionModel.md`](docs/TransitionModel.md) — the design:
-  semantics, obligations, phases.
 - [`docs/STATUS.md`](docs/STATUS.md) — current snapshot and closure
   numbers.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — what is next.
@@ -135,6 +132,8 @@ Per proved target `T` (`prove T using U₁ … ;`), with premises `T ∧ U₁ �
   `<M>.<S>.entry_correct_<T>` per state, and
   `<M>.<S>.recv<k>_<ev>_correct_<T>` per `receive` case: after a handler
   that completes, `T` holds (`RunPost`);
+- `drop_correct_<T>`, when some machine can halt: `T` holds after a packet
+  to a halted machine is dropped;
 - `base_<T>`: `InitConditions g → T g`.
 
 Assuming every invariant (`AllInv`), once per module:
@@ -287,6 +286,11 @@ load-bearing invariants you need to respect when editing.
   module per call (it crashes when one call covers several).
 - **Tag new state-update helpers `@[pverifySimp]`.** The normalisation
   before crush uses this set.
+- **`vcgen` does not see the premises.** `pverify_close` normalises them
+  once, replaces each `h : P` by `h : Stashed P` while `vcgen` runs (it
+  preprocesses every proposition in the context), and restores it in
+  place. Keep the order of the hypotheses: it is the order of the solver's
+  query, and the pinned counterexamples depend on it.
 - **Macro hygiene through `mkIdent`.** Identifiers that resolve against
   user-namespace constants (`E`, `G`, `this`, `<S>_st`, …) or against
   modules a quotation's file does not import must be built via
@@ -331,6 +335,9 @@ load-bearing invariants you need to respect when editing.
   `✓ (trusted)`), `pverify.heartbeats`. On a slower machine,
   `lake build -R -KpverifyTimeout=<seconds> Examples` sets the timeout for
   the examples (CI does).
+- `pverify.report` (another path for the report), `pverify.showTimes false`
+  (no times, for pinned test output), `pverify.failOnIncomplete false` (an
+  incomplete run is a warning, not an error).
 - Each obligation line says how its goals were closed (`[norm]`: nothing
   left after `vcgen` and normalisation; `smt n` / `pre n` / `hyp n`: by an
   SMT solver, by crush before SMT translation, as a hypothesis). In the
@@ -338,6 +345,19 @@ load-bearing invariants you need to respect when editing.
   obligations done, the one being proved, and the goal, invariant and
   solver it is on (`pverify.progress`, `PLean/Verify/Progress.lean`). The
   command line prints only the final report.
+- Normalisation computes a set or map lookup only where the update is the
+  lookup's own argument. A container reached through an equation (a set
+  stored in a map, the payload of a message just sent) is left to the
+  solvers, to which `PSet.mem` and `PMap.get` are unknown functions. So
+  for each update term in a goal (`s.add x`, `m.put k v`, …),
+  `pv_lookup_facts` (`PLean/Verify/Norm.lean`) adds the lookup's equation
+  at that term as a hypothesis (`pv_lookup : ∀ y, (s.add x).mem y = …`).
+  The facts quantify over the element only: with the equations for every
+  set (`crush_unfold` on `PSet.mem`) a solver finds no model of a goal that
+  does not hold, and the report would lose its counterexample. An update
+  under a binder gets no fact. `Option.isSome` (what `k ∈ m` means on a
+  map) is `crush_unfold`. `sizeof`, `keys` beyond membership and `values`
+  stay opaque to the solvers (`Tests/Verify/ContainerLookups.lean`).
 - A goal that is not proved gets a counterexample when z3 finds one
   (`pverify.cex`, on by default): the report names the failing invariant
   and the step, and shows a minimised pre-state (machines by kind with

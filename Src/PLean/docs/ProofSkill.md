@@ -330,11 +330,14 @@ the module does not declare (a `paxiom` or `pinstance` is fine; the
 solver's trust makes it `✓ (manual, trusted)`). Only a theorem can be
 tagged. The kernel checks the proof again, against the obligation's
 statement, together with every lemma and definition it depends on outside
-PLean's library and its imports, so a theorem or lemma that skipped the
-kernel (`debug.skipKernelTC`, a metaprogram) is caught. A manual proof
-that fails is not used: `M.safe` takes its obligation as `sorry`. The same
-check covers the lemmas the automatic proofs use (a `@[pverifySimp]` lemma
-you add, say): an obligation whose proof uses one the kernel rejects fails.
+PLean's library and its imports, so a theorem or lemma declared without the
+kernel (`debug.skipKernelTC`, a metaprogram) before `#pverify` runs is
+caught. A manual proof that fails is not used: `M.safe` takes its
+obligation as `sorry`. The same check covers the lemmas the automatic
+proofs use (a `@[pverifySimp]` lemma you add, say): an obligation whose
+proof uses one the kernel rejects fails. Code that runs during `#pverify`
+(a tactic or simproc of yours) is trusted; to check a module whole, run
+`lake env leanchecker <Module>` on it once it is built.
 
 The obligation covers every invariant of its target, so a manual proof
 usually lets the solver do most of it. `pverify_auto` runs the solver

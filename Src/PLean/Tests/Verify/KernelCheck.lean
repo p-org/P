@@ -1,18 +1,21 @@
 /-
 The kernel check of what `#pverify`'s theorems rest on. A declaration that
 skipped the kernel (`debug.skipKernelTC`, a metaprogram) can state anything, so
-`#pverify` checks again, through the kernel, every declaration outside PLean's
-library and its imports that its theorems use: manual proofs and the lemmas
-they rest on, lemmas the automatic proofs use (a `@[pverifySimp]` lemma), and
-lemmas the assembly's tactics use (a `@[simp]` lemma). An obligation that rests
-on one the kernel rejects fails, and `M.safe` takes it as `sorry`, with a warm
-proof cache too; so does the assembly's step, when the assembly rests on one.
+`#pverify` checks again, through the kernel, every declaration made before it
+ran, outside PLean's library and its imports, that its theorems use: manual
+proofs and the lemmas they rest on, lemmas the automatic proofs use (a
+`@[pverifySimp]` lemma), and lemmas the assembly's tactics use (a `@[simp]`
+lemma). An obligation that rests on one the kernel rejects fails, and `M.safe`
+takes it as `sorry`, with a warm proof cache too; so does the assembly's step,
+when the assembly rests on one. (Code that runs during `#pverify` is trusted;
+`leanchecker` covers it.)
 
 Each module is a counter that `ePing` increments. The probes: a copy of `oops`
 declared in advance under the name the check would give it; a manual proof
 replaced, with a warm cache, by one the kernel rejects; an honest proof through
 the recursor of a mutual inductive type (accepted); a forged `@[pverifySimp]`
-lemma; a forged `@[simp]` lemma the assembly uses.
+lemma; a forged `@[simp]` lemma the assembly uses; a forged lemma whose proof
+points at a theorem the run declares.
 -/
 import PLean
 
@@ -359,3 +362,59 @@ info: 'KSimp.safe' depends on axioms: [propext, sorryAx, Quot.sound]
 -/
 #guard_msgs in
 #print axioms KSimp.safe
+
+/-! A lemma made before the run that uses a theorem the run makes. -/
+
+pmodule KFwd
+  system s
+  event ePing
+  machine Node {
+    var count : Int
+    start state Run {
+      on ePing {
+        count = count + 1
+      }
+    }
+  }
+  init-holds ∀ n : Node, n.count = 0
+  Theorem safety {
+    -- false: `ePing` takes a count of 9 to 10
+    invariant small : ∀ n : Node, n.count ≤ 9
+  }
+  Proof {
+    prove safety ;
+  }
+end KFwd
+
+#gen_module KFwd
+
+namespace KFwd
+
+-- its proof points at `base_safety`, which `#pverify` declares (and proves with it)
+set_option debug.skipKernelTC true in
+@[pverifySimp] theorem ahead (x : Int) : (x ≤ 9) = True := by
+  run_tac do (← getMainGoal).assign (mkConst `KFwd.base_safety)
+
+end KFwd
+
+/--
+warning: #pverify KFwd: 8 obligations, 5 proved (0 trusting the solver), 3 failed
+  proved by normalisation or a hypothesis: 2, by crush before SMT: 0, with an SMT solver: 3
+  ✗ [error] Node.Run.ePing_correct_safety: `KFwd.Node.Run.ePing_correct_safety` rests on `KFwd.ahead`, which the kernel does not accept: `KFwd.ahead` uses `KFwd.base_safety`, which was declared after it
+  ✗ [error] Node.Run.entry_correct_safety: `KFwd.Node.Run.entry_correct_safety` rests on `KFwd.ahead`, which the kernel does not accept: `KFwd.ahead` uses `KFwd.base_safety`, which was declared after it
+  ✗ [error] base_safety: `KFwd.base_safety` rests on `KFwd.ahead`, which the kernel does not accept: `KFwd.ahead` uses `KFwd.base_safety`, which was declared after it
+  ✓ Node.Run.ePing_correct_NoHalt [smt 1]
+  ✓ Node.Run.entry_correct_NoHalt [smt 1]
+  ✓ base_NoHalt [smt 1]
+  ✓ Node.Run.ePing_safe [norm]
+  ✓ Node.Run.entry_safe [norm]
+  KFwd.safe assumes: `sorry`
+-/
+#guard_msgs in
+set_option pverify.failOnIncomplete false in
+set_option pverify.showTimes false in
+#pverify KFwd
+
+/-- info: 'KFwd.safe' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms KFwd.safe

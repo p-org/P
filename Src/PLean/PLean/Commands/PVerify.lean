@@ -46,10 +46,12 @@ per hardware thread), each kernel-checked on its own copy of the
 environment; the report keeps their order.
 
 What the theorems rest on is checked by the kernel too (`checkDeps`): a
-declaration made without it can state anything. Every declaration outside
-PLean's library and its imports that a manual proof, an automatic proof or
-the assembly uses is replayed through the kernel; an obligation that rests
-on one it rejects fails, and the assembly takes it as `sorry`.
+declaration made without it can state anything. Every declaration made
+before `#pverify` ran, outside PLean's library and its imports, that a
+manual proof, an automatic proof or the assembly uses is replayed through
+the kernel; an obligation that rests on one it rejects fails, and the
+assembly takes it as `sorry`. Code that runs during `#pverify` is trusted;
+`leanchecker` on the built module checks it too.
 
 The report ends with what `M.safe` assumes beyond Lean's axioms (`paxiom`s,
 `pinstance`s, the solver's answers in trusted obligations, `sorry`), and
@@ -357,6 +359,10 @@ private def replayedDecl? (msg : String) : Option String := do
 /-- The kernel check of what `roots` rest on. Elaboration alone proves
 nothing: a declaration added without the kernel (under `debug.skipKernelTC`,
 or by a metaprogram) can state anything, and so can a proof that uses one.
+The check covers declarations made before `#pverify` ran; code that runs
+during it (a tactic, simproc or command of the user's) is trusted, since it
+can declare without the kernel too, or replace `#pverify` altogether.
+`leanchecker`, which replays a built module whole, covers that.
 So every declaration the roots depend on, transitively, outside the trusted
 modules (`trustedModules`) is replayed through the kernel
 (`Lean.Kernel.Environment.replay`) as a copy renamed under a prefix no
@@ -406,7 +412,14 @@ private def checkDeps (roots : Array Name) (checked : Name → Bool := fun _ => 
     | .recInfo v =>
       deps := deps ++ v.all.toArray ++ v.rules.toArray.flatMap (·.rhs.getUsedConstants)
     | _ => pure ()
-    deps := deps.filter fun d => d != n && !known.contains d && !trusted d
+    deps := deps.filter fun d => d != n && !trusted d
+    -- A declaration made before this run cannot use one the run made: such a
+    -- forward reference was added without the kernel, and its copy, which
+    -- would point at the run's declaration, proves nothing.
+    unless checked n do
+      if let some d := deps.find? checked then
+        rejected := rejected.insert n s!"`{n}` uses `{d}`, which was declared after it"
+    deps := deps.filter fun d => !known.contains d
     uses := uses.insert n deps
     unless checked n do replay := replay.push ci
     todo := todo ++ deps

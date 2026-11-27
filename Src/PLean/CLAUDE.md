@@ -271,14 +271,20 @@ load-bearing invariants you need to respect when editing.
 - **What the theorems rest on is kernel-checked.** A declaration made
   without the kernel (`debug.skipKernelTC`, a metaprogram) can state
   anything. `checkDeps` replays through the kernel, as copies renamed under
-  a fresh prefix, every declaration outside PLean's library and its imports
-  that a manual proof (typed with its obligation's statement), an
-  automatic proof or the assembly uses; `#pverify` keeps the kernel on for
+  a fresh prefix, every declaration made before the run, outside PLean's
+  library and its imports, that a manual proof (typed with its obligation's
+  statement), an automatic proof or the assembly uses; one that uses a
+  declaration the run made is rejected. `#pverify` keeps the kernel on for
   what it declares itself, so that is not replayed. An obligation that
   rests on a rejected declaration fails, and the assembly takes it as
   `sorry` (`_unproved.<obligation>`, not from the cache); when the assembly
   itself rests on one, its step and base case become `sorry`
-  (`Tests/Verify/KernelCheck.lean`).
+  (`Tests/Verify/KernelCheck.lean`). The limit: code that runs during
+  `#pverify` (a user's tactic, simproc or command) is trusted, as it can
+  declare without the kernel or replace `#pverify`. CI
+  (`.github/workflows/plean.yml`) runs `leanchecker` on the built library
+  and examples, which covers that: `lake env leanchecker <Module>`, one
+  module per call (it crashes when one call covers several).
 - **Tag new state-update helpers `@[pverifySimp]`.** The normalisation
   before crush uses this set.
 - **Macro hygiene through `mkIdent`.** Identifiers that resolve against

@@ -74,7 +74,7 @@ fun ReleaseLock(sharedObj: LBSharedObject, client: machine, val: any)
 }
 
 /*
-ReleaseLock function sends the eReleaseLock event along with the updated value of the contents of the shared obj.
+Read function returns the current value of the shared obj without acquiring the lock.
 */
 fun Read(sharedObj: LBSharedObject, client: machine): any
 {

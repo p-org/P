@@ -280,10 +280,10 @@ load-bearing invariants you need to respect when editing.
   itself rests on one, its step and base case become `sorry`
   (`Tests/Verify/KernelCheck.lean`). The limit: code that runs during
   `#pverify` (a user's tactic, simproc or command) is trusted, as it can
-  declare without the kernel or replace `#pverify`. CI
-  (`.github/workflows/plean.yml`) runs `leanchecker` on the built library
-  and examples, which covers that: `lake env leanchecker <Module>`, one
-  module per call (it crashes when one call covers several).
+  declare without the kernel or replace `#pverify`. `leanchecker` covers
+  that: `lake env leanchecker <Module>`, one module per call (it crashes
+  when one call covers several). CI (`.github/workflows/plean.yml`) runs it
+  on the built library; it does not build the examples, so check them locally.
 - **Tag new state-update helpers `@[pverifySimp]`.** The normalisation
   before crush uses this set.
 - **`vcgen` does not see the premises.** `pverify_close` normalises them
@@ -334,7 +334,7 @@ load-bearing invariants you need to respect when editing.
   default: obligations whose proof could not be replayed are reported
   `✓ (trusted)`), `pverify.heartbeats`. On a slower machine,
   `lake build -R -KpverifyTimeout=<seconds> Examples` sets the timeout for
-  the examples (CI does).
+  the examples.
 - `pverify.report` (another path for the report), `pverify.showTimes false`
   (no times, for pinned test output), `pverify.failOnIncomplete false` (an
   incomplete run is a warning, not an error).

@@ -29,8 +29,8 @@ gap. Each bullet says *when* the rule applies, not just what it is.
   its full report — every obligation with its time, and the goals
   crush failed on — to `.lake/pverify/<Mod>.txt`. Read it, and use
   `pverify.only` / `pverify.profile` to iterate on single
-  obligations; re-running a whole example is expensive (SMT solving
-  dominates).
+  obligations; re-running a whole example is expensive (minutes for the
+  larger ones).
 - **Don't leave probe code lying around.** When a probe (a temporary
   `example`, `#check`, `#eval`, or a one-off file under `Tests/`)
   has served its purpose, either delete it or convert it into a

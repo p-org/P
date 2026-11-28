@@ -95,3 +95,47 @@ end LoopSetT
 #gen_module LoopSetT
 
 #pverify LoopSetT
+
+/-! An invariant that names the items already visited (`pref`): none at loop
+entry, one more after each iteration. -/
+
+pmodule LoopPrefT
+
+  system s
+
+  event eCheck : Int
+
+  machine Store {
+    var items : set[Int]
+    var hits : Int
+
+    start state Serve {
+      on eCheck (j : Int) {
+        var acc : set[Int]
+        foreach (i in items)
+          invariant seen : ∀ k : Int, k ∈ pref → k ∈ acc ;
+        {
+          acc += (i)
+        }
+        if j ∈ items then do
+          assert (j ∈ acc)
+          hits = hits + 1
+      }
+    }
+  }
+
+  init-holds ∀ x : Store, x.hits = 0
+
+  Lemma counts {
+    invariant hits_nonneg : ∀ x : Store, x.hits ≥ 0
+  }
+
+  Proof {
+    prove counts ;
+  }
+
+end LoopPrefT
+
+#gen_module LoopPrefT
+
+#pverify LoopPrefT

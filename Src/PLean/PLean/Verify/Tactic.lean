@@ -4,19 +4,24 @@ PLean.Verify.Tactic — `pverify_close`, the automation for an obligation.
   pverify_close [h₁, …] [d₁, …] [l₁, …] [a₁, …]
 
 1. unfolds `RunPost` / `RunSafe` and introduces the coin stream (handler
-   obligations),
-2. unfolds the handler definitions `hᵢ`, runs `vcgen`, splits the
-   post-condition into one goal per invariant (`PostInv`), tagged with the
-   invariant's name (`pv_split_post`), and records each `foreach` cursor's
-   membership (`pv_cursor_mem`),
-3. adds the facts `aᵢ` (axioms) as hypotheses, substitutes the start
-   state, and normalises with `pverifySimp` plus the definitions `dᵢ`
-   (invariants, kind predicates, …),
-4. destructures message / machine-wrapper locals and conjunctive /
-   existential hypotheses (`pv_destruct`), splits the goal's conjunctions, and
+   obligations), and unfolds the handler definitions `hᵢ`,
+2. adds the facts `aᵢ` (axioms) as hypotheses and normalises the premises
+   once, with `pverifySimp` plus the definitions `dᵢ` (invariants, kind
+   predicates, …): every goal made below starts from them,
+3. runs `vcgen` with the premises out of its sight (`stashHyps`: `vcgen`
+   preprocesses each hypothesis it sees), splits the post-condition into
+   one goal per invariant (`PostInv`), tagged with the invariant's name
+   (`pv_split_post`), and records each `foreach` cursor's membership
+   (`pv_cursor_mem`),
+4. substitutes the start state and, goal by goal, normalises and
+   destructures message / machine-wrapper locals and conjunctive /
+   existential hypotheses (`pv_destruct`) until a round changes nothing,
+   splits the goal's conjunctions, adds the lookup equations of the set
+   and map updates in each goal (`pv_lookup_facts`), and
 5. discharges each conjunct with `crush`, given the hints `lᵢ`: briefly
    with z3 and cvc5 without crush's ground instantiation, then with it at
-   the full timeout (cvc5, then z3).
+   the full timeout (cvc5, then z3). A solver's `unsat` is replayed with
+   `grind` on its unsat core first, then by crush's own search.
 
 It logs how its goals were closed and where the time went (`pverify-stats:
 <by a hypothesis> <by crush before SMT translation> <by an SMT solver>
@@ -34,6 +39,12 @@ import PLean.Semantics.Msg
 import Crush
 
 namespace PLean
+
+/-! `k ∈ m` on a map is `(m.get k).isSome`. Without `Option.isSome`'s two equations a
+solver takes it for an unknown function, and a key's presence says nothing about the key's
+value; every query that mentions it gets them. (What the solvers know about the lookups
+themselves: `pv_lookup_facts`.) -/
+attribute [crush_unfold] Option.isSome
 
 register_option pverify.profile : Bool := {
   defValue := false
@@ -80,6 +91,56 @@ def findCex (g : MVarId) (crushTac : TSyntax `tactic) : TacticM (Option (String 
   if script.isEmpty then return none
   Cex.findModel script
 
+open Lean Elab Tactic Meta in
+/-- Run the `simp` call `stx` (written without a location) on the main goal's proposition
+hypotheses, leaving the target as it is. -/
+def simpHypsOnly (stx : Syntax) : TacticM Unit := withMainContext do
+  let { ctx, simprocs, dischargeWrapper, .. } ← mkSimpContext stx (eraseLocal := false)
+  let g ← getMainGoal
+  let fvars ← g.getNondepPropHyps
+  let (r, _) ← dischargeWrapper.with fun discharge? =>
+    simpGoal g ctx simprocs discharge? (simplifyTarget := false) (fvarIdsToSimp := fvars)
+  match r with
+  | none => replaceMainGoal []
+  | some (_, g') => replaceMainGoal [g']
+
+/-- A proposition kept as data: a local `h : Stashed P` is not a hypothesis (`stashHyps`). -/
+structure Stashed (P : Prop) : Type where
+  /-- The proof. -/
+  down : P
+
+open Lean Elab Tactic Meta in
+/-- Replace each proposition hypothesis `h : P` of the main goal by `h : Stashed P`, in
+place (`unstashHyps` undoes it).
+
+`vcgen` preprocesses every hypothesis in the context before it looks at the program
+(it unfolds them and prepares each quantified one for instantiation). For an obligation
+that assumes many invariants that takes far longer than generating its conditions, which
+need none of them. A local whose type is not a proposition is left alone. -/
+def stashHyps : TacticM Unit := liftMetaTactic fun g => g.withContext do
+  let mut g := g
+  -- Last first: `assertAfter` renames only the locals after the one it is given.
+  for h in (← g.getNondepPropHyps).reverse do
+    let d ← g.withContext h.getDecl
+    let r ← g.assertAfter h d.userName (← mkAppM ``Stashed #[d.type])
+      (← mkAppOptM ``Stashed.mk #[d.type, mkFVar h])
+    g ← r.mvarId.clear h
+  return [g]
+
+open Lean Elab Tactic Meta in
+/-- Undo `stashHyps` in the main goal: each `h : Stashed P` is `h : P` again, in place. -/
+def unstashHyps : TacticM Unit := liftMetaTactic fun g => do
+  let mut g := g
+  repeat
+    let some d ← g.withContext do
+        return (← getLCtx).foldl (init := none) fun acc d =>
+          if !d.isImplementationDetail && d.type.isAppOfArity ``Stashed 1 then some d else acc
+      | break
+    let r ← g.assertAfter d.fvarId d.userName (d.type.getArg! 0)
+      (← g.withContext (mkAppM ``Stashed.down #[d.toExpr]))
+    g ← r.mvarId.clear d.fvarId
+  return [g]
+
 syntax (name := pverifyClose)
   "pverify_close" "[" ident,* "]" "[" ident,* "]" "[" term,* "]" "[" term,* "]" : tactic
 
@@ -98,29 +159,59 @@ def evalPverifyClose : Tactic := fun stx => do
   evalTactic (← `(tactic|
     try ((first | unfold PLean.RunPost | unfold PLean.RunSafe | unfold PLean.RunOK); intro coins)))
   for h in hs do evalTactic (← `(tactic| try unfold $h:ident))
-  evalTactic (← `(tactic| try vcgen))
-  evalTactic (← `(tactic| pv_split_post))
-  evalTactic (← `(tactic| pv_cursor_mem))
-  -- Facts join the hypotheses, so they are normalised like them.
-  for a in as do
-    evalTactic (← `(tactic| all_goals (try have := $a:term)))
   let simpArgs ← ds.mapM fun d => `(Lean.Parser.Tactic.simpLemma| $d:ident)
   -- The first pass keeps `sentSince` folded, so a loop's sends are peeled off
   -- one `push` at a time (`sentSince_push`).
   let norm0 ← `(tactic| all_goals (simp -failIfUnchanged +zetaDelta only
     [pverifySimp, reduceCtorEq, $[$simpArgs],*] at *))
+  let normHyps ← `(tactic| simp -failIfUnchanged +zetaDelta only
+    [pverifySimp, reduceCtorEq, $(mkIdent ``PLean.sentSince):ident, $[$simpArgs],*])
   let norm ← `(tactic| all_goals (simp -failIfUnchanged +zetaDelta only
     [pverifySimp, reduceCtorEq, $(mkIdent ``PLean.sentSince):ident, $[$simpArgs],*] at *))
+  -- Facts join the hypotheses, so they are normalised like them.
+  for a in as do
+    evalTactic (← `(tactic| all_goals (try have := $a:term)))
+  -- The premises are the same in every goal `vcgen` makes: they are normalised once,
+  -- here, and kept out of `vcgen`'s sight (`stashHyps`).
+  let single := (← getGoals).length == 1
+  if single then simpHypsOnly normHyps
+  let stashed := single && (← getGoals).length == 1
+  if stashed then stashHyps
+  evalTactic (← `(tactic| try vcgen))
+  if stashed then
+    let mut gs := []
+    for g in ← getGoals do
+      setGoals [g]
+      unstashHyps
+      gs := gs ++ (← getGoals)
+    setGoals gs
+  evalTactic (← `(tactic| pv_split_post))
+  evalTactic (← `(tactic| pv_cursor_mem))
   evalTactic (← `(tactic| all_goals (try subst_vars)))
   evalTactic norm0
-  for _ in [0:3] do
+  -- Goal by goal: normalise, destructure, substitute, and again (at most four times)
+  -- while destructuring or substitution changed the goal. A pass over a goal they left
+  -- as it was would find nothing to rewrite.
+  let mut done : Array MVarId := #[]
+  let mut todo : List (MVarId × Nat) := (← getGoals).map (·, 0)
+  while !todo.isEmpty do
+    let (g, round) := todo.head!
+    todo := todo.tail!
+    setGoals [g]
     evalTactic norm
+    let normed ← getGoals
     evalTactic (← `(tactic| all_goals pv_destruct))
+    if round ≥ 3 then
+      done := done ++ (← getGoals).toArray
+      continue
     evalTactic (← `(tactic| all_goals (try subst_vars)))
-  evalTactic norm
-  evalTactic (← `(tactic| all_goals pv_destruct))
+    let after ← getGoals
+    if after == normed then done := done ++ after.toArray
+    else todo := after.map (·, round + 1) ++ todo
+  setGoals done.toList
   evalTactic (← `(tactic| all_goals (try and_intros)))
   evalTactic (← `(tactic| all_goals pv_clear_lets))
+  evalTactic (← `(tactic| all_goals pv_lookup_facts))
   -- A hint about `<ev>_payload_of` matters only to goals that mention it (a
   -- fact about a symbol nothing else mentions cannot help a proof), and
   -- asserting it elsewhere keeps the solvers from finding models.
@@ -145,7 +236,16 @@ def evalPverifyClose : Tactic := fun stx => do
         for c in (← instantiateMVars d.type).getUsedConstants do used := used.insert c
     let hints ← ((ls.zip hintKeys).filter fun (_, ks) => ks.isEmpty || ks.any used.contains).mapM
       fun (l, _) => `(Crush.crushHintElem| $l:term)
-    let crush1 ← if hints.isEmpty then `(tactic| crush [*]) else `(tactic| crush [*, $[$hints],*])
+    -- crush replays a solver's `unsat` from its unsat core: by a search for a hypothesis to
+    -- apply backwards, then by `grind` and other tactics. On these goals `grind` usually
+    -- closes the core at once and the search before it can take most of a minute, so
+    -- `grind` goes first (`using`, which crush refuses when no proof is replayed).
+    let replay := (← getOptions).get `crush.trust "trust" != "trust"
+    let crush1 ←
+      if replay then
+        if hints.isEmpty then `(tactic| crush [*] using grind)
+        else `(tactic| crush [*, $[$hints],*] using grind)
+      else if hints.isEmpty then `(tactic| crush [*]) else `(tactic| crush [*, $[$hints],*])
     -- `crush.result` traces say how crush closed the goal.
     let traced ← `(tactic| set_option trace.crush.result true in $crush1:tactic)
     let prof ← if profile then

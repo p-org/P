@@ -59,6 +59,16 @@ attribute [pverifySimp] Lean.Order.meet_apply Lean.Order.iSup_apply Lean.Order.t
 them split into equations between their fields. -/
 attribute [pverifySimp] HState.mk.injEq Log.mk.injEq MachineState.mk.injEq
 
+/-- A machine state taken apart, equated with one that is not: one equation per field.
+The frame of a loop that runs before its handler assigns a field leaves
+`{ state := s, fields := f, … } = g.machines dst`, where `MachineState.mk.injEq` does not
+apply; the solvers cope with it, but their proofs then often do not replay. -/
+@[pverifySimp] theorem MachineState.mk_eq_iff (x : MachineState S E F G W)
+    (s : Option S) (f : F) (p : Option G) (w : Option W) (h : Bool) :
+    (MachineState.mk s f p w h = x) =
+      (s = x.state ∧ f = x.fields ∧ p = x.pending ∧ w = x.waiting ∧ h = x.halted) := by
+  cases x; simp
+
 /-- Quantifiers over packets range over their fields. -/
 @[pverifySimp] theorem Packet.forall_iff (P : Packet E → Prop) :
     (∀ p, P p) ↔ ∀ src dst ev, P ⟨src, dst, ev⟩ :=
@@ -71,6 +81,10 @@ attribute [pverifySimp] HState.mk.injEq Log.mk.injEq MachineState.mk.injEq
 @[pverifySimp] theorem PIterable.toList_pmap {K V : Type} [DecidableEq K] (m : PMap K V) :
     PIterable.toList m = m.keySet.support := rfl
 attribute [pverifySimp] Std.Internal.ForIn.toList_list PSet.mem_support PMap.mem_keySet
+
+/-! A `foreach` invariant may name the items already visited (`pref`): none at entry, one
+more after each iteration. -/
+attribute [pverifySimp] List.not_mem_nil List.mem_append List.mem_singleton
 
 open Lean Meta Elab Tactic in
 /-- For each `foreach` cursor hypothesis `xs = pref ++ cur :: suff`, add
@@ -143,6 +157,69 @@ elab "pv_clear_lets" : tactic => liftMetaTactic fun g => do
   let lets := (← g.getDecl).lctx.foldl (init := #[]) fun acc d =>
     if d.isLet && !d.isImplementationDetail then acc.push d.fvarId else acc
   return [← g.tryClearMany lets]
+
+open Lean Meta Elab Tactic in
+/-- For each update term in the goal or a hypothesis (`s.add x`, `s.del x`, `m.put k v`,
+`m.del k`, the empty set and map), add the lookup's equation at that term as a hypothesis,
+e.g. `∀ y, (s.add x).mem y = (decide (y = x) || s.mem y)`.
+
+Normalisation computes a lookup where the update is the lookup's own argument. A container
+reached through an equation (a set stored in a map, the payload of a message just sent) is
+left to the solvers, to which `PSet.mem` and `PMap.get` are unknown functions. These facts
+say what they are at the updates the goal has. They are instances of proved lemmas, and
+they quantify over the element only: with the lookups' equations for every set (as
+`crush_unfold` would send them) a solver no longer finds a model of a goal that does not
+hold, and the report would lose its counterexample.
+
+An update term under a binder is skipped. A term gets its fact only when the goal mentions
+a lookup at its element (key) type, whose `DecidableEq` instance the fact then uses, so that
+the solver sees one lookup function per type. -/
+elab "pv_lookup_facts" : tactic => withMainContext do
+  let g ← getMainGoal
+  let mut es : Array Expr := #[← instantiateMVars (← g.getType)]
+  for d in ← getLCtx do
+    unless d.isImplementationDetail do es := es.push (← instantiateMVars d.type)
+  -- the update terms, and the `DecidableEq` instance of the goal's lookups at each type
+  let upd ← IO.mkRef (#[] : Array Expr)
+  let insts ← IO.mkRef (#[] : Array (Expr × Expr))
+  let noteInst (ty inst : Expr) : MetaM Unit := do
+    unless ty.hasLooseBVars || inst.hasLooseBVars || (← insts.get).any (·.1 == ty) do
+      insts.modify (·.push (ty, inst))
+  for e in es do
+    e.forEach' fun t => do
+      if t.isAppOfArity ``PSet.mem 4 then noteInst (t.getArg! 0) (t.getArg! 1)
+      else if t.isAppOfArity ``PMap.get 5 then noteInst (t.getArg! 0) (t.getArg! 2)
+      else if !t.hasLooseBVars && (t.isAppOfArity ``PSet.add 3 || t.isAppOfArity ``PSet.del 3
+          || t.isAppOfArity ``PSet.empty 1 || t.isAppOfArity ``PMap.put 5
+          || t.isAppOfArity ``PMap.del 4 || t.isAppOfArity ``PMap.empty 2) then
+        unless (← upd.get).contains t do upd.modify (·.push t)
+      return true
+  let insts ← insts.get
+  let mut g := g
+  for t in ← upd.get do
+    let keyTy := t.getArg! 0
+    let some (_, inst) := insts.find? (·.1 == keyTy) | continue
+    let proof? ← (try
+      if t.isAppOfArity ``PSet.add 3 then
+        some <$> mkAppOptM ``PSet.mem_add #[keyTy, inst, t.getArg! 1, t.getArg! 2]
+      else if t.isAppOfArity ``PSet.del 3 then
+        some <$> mkAppOptM ``PSet.mem_del #[keyTy, inst, t.getArg! 1, t.getArg! 2]
+      else if t.isAppOfArity ``PSet.empty 1 then
+        some <$> mkAppOptM ``PSet.mem_empty #[keyTy, inst]
+      else if t.isAppOfArity ``PMap.put 5 then
+        some <$> withLocalDeclD `k keyTy fun k => do
+          mkLambdaFVars #[k] (← mkAppOptM ``PMap.get_put
+            #[keyTy, t.getArg! 1, inst, t.getArg! 2, t.getArg! 3, k, t.getArg! 4])
+      else if t.isAppOfArity ``PMap.del 4 then
+        some <$> mkAppOptM ``PMap.get_del #[keyTy, t.getArg! 1, inst, t.getArg! 2, t.getArg! 3]
+      else
+        some <$> mkAppOptM ``PMap.get_empty #[keyTy, t.getArg! 1, inst]
+      catch _ => pure none)
+    let some proof := proof? | continue
+    let ty ← instantiateMVars (← inferType proof)
+    let (_, g') ← (← g.assert `pv_lookup ty proof).intro1P
+    g := g'
+  replaceMainGoal [g]
 
 open Lean Elab Tactic in
 /-- Split every hypothesis that is (syntactically) a conjunction. -/
